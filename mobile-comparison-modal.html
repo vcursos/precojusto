@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modal de Comparação Mobile</title>
+    
+    <!-- Use only the dedicated mobile-compare.css for this page -->
+    <link rel="stylesheet" href="css/mobile-compare.css">
+</head>
+<body>
+    <!-- Button to open the modal (for testing) -->
+    <button id="openModalBtn">Abrir Comparação</button>
+    
+    <!-- Mobile Comparison Modal -->
+    <div id="mobileComparisonModal" class="mobile-comparison-modal">
+        <div class="mobile-comparison-modal__container">
+            <div class="mobile-comparison-modal__header">
+                <h2>Comparação de Preços</h2>
+                <button class="mobile-comparison-modal__close">&times;</button>
+            </div>
+            
+            <div class="mobile-comparison-modal__content">
+                <!-- Cheapest product (will be populated by JS) -->
+                <div class="best-price-product">
+                    <!-- Content will be inserted here by JS -->
+                </div>
+                
+                <!-- Other products list (will be populated by JS) -->
+                <div class="other-products">
+                    <h3>Outros Preços</h3>
+                    <ul class="other-products-list">
+                        <!-- Content will be inserted here by JS -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script>
+        // Sample data for testing
+        const productData = {
+            cheapest: {
+                name: "Produto A",
+                price: 10.99,
+                store: "Loja X",
+                link: "#",
+                image: "https://via.placeholder.com/150"
+            },
+            other: [
+                {
+                    name: "Produto B",
+                    price: 12.99,
+                    store: "Loja Y",
+                    link: "#",
+                    image: "https://via.placeholder.com/150"
+                },
+                {
+                    name: "Produto C",
+                    price: 11.49,
+                    store: "Loja Z",
+                    link: "#",
+                    image: "https://via.placeholder.com/150"
+                }
+            ]
+        };
+        
+        // Function to open the modal and populate with data
+        function openModal() {
+            // Populate cheapest product
+            const bestPriceContainer = document.querySelector(".best-price-product");
+            bestPriceContainer.innerHTML = `
+                <a href="${productData.cheapest.link}" class="block" style="text-decoration: none; color: inherit;">
+                    <div style="display: flex; align-items: center;">
+                        <img src="${productData.cheapest.image}" alt="${productData.cheapest.name}" style="width: 50px; height: 50px; border-radius: 8px; margin-right: 10px;">
+                        <div>
+                            <div style="font-weight: bold;">${productData.cheapest.name}</div>
+                            <div style="color: #6b7280;">${productData.cheapest.store}</div>
+                        </div>
+                        <div style="margin-left: auto; font-weight: bold;">R$ ${productData.cheapest.price.toFixed(2)}</div>
+                    </div>
+                </a>
+            `;
+            
+            // Populate other products
+            const otherProductsList = document.querySelector(".other-products-list");
+            otherProductsList.innerHTML = "";
+            productData.other.forEach(product => {
+                const li = document.createElement("li");
+                li.innerHTML = `
+                    <a href="${product.link}" class="block" style="text-decoration: none; color: inherit; padding: 10px 0;">
+                        <div style="display: flex; align-items: center;">
+                            <img src="${product.image}" alt="${product.name}" style="width: 40px; height: 40px; border-radius: 8px; margin-right: 10px;">
+                            <div style="flex-grow: 1;">
+                                <div style="font-weight: bold;">${product.name}</div>
+                                <div style="color: #6b7280;">${product.store}</div>
+                            </div>
+                            <div style="font-weight: bold;">R$ ${product.price.toFixed(2)}</div>
+                        </div>
+                    </a>
+                `;
+                otherProductsList.appendChild(li);
+            });
+            
+            // Show the modal
+            document.getElementById("mobileComparisonModal").classList.add("active");
+        }
+        
+        // Event listeners
+        document.getElementById("openModalBtn").addEventListener("click", openModal);
+        document.querySelector(".mobile-comparison-modal__close").addEventListener("click", () => {
+            document.getElementById("mobileComparisonModal").classList.remove("active");
+        });
+
+
+
+</html></body>    </script>                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/mobile-comparison-modal.js"></script>
+</body>
+</html>

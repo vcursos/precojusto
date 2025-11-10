@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste - Adicionar Produto</title>
+</head>
+<body>
+    <h1>Teste de Produto</h1>
+    <button onclick="addTestProduct()">Adicionar Produto de Teste</button>
+    <div id="result"></div>
+
+    <script type="module">
+        import { db, addDoc, collection } from './js/firebase-init.js';
+        
+        window.addTestProduct = async () => {
+            try {
+                const appId = 'default-app-id';
+                
+                const testProduct = {
+                    name: 'Délicieuse & Tropical Coco',
+                    barcode: '7891000369098',
+                    price: '0.88',
+                    market: 'Continente',
+                    unit: 'L',
+                    quantity: 1,
+                    category: 'Laticínios e Frios',
+                    brand: 'alpro',
+                    zone: 'Lisboa',
+                    parish: 'Benfica',
+                    description: 'Bebida vegetal de coco tropical, rica em sabor e cremosidade.',
+                    imageUrl: 'https://images.unsplash.com/photo-1605889351007-c0301fb0c2b8?w=400&h=400&fit=crop&crop=center'
+                };
+                
+                const docRef = await addDoc(collection(db, `/artifacts/${appId}/public/data/products`), testProduct);
+                document.getElementById('result').innerHTML = `✅ Produto teste adicionado com ID: ${docRef.id}`;
+                console.log('Produto teste adicionado:', testProduct);
+            } catch (error) {
+                document.getElementById('result').innerHTML = `❌ Erro: ${error.message}`;
+                console.error('Erro ao adicionar produto:', error);
+            }
+        };
+    </script>
+</body>
+</html>

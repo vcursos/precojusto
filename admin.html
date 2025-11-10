@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Administração - Preço Certo</title>
+    <link rel="stylesheet" href="css/style-admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div id="login-container" class="login-container">
+        <form id="admin-login-form" class="login-form">
+            <h1><i class="fas fa-user-shield"></i> Acesso Restrito</h1>
+            <div class="form-group">
+                <label for="admin-email">E-mail</label>
+                <input type="email" id="admin-email" placeholder="admin@exemplo.com">
+            </div>
+            <div class="form-group">
+                <label for="admin-password">Senha</label>
+                <input type="password" id="admin-password" placeholder="••••••">
+            </div>
+            <button type="submit" class="btn-submit">Entrar</button>
+            <p id="login-error" class="error-message" style="display: none;"></p>
+        </form>
+    </div>
+
+    <div id="admin-panel" style="display: none;">
+        <main class="admin-container">
+            <header class="admin-header">
+                <h1><i class="fas fa-user-shield"></i> Painel de Administração</h1>
+                <div>
+                    <a href="index.html" class="btn-back"><i class="fas fa-home"></i> Início</a>
+                    <button id="btn-return-to-add-product" class="btn-back"><i class="fas fa-arrow-left"></i> Voltar</button>
+                </div>
+            </header>
+
+            <div class="tabs">
+                <button class="tab-button active" id="tab-add-product-btn" data-tab="tab-add-product">
+                    <i class="fas fa-plus-circle"></i> Adicionar Produto
+                </button>
+                <button class="tab-button" data-tab="tab-view-products">
+                    <i class="fas fa-list-alt"></i> Produtos Cadastrados
+                    <span id="products-count" class="badge">0</span>
+                </button>
+                <button class="tab-button" data-tab="tab-suggestions">
+                    <i class="fas fa-check-double"></i> Sugestões
+                    <span id="suggestions-count" class="badge">0</span>
+                </button>
+            </div>
+
+            <div id="tab-add-product" class="tab-content active">
+                <section class="admin-section">
+                    <h2><i class="fas fa-edit"></i> Formulário de Produto</h2>
+                    <form id="product-form" class="admin-form">
+                        <input type="hidden" id="product-id">
+                        <div class="form-group">
+                            <label for="product-name">Nome do Produto:</label>
+                            <div class="name-input-group">
+                                <input type="text" id="product-name">
+                                <button type="button" id="search-name-btn" class="btn-search-name" title="Buscar nome correto no Google">
+                                    <i class="fas fa-search"></i>
+                                    <span style="margin-left: 4px; font-size: 10px;">Google</span>
+                                </button>
+                            </div>
+                            <div id="name-suggestions" class="suggestions-dropdown"></div>
+                        </div>
+
+                        <!-- Campo de Código de Barras -->
+                        <div class="form-group">
+                            <label for="product-barcode">Código de Barras:</label>
+                            <div class="barcode-input-group">
+                                <input type="text" id="product-barcode" placeholder="Digite ou escaneie o código de barras">
+                                <button type="button" id="scan-barcode-btn" class="btn-scan">
+                                    <i class="fas fa-camera"></i> Câmera
+                                </button>
+                            </div>
+                            <small class="help-text">Digite o código e pressione Enter para buscar automaticamente</small>
+                            <div class="loading-indicator" style="display: none;">
+                                <i class="fas fa-spinner fa-spin"></i> Buscando produto...
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="product-market">Mercado:</label>
+                            <select id="product-market">
+                                <option value="">Selecione um Mercado</option>
+                                <option value="Continente">Continente</option>
+                                <option value="Pingo Doce">Pingo Doce</option>
+                                <option value="Lidl">Lidl</option>
+                                <option value="Makro">Makro</option>
+                                <option value="Recheio">Recheio</option>
+                                <option value="Aldi">Aldi</option>
+                                <option value="Auchan">Auchan</option>
+                                <option value="Minipreço">Minipreço</option>
+                                <option value="Outro">Outro</option>
+                            </select>
+                            <input type="text" id="custom-market-name" placeholder="Digite o nome do mercado" style="display: none;">
+                        </div>
+
+                        <div class="form-group-inline">
+                            <div class="form-group">
+                                <label for="product-price">Preço (€):</label>
+                                <div class="price-input-group">
+                                    <input type="number" id="product-price" step="0.01">
+                                    <button type="button" id="search-price-btn" class="btn-search-price" title="Buscar preço atualizado online">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="product-unit">Unidade de Medida:</label>
+                                <select id="product-unit">
+                                    <option value="unidade">Unidade</option>
+                                    <option value="kg">kg</option>
+                                    <option value="g">g</option>
+                                    <option value="L">L</option>
+                                    <option value="ml">ml</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="product-quantity">Quantidade:</label>
+                                <input type="number" id="product-quantity" step="1" value="1">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Tipo de Marca:</label>
+                            <div class="brand-options">
+                                <input type="radio" id="brand-is-generic" name="brand-type" value="generic" checked>
+                                <label for="brand-is-generic">Marca Branca</label>
+                                <input type="radio" id="brand-is-specific" name="brand-type" value="specific">
+                                <label for="brand-is-specific">Marca Específica</label>
+                            </div>
+                        </div>
+                        <div class="form-group brand-input-group" style="display: none;">
+                            <label for="product-brand">Nome da Marca:</label>
+                            <input type="text" id="product-brand" placeholder="Ex: Milka, Nestlé, etc.">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="product-category">Categoria:</label>
+                            <select id="product-category">
+                                <option value="">Selecione uma Categoria</option>
+                                <option value="alimentos">Alimentos</option>
+                                <option value="talho">Talho</option>
+                                <option value="eletros">Eletros</option>
+                                <option value="limpeza">Limpeza</option>
+                                <option value="higiene">Higiene Pessoal</option>
+                                <option value="bebidas">Bebidas</option>
+                                <option value="frios">Laticínios e Frios</option>
+                                <option value="congelados">Congelados</option>
+                                <option value="padaria">Padaria e Pastelaria</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="market-zone">Zona:</label>
+                            <select id="market-zone">
+                                <option value="">Selecione uma Zona</option>
+                                <option value="Aveiro">Aveiro</option>
+                                <option value="Beja">Beja</option>
+                                <option value="Braga">Braga</option>
+                                <option value="Bragança">Bragança</option>
+                                <option value="Castelo Branco">Castelo Branco</option>
+                                <option value="Coimbra">Coimbra</option>
+                                <option value="Évora">Évora</option>
+                                <option value="Faro">Faro</option>
+                                <option value="Guarda">Guarda</option>
+                                <option value="Leiria">Leiria</option>
+                                <option value="Lisboa">Lisboa</option>
+                                <option value="Portalegre">Portalegre</option>
+                                <option value="Porto">Porto</option>
+                                <option value="Santarém">Santarém</option>
+                                <option value="Setúbal">Setúbal</option>
+                                <option value="Viana do Castelo">Viana do Castelo</option>
+                                <option value="Vila Real">Vila Real</option>
+                                <option value="Viseu">Viseu</option>
+                                <option value="Açores">Açores</option>
+                                <option value="Madeira">Madeira</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="market-parish">Freguesia:</label>
+                            <input type="text" id="market-parish" list="parish-list" placeholder="Ex: Alcains, Lousa, etc.">
+                            <datalist id="parish-list"></datalist>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Opção de Imagem:</label>
+                            <div class="image-options">
+                                <input type="radio" id="use-custom-image" name="image-type" value="custom" checked>
+                                <label for="use-custom-image">URL Personalizada</label>
+                                <input type="radio" id="use-default-image" name="image-type" value="default">
+                                <label for="use-default-image">Imagem Padrão</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group image-url-group">
+                            <label for="product-image">URL da Imagem:</label>
+                            <input type="url" id="product-image" placeholder="URL da imagem (Opcional)">
+                        </div>
+
+                        <button type="submit" class="btn-submit" id="form-submit-btn">Adicionar Produto</button>
+                    </form>
+                </section>
+            </div>
+
+            <div id="tab-view-products" class="tab-content" style="display: none;">
+                <section class="admin-section">
+                    <h2><i class="fas fa-list-alt"></i> Produtos Cadastrados</h2>
+                    <div class="product-search-bar">
+                        <input type="text" id="product-search-input" placeholder="Pesquisar por nome...">
+                        <select id="product-market-filter">
+                            <option value="all">Todos os Mercados</option>
+                        </select>
+                        <select id="product-brand-filter">
+                            <option value="all">Todas as Marcas</option>
+                        </select>
+                        <select id="product-category-filter">
+                            <option value="all">Todas as Categorias</option>
+                            <option value="alimentos">Alimentos</option>
+                            <option value="talho">Talho</option>
+                            <option value="eletros">Eletros</option>
+                            <option value="limpeza">Limpeza</option>
+                            <option value="higiene">Higiene Pessoal</option>
+                            <option value="bebidas">Bebidas</option>
+                            <option value="frios">Laticínios e Frios</option>
+                            <option value="congelados">Congelados</option>
+                            <option value="padaria">Padaria e Pastelaria</option>
+                        </select>
+                    </div>
+                    <div class="products-table-container">
+                        <table id="products-table">
+                            <thead>
+                                <tr>
+                                    <th data-sort="name">Nome <i class="fas fa-sort"></i></th>
+                                    <th data-sort="barcode">Código de Barras <i class="fas fa-sort"></i></th>
+                                    <th data-sort="market">Mercado <i class="fas fa-sort"></i></th>
+                                    <th data-sort="price">Preço <i class="fas fa-sort"></i></th>
+                                    <th data-sort="unit">Unidade <i class="fas fa-sort"></i></th>
+                                    <th data-sort="brand">Marca <i class="fas fa-sort"></i></th>
+                                    <th data-sort="zone">Zona <i class="fas fa-sort"></i></th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="products-table-body"></tbody>
+                        </table>
+                    </div>
+                    <p id="no-products" class="no-suggestions" style="display: none;">Não há produtos cadastrados.</p>
+                </section>
+            </div>
+
+            <div id="tab-suggestions" class="tab-content" style="display: none;">
+                <section class="admin-section">
+                    <h2><i class="fas fa-check-double"></i> Sugestões de Preço Pendentes</h2>
+                    <div id="suggestions-list" class="suggestions-list"></div>
+                    <p id="no-suggestions" class="no-suggestions" style="display: none;">Não há sugestões de preço pendentes no momento.</p>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal do Scanner de Código de Barras -->
+    <div id="barcode-scanner-modal" class="barcode-scanner-modal">
+        <div class="barcode-scanner-content">
+            <div class="scanner-header">
+                <h3>Scanner de Código de Barras</h3>
+                <button id="close-scanner" class="close-scanner-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="scanner-body">
+                <div id="scanner-container">
+                    <div id="scanner-target"></div>
+                    <div class="scanner-overlay">
+                        <div class="scanner-line"></div>
+                        <div class="scanner-corners">
+                            <div class="corner top-left"></div>
+                            <div class="corner top-right"></div>
+                            <div class="corner bottom-left"></div>
+                            <div class="corner bottom-right"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="scanner-info">
+                    <p>Posicione o código de barras dentro da área destacada</p>
+                    <div id="scanner-result" class="scanner-result"></div>
+                </div>
+            </div>
+            <div class="scanner-controls">
+                <button id="toggle-flash" class="scanner-btn">
+                    <i class="fas fa-flashlight"></i> Flash
+                </button>
+                <button id="switch-camera" class="scanner-btn">
+                    <i class="fas fa-camera-rotate"></i> Trocar Câmera
+                </button>
+                <button id="stop-scanner" class="scanner-btn scanner-btn-danger">
+                    <i class="fas fa-stop"></i> Parar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Error Modal for better error handling -->
+    <div id="error-modal" class="error-modal" style="display: none;">
+        <div class="error-modal-content">
+            <div class="error-header">
+                <h3><i class="fas fa-exclamation-triangle"></i> Erro</h3>
+                <button id="close-error" class="close-error-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="error-body">
+                <p id="error-message">Ocorreu um erro inesperado.</p>
+                <div class="error-details" id="error-details" style="display: none;">
+                    <h4>Detalhes técnicos:</h4>
+                    <pre id="error-stack"></pre>
+                </div>
+            </div>
+            <div class="error-actions">
+                <button id="reload-page" class="btn-error-action">
+                    <i class="fas fa-refresh"></i> Recarregar Página
+                </button>
+                <button id="close-error-btn" class="btn-error-action">
+                    <i class="fas fa-times"></i> Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/admin.js"></script>
+    
+    <!-- Add Scanner Fix Script -->
+    <script>
+        // Global error handler
+        window.addEventListener('error', function(event) {
+            console.error('Global error caught:', event.error);
+            showErrorModal('Erro na aplicação', event.error.message, event.error.stack);
+        });
+
+        // Unhandled promise rejection handler
+        window.addEventListener('unhandledrejection', function(event) {
+            console.error('Unhandled promise rejection:', event.reason);
+            showErrorModal('Erro de promessa não tratada', event.reason?.message || 'Erro desconhecido', event.reason?.stack);
+        });
+
+        // Error modal functions
+        function showErrorModal(title, message, stack) {
+            const errorModal = document.getElementById('error-modal');
+            const errorMessage = document.getElementById('error-message');
+            const errorDetails = document.getElementById('error-details');
+            const errorStack = document.getElementById('error-stack');
+            
+            if (errorModal && errorMessage) {
+                errorMessage.textContent = message || 'Ocorreu um erro inesperado.';
+                
+                if (stack && errorStack && errorDetails) {
+                    errorStack.textContent = stack;
+                    errorDetails.style.display = 'block';
+                }
+                
+                errorModal.style.display = 'flex';
+            }
+        }
+
+        function hideErrorModal() {
+            const errorModal = document.getElementById('error-modal');
+            if (errorModal) {
+                errorModal.style.display = 'none';
+            }
+        }
+
+        // Scanner Modal Fix with Enhanced Error Handling
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                // Error modal event listeners
+                const closeErrorBtn = document.getElementById('close-error');
+                const closeErrorBtn2 = document.getElementById('close-error-btn');
+                const reloadPageBtn = document.getElementById('reload-page');
+                const errorModal = document.getElementById('error-modal');
+
+                if (closeErrorBtn) {
+                    closeErrorBtn.addEventListener('click', hideErrorModal);
+                }
+
+                if (closeErrorBtn2) {
+                    closeErrorBtn2.addEventListener('click', hideErrorModal);
+                }
+
+                if (reloadPageBtn) {
+                    reloadPageBtn.addEventListener('click', function() {
+                        window.location.reload();
+                    });
+                }
+
+                if (errorModal) {
+                    errorModal.addEventListener('click', function(e) {
+                        if (e.target === errorModal) {
+                            hideErrorModal();
+                        }
+                    });
+                }
+
+                // Scanner functionality with error handling
+                const scannerModal = document.getElementById('barcode-scanner-modal');
+                const closeScannerBtn = document.getElementById('close-scanner');
+                const stopScannerBtn = document.getElementById('stop-scanner');
+                const scannerTarget = document.getElementById('scanner-target');
+                
+                let currentStream = null;
+                let scannerActive = false;
+                let quaggaInitialized = false;
+                
+                console.log('Scanner fix loaded');
+                
+                // Function to stop camera stream with error handling
+                function stopCameraStream() {
+                    console.log('Stopping camera stream...');
+                    
+                    try {
+                        // Stop all video tracks
+                        if (currentStream) {
+                            currentStream.getTracks().forEach(track => {
+                                try {
+                                    track.stop();
+                                    console.log('Camera track stopped:', track.label);
+                                } catch (trackError) {
+                                    console.warn('Error stopping track:', trackError);
+                                }
+                            });
+                            currentStream = null;
+                        }
+                        
+                        // Stop Quagga if it's running
+                        if (quaggaInitialized && typeof Quagga !== 'undefined') {
+                            try {
+                                Quagga.stop();
+                                quaggaInitialized = false;
+                                console.log('Quagga stopped');
+                            } catch (quaggaError) {
+                                console.warn('Error stopping Quagga:', quaggaError);
+                            }
+                        }
+                        
+                        // Clear scanner target
+                        if (scannerTarget) {
+                            try {
+                                scannerTarget.innerHTML = '';
+                            } catch (clearError) {
+                                console.warn('Error clearing scanner target:', clearError);
+                            }
+                        }
+                        
+                        scannerActive = false;
+                        console.log('Camera stream stopped successfully');
+                        
+                    } catch (error) {
+                        console.error('Error stopping camera:', error);
+                        showErrorModal('Erro ao parar câmera', error.message, error.stack);
+                    }
+                }
+                
+                // Function to close scanner modal with error handling
+                function closeScannerModal() {
+                    console.log('Closing scanner modal...');
+                    
+                    try {
+                        // Stop camera first
+                        stopCameraStream();
+                        
+                        // Hide modal
+                        if (scannerModal) {
+                            scannerModal.style.display = 'none';
+                            scannerModal.classList.remove('active');
+                            
+                            // Remove modal-open class safely
+                            try {
+                                document.body.classList.remove('modal-open');
+                            } catch (classError) {
+                                console.warn('Error removing modal-open class:', classError);
+                            }
+                        }
+                        
+                        console.log('Scanner modal closed');
+                        
+                    } catch (error) {
+                        console.error('Error closing scanner modal:', error);
+                        showErrorModal('Erro ao fechar scanner', error.message, error.stack);
+                    }
+                }
+                
+                // Safe button event binding function
+                function bindButtonEvent(button, eventType, handler, buttonName) {
+                    if (!button) {
+                        console.warn(`Button ${buttonName} not found`);
+                        return;
+                    }
+                    
+                    try {
+                        // Clone button to remove existing listeners
+                        const newButton = button.cloneNode(true);
+                        if (button.parentNode) {
+                            button.parentNode.replaceChild(newButton, button);
+                        }
+                        
+                        // Add event listener with error handling
+                        newButton.addEventListener(eventType, function(e) {
+                            try {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                console.log(`${buttonName} ${eventType} triggered`);
+                                handler();
+                            } catch (handlerError) {
+                                console.error(`Error in ${buttonName} handler:`, handlerError);
+                                showErrorModal(`Erro no botão ${buttonName}`, handlerError.message, handlerError.stack);
+                            }
+                        });
+                        
+                        // Add onclick as backup
+                        newButton.onclick = function(e) {
+                            try {
+                                e.preventDefault();
+                                console.log(`${buttonName} onclick triggered`);
+                                handler();
+                                return false;
+                            } catch (onclickError) {
+                                console.error(`Error in ${buttonName} onclick:`, onclickError);
+                                showErrorModal(`Erro no botão ${buttonName}`, onclickError.message, onclickError.stack);
+                                return false;
+                            }
+                        };
+                        
+                        return newButton;
+                        
+                    } catch (bindError) {
+                        console.error(`Error binding ${buttonName} button:`, bindError);
+                        showErrorModal(`Erro ao configurar botão ${buttonName}`, bindError.message, bindError.stack);
+                    }
+                }
+                
+                // Bind scanner buttons with error handling
+                bindButtonEvent(closeScannerBtn, 'click', closeScannerModal, 'close scanner');
+                bindButtonEvent(stopScannerBtn, 'click', stopCameraStream, 'stop scanner');
+                
+                // Safe modal event listeners
+                if (scannerModal) {
+                    try {
+                        scannerModal.addEventListener('click', function(e) {
+                            if (e.target === scannerModal) {
+                                console.log('Clicked outside scanner modal');
+                                closeScannerModal();
+                            }
+                        });
+                    } catch (modalError) {
+                        console.error('Error binding scanner modal click:', modalError);
+                    }
+                }
+                
+                // Safe keyboard event listener
+                try {
+                    document.addEventListener('keydown', function(e) {
+                        if (e.key === 'Escape' && scannerModal && scannerModal.style.display !== 'none') {
+                            console.log('Escape key pressed');
+                            closeScannerModal();
+                        }
+                    });
+                } catch (keyboardError) {
+                    console.error('Error binding keyboard events:', keyboardError);
+                }
+                
+                // Safe scanner opening function
+                window.openBarcodeScanner = function() {
+                    try {
+                        console.log('Opening barcode scanner...');
+                        
+                        if (scannerModal) {
+                            scannerModal.style.display = 'block';
+                            scannerModal.classList.add('active');
+                            document.body.classList.add('modal-open');
+                            
+                            // Start camera after modal is visible
+                            setTimeout(() => {
+                                try {
+                                    startCamera();
+                                } catch (cameraError) {
+                                    console.error('Error starting camera:', cameraError);
+                                    showErrorModal('Erro ao iniciar câmera', cameraError.message, cameraError.stack);
+                                }
+                            }, 300);
+                        }
+                    } catch (openError) {
+                        console.error('Error opening scanner:', openError);
+                        showErrorModal('Erro ao abrir scanner', openError.message, openError.stack);
+                    }
+                };
+                
+                // Safe camera start function
+                function startCamera() {
+                    console.log('Starting camera...');
+                    
+                    try {
+                        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                            throw new Error('Camera não suportada neste navegador');
+                        }
+                        
+                        // Camera constraints with fallbacks
+                        const constraints = [
+                            { video: { facingMode: 'environment', width: 640, height: 480 } },
+                            { video: { facingMode: 'user', width: 640, height: 480 } },
+                            { video: { width: 640, height: 480 } },
+                            { video: true }
+                        ];
+                        
+                        function tryConstraint(index) {
+                            if (index >= constraints.length) {
+                                throw new Error('Não foi possível acessar nenhuma câmera');
+                            }
+                            
+                            navigator.mediaDevices.getUserMedia(constraints[index])
+                                .then(function(stream) {
+                                    try {
+                                        currentStream = stream;
+                                        scannerActive = true;
+                                        
+                                        // Initialize Quagga
+                                        if (typeof Quagga !== 'undefined') {
+                                            initializeQuagga(stream);
+                                        } else {
+                                            throw new Error('Biblioteca Quagga não carregada');
+                                        }
+                                        
+                                        console.log('Camera started successfully');
+                                    } catch (streamError) {
+                                        console.error('Error handling stream:', streamError);
+                                        showErrorModal('Erro ao processar stream da câmera', streamError.message, streamError.stack);
+                                    }
+                                })
+                                .catch(function(error) {
+                                    console.error(`Failed with constraint ${index}:`, error);
+                                    if (index < constraints.length - 1) {
+                                        tryConstraint(index + 1);
+                                    } else {
+                                        showErrorModal('Erro de acesso à câmera', error.message, error.stack);
+                                    }
+                                });
+                        }
+                        
+                        tryConstraint(0);
+                        
+                    } catch (startError) {
+                        console.error('Error in startCamera:', startError);
+                        showErrorModal('Erro ao inicializar câmera', startError.message, startError.stack);
+                    }
+                }
+                
+                // Safe Quagga initialization
+                function initializeQuagga(stream) {
+                    if (quaggaInitialized) return;
+                    
+                    try {
+                        Quagga.init({
+                            inputStream: {
+                                name: "Live",
+                                type: "LiveStream",
+                                target: scannerTarget,
+                                constraints: {
+                                    width: 640,
+                                    height: 480,
+                                    facingMode: "environment"
+                                }
+                            },
+                            decoder: {
+                                readers: [
+                                    "ean_reader",
+                                    "ean_8_reader", 
+                                    "code_128_reader",
+                                    "code_39_reader"
+                                ]
+                            }
+                        }, function(err) {
+                            if (err) {
+                                console.error('Quagga initialization error:', err);
+                                showErrorModal('Erro ao inicializar scanner', err.message || 'Erro desconhecido', err.stack);
+                                return;
+                            }
+                            
+                            try {
+                                Quagga.start();
+                                quaggaInitialized = true;
+                                console.log('Quagga started');
+                            } catch (startError) {
+                                console.error('Error starting Quagga:', startError);
+                                showErrorModal('Erro ao iniciar Quagga', startError.message, startError.stack);
+                            }
+                        });
+                        
+                        // Handle barcode detection with error handling
+                        Quagga.onDetected(function(data) {
+                            try {
+                                const barcode = data.codeResult.code;
+                                console.log('Barcode detected:', barcode);
+                                
+                                // Fill barcode input
+                                const barcodeInput = document.getElementById('product-barcode');
+                                if (barcodeInput) {
+                                    barcodeInput.value = barcode;
+                                    
+                                    // Trigger input event
+                                    const event = new Event('input', { bubbles: true });
+                                    barcodeInput.dispatchEvent(event);
+                                }
+                                
+                                // Close scanner after detection
+                                setTimeout(() => {
+                                    closeScannerModal();
+                                }, 1000);
+                                
+                            } catch (detectionError) {
+                                console.error('Error handling barcode detection:', detectionError);
+                                showErrorModal('Erro ao processar código de barras', detectionError.message, detectionError.stack);
+                            }
+                        });
+                        
+                    } catch (initError) {
+                        console.error('Error initializing Quagga:', initError);
+                        showErrorModal('Erro ao configurar scanner', initError.message, initError.stack);
+                    }
+                }
+                
+                // Safe scan button event listener
+                const scanBarcodeBtn = document.getElementById('scan-barcode-btn');
+                bindButtonEvent(scanBarcodeBtn, 'click', function() {
+                    window.openBarcodeScanner();
+                }, 'scan barcode');
+                
+            } catch (mainError) {
+                console.error('Error in main scanner initialization:', mainError);
+                showErrorModal('Erro ao inicializar scanner', mainError.message, mainError.stack);
+            }
+        });
+    </script>
+    
+    <!-- Add CSS for error modal -->
+    <style>
+        .error-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .error-modal-content {
+            background: white;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .error-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: #dc3545;
+            color: white;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .error-header h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .close-error-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .error-body {
+            padding: 20px;
+        }
+
+        .error-body p {
+            margin: 0 0 15px 0;
+            color: #333;
+        }
+
+        .error-details {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 15px;
+        }
+
+        .error-details h4 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        .error-details pre {
+            background: #343a40;
+            color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            overflow-x: auto;
+            margin: 0;
+        }
+
+        .error-actions {
+            display: flex;
+            gap: 10px;
+            padding: 15px 20px;
+            border-top: 1px solid #dee2e6;
+            justify-content: flex-end;
+        }
+
+        .btn-error-action {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .btn-error-action:first-child {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-error-action:first-child:hover {
+            background: #0056b3;
+        }
+
+        .btn-error-action:last-child {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-error-action:last-child:hover {
+            background: #545b62;
+        }
+    </style>
+    
+    <!-- Add Quagga library for barcode scanning -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+</body>
+</html>
