@@ -2340,7 +2340,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 try { localStorage.removeItem('isAuthenticated'); } catch (_) {}
                 try { localStorage.removeItem('adminEmail'); } catch (_) {}
                 await signOut(auth);
-                // onAuthStateChanged cuidará de exibir a tela de login
+                // Em vez de mostrar a tela de login do admin, redireciona para a página pública
+                window.location.href = 'index.html';
             } catch (err) {
                 console.error('Erro ao sair:', err);
                 alert('Não foi possível terminar a sessão agora. Tente novamente.');
