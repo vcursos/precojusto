@@ -26,10 +26,17 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const auth = getAuth(app);
 
-// A autenticação anônima pode ser mantida se for necessária para outras partes
-signInAnonymously(auth).catch((error) => {
-    console.error("Erro na autenticação anônima:", error);
-});
+// A autenticação anônima pode ser mantida para o site público, mas evite no admin
+try {
+    const isAdminPage = typeof window !== 'undefined' && /(^|\/)admin\.html(\?|#|$)/i.test(window.location.pathname || '');
+    if (!isAdminPage) {
+        signInAnonymously(auth).catch((error) => {
+            console.error("Erro na autenticação anônima:", error);
+        });
+    }
+} catch (e) {
+    // Ambiente sem window (tests/build) — ignore
+}
 
 // Exporta as funções do Firebase para serem usadas em outros módulos
 export {

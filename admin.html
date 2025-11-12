@@ -8,7 +8,17 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-    <div id="login-container" class="login-container">
+    <!-- Tela de carregamento de autenticação para evitar flicker da tela de login -->
+    <div id="auth-loading" style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#333;">
+        <div style="text-align:center;">
+            <div style="margin-bottom:12px;">
+                <i class="fas fa-spinner fa-spin" style="font-size:22px;color:#007bff;"></i>
+            </div>
+            <div style="font-weight:600;">Verificando sessão…</div>
+            <div style="font-size:12px;color:#666;margin-top:6px;">Aguarde um instante</div>
+        </div>
+    </div>
+    <div id="login-container" class="login-container" style="display: none;">
         <form id="admin-login-form" class="login-form">
             <h1><i class="fas fa-user-shield"></i> Acesso Restrito</h1>
             <div class="form-group">

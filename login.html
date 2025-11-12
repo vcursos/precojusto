@@ -12,6 +12,15 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
 </head>
 <body>
+    <script>
+        // Redireciona para a tela única de administração
+        try { window.location.replace('admin.html'); } catch (e) { window.location.href = 'admin.html'; }
+    </script>
+    <noscript>
+        <div style="padding:16px; text-align:center; font-family: system-ui, sans-serif;">
+            A página de login foi unificada. Acesse <a href="admin.html">admin.html</a>.
+        </div>
+    </noscript>
     <div class="container">
         <div class="login-card">
             <a href="index.html" class="back-button">← Voltar</a>

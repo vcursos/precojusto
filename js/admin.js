@@ -1,4 +1,4 @@
-import { auth, signInWithEmailAndPassword, db, addDoc, collection, getDocs, doc, deleteDoc, query, where } from './firebase-init.js';
+import { auth, onAuthStateChanged, signInWithEmailAndPassword, db, addDoc, collection, getDocs, doc, deleteDoc, query, where } from './firebase-init.js';
 
 // Classe para gerenciar busca por código de barras
 class BarcodeProductSearch {
@@ -2263,18 +2263,43 @@ document.addEventListener('DOMContentLoaded', () => {
         await initializeAppData();
     }
 
-    // Verificar se já está logado (de login.html)
-    console.log("Checking localStorage in admin.js: " + localStorage.getItem('isAuthenticated'));
-    if (localStorage.getItem('isAuthenticated') === 'true') {
-        console.log("Authenticated, showing panel");
-        loginContainer.style.display = 'none';
-        adminPanel.style.display = 'block';
-        initAdminPanel();
-    } else {
-        console.log("Not authenticated, showing login");
-        // Mostrar login se não estiver logado
+    // Guard de autenticação: usar Firebase (fonte da verdade) + fallback localStorage
+    let adminInitialized = false;
+    const authLoadingEl = document.getElementById('auth-loading');
+    const showAdmin = () => {
+        if (!adminInitialized) {
+            adminInitialized = true;
+            if (authLoadingEl) authLoadingEl.style.display = 'none';
+            loginContainer.style.display = 'none';
+            adminPanel.style.display = 'block';
+            initAdminPanel();
+        } else {
+            // mesmo já inicializado, garanta que os contadores reflitam produtos atuais
+            try { updateCounts(); } catch (_) {}
+        }
+    };
+    const showLogin = () => {
+        if (authLoadingEl) authLoadingEl.style.display = 'none';
         loginContainer.style.display = 'block';
         adminPanel.style.display = 'none';
+    };
+
+    try {
+        onAuthStateChanged(auth, (user) => {
+            console.log('[auth] onAuthStateChanged user:', !!user, 'isAnonymous:', user?.isAnonymous);
+            if (user && user.isAnonymous !== true) {
+                // Considera logado apenas se NÃO for anônimo
+                showAdmin();
+            } else {
+                // fallback: aceitar login prévio salvo por login.html, mas migrar para este fluxo
+                const legacyLogged = localStorage.getItem('adminLogado') === 'true' || localStorage.getItem('isAuthenticated') === 'true';
+                if (legacyLogged) showAdmin(); else showLogin();
+            }
+        });
+    } catch (e) {
+        console.warn('onAuthStateChanged failed, using localStorage fallback', e);
+        const legacyLogged = localStorage.getItem('adminLogado') === 'true' || localStorage.getItem('isAuthenticated') === 'true';
+        if (legacyLogged) showAdmin(); else showLogin();
     }
 
     if (loginForm) {
@@ -2291,9 +2316,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 await signInWithEmailAndPassword(auth, email, password);
                 localStorage.setItem('isAuthenticated', 'true');
-                loginContainer.style.display = 'none';
-                adminPanel.style.display = 'block';
-                initAdminPanel();
+                // Firebase vai disparar onAuthStateChanged -> showAdmin();
             } catch (error) {
                 let userMessage = 'Erro desconhecido. Tente novamente.';
                 if (error.code === 'auth/invalid-email' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
@@ -2306,6 +2329,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+    // Atualizar contadores quando produtos forem carregados por qualquer origem
+    try {
+        window.addEventListener('productsLoaded', () => {
+            try { updateCounts(); } catch (_) {}
+            try { updateFilterOptions(); } catch (_) {}
+        });
+    } catch (_) {}
+
     // O resto do código continua dentro do eventListener
     const DEFAULT_IMAGE_URL = "https://png.pngtree.com/png-vector/20241025/ourmid/pngtree-grocery-cart-filled-with-fresh-vegetables-png-image_14162473.png";
 
