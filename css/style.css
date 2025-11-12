@@ -2660,3 +2660,307 @@ button[aria-label="Abrir leitor de código de barras"],
 .compare-mobile-redesign { display:flex; flex-direction:column; gap:.75rem; padding:.25rem; }
 .compare-highlight-card .highlight-price-row { display:flex; align-items:center; gap:.5rem; margin-top:.4rem; }
 .compare-highlight-card .highlight-badge { background:#16a34a; color:#fff; font-size:.65rem; font-weight:700; padding:4px 8px; border-radius:999px; }
+
+/* ===== SCANNER DE CÓDIGO DE BARRAS ===== */
+/* Modal do Scanner de Código de Barras */
+.barcode-scanner-modal {
+    display: none;
+    position: fixed;
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(5px);
+}
+
+.barcode-scanner-modal.show {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+}
+
+.barcode-scanner-content {
+    position: relative;
+    background-color: #1a1a1a;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    color: white;
+    max-width: 600px;
+    max-height: 90vh;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.scanner-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: linear-gradient(135deg, #2c3e50, #34495e);
+    border-bottom: 2px solid #3498db;
+}
+
+.scanner-header h3 {
+    margin: 0;
+    color: white;
+    font-size: 18px;
+}
+
+.close-scanner-btn {
+    background: rgba(231, 76, 60, 0.2);
+    border: 1px solid #e74c3c;
+    color: #e74c3c;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+.close-scanner-btn:hover {
+    background: #e74c3c;
+    color: white;
+}
+
+.scanner-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    position: relative;
+}
+
+#scanner-container {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    height: 300px;
+    background: #000;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+#scanner-target {
+    width: 100%;
+    height: 100%;
+}
+
+#scanner-target canvas,
+#scanner-target video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.scanner-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+}
+
+.scanner-line {
+    position: absolute;
+    top: 50%;
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #3498db, transparent);
+    animation: scannerLine 2s ease-in-out infinite;
+    border-radius: 1px;
+    box-shadow: 0 0 10px #3498db;
+}
+
+@keyframes scannerLine {
+    0%, 100% { transform: translateY(-50px); opacity: 0; }
+    50% { transform: translateY(0); opacity: 1; }
+}
+
+.scanner-corners {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    bottom: 20px;
+}
+
+.corner {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border: 3px solid #3498db;
+    box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+}
+
+.corner.top-left {
+    top: 0;
+    left: 0;
+    border-right: none;
+    border-bottom: none;
+    border-top-left-radius: 10px;
+}
+
+.corner.top-right {
+    top: 0;
+    right: 0;
+    border-left: none;
+    border-bottom: none;
+    border-top-right-radius: 10px;
+}
+
+.corner.bottom-left {
+    bottom: 0;
+    left: 0;
+    border-right: none;
+    border-top: none;
+    border-bottom-left-radius: 10px;
+}
+
+.corner.bottom-right {
+    bottom: 0;
+    right: 0;
+    border-left: none;
+    border-top: none;
+    border-bottom-right-radius: 10px;
+}
+
+.scanner-info {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.scanner-info p {
+    color: #bdc3c7;
+    margin: 0 0 10px 0;
+    font-size: 14px;
+}
+
+.scanner-result {
+    background: rgba(39, 174, 96, 0.2);
+    border: 1px solid #27ae60;
+    color: #27ae60;
+    padding: 10px 15px;
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 16px;
+    min-height: 20px;
+    display: none;
+    animation: scannerSuccess 0.5s ease-in-out;
+}
+
+.scanner-result.show {
+    display: block;
+}
+
+.scanner-result.error {
+    background: rgba(231, 76, 60, 0.2);
+    border: 1px solid #e74c3c;
+    color: #e74c3c;
+}
+
+@keyframes scannerSuccess {
+    0% { transform: scale(0.8); opacity: 0; }
+    50% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.scanner-controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border-top: 1px solid #34495e;
+}
+
+.scanner-btn {
+    background: rgba(52, 152, 219, 0.2);
+    border: 1px solid #3498db;
+    color: #3498db;
+    padding: 12px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    min-width: 100px;
+    justify-content: center;
+}
+
+.scanner-btn:hover {
+    background: rgba(52, 152, 219, 0.3);
+    transform: translateY(-2px);
+}
+
+.scanner-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.scanner-btn-danger {
+    background: rgba(231, 76, 60, 0.2);
+    border-color: #e74c3c;
+    color: #e74c3c;
+}
+
+.scanner-btn-danger:hover {
+    background: rgba(231, 76, 60, 0.3);
+}
+
+/* Responsive para Scanner */
+@media (max-width: 768px) {
+    .barcode-scanner-content {
+        max-width: 100%;
+        max-height: 100vh;
+        border-radius: 0;
+    }
+
+    .scanner-header {
+        padding: 12px 15px;
+    }
+    
+    .scanner-header h3 {
+        font-size: 16px;
+    }
+    
+    .scanner-body {
+        padding: 15px;
+    }
+    
+    #scanner-container {
+        max-width: none;
+        height: 250px;
+    }
+    
+    .scanner-controls {
+        padding: 15px 10px;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .scanner-btn {
+        padding: 10px 15px;
+        font-size: 12px;
+        min-width: 80px;
+        flex: 1;
+    }
+    
+    .corner {
+        width: 25px;
+        height: 25px;
+    }
+}
