@@ -942,15 +942,15 @@ class BarcodeProductSearch {
         if (barcode) {
             // Se já tem código, faz a busca
             console.log('Código já preenchido, iniciando busca:', barcode);
-            this.searchByBarcode(barcode);
+            this.searchProductByBarcode(barcode);
         } else {
             // Se não tem código, abre o scanner de câmera
             console.log('📱 Abrindo scanner de câmera...');
-            if (window.barcodeScanner) {
-                window.barcodeScanner.openScanner();
+            if (typeof window.openBarcodeScanner === 'function') {
+                window.openBarcodeScanner();
             } else {
                 console.error('Scanner não disponível');
-                this.showError('Scanner de câmera não disponível. Use a entrada manual.');
+                alert('Scanner de câmera não disponível. Use a entrada manual.');
                 
                 // Foca no campo de entrada como fallback
                 const barcodeInput = document.getElementById('product-barcode');
@@ -2133,7 +2133,7 @@ class BarcodeScanner {
             
             // Trigger do evento de busca automática
             if (window.barcodeSearch) {
-                window.barcodeSearch.searchByBarcode(code);
+                window.barcodeSearch.searchProductByBarcode(code);
             }
         }
 
