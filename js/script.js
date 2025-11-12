@@ -2111,69 +2111,7 @@ window.addEventListener('productsLoaded', (event) => {
         console.warn('Falha ao processar productsLoaded externo:', e);
     }
 });
-/* MERGE CONFLICT OLD VARIANT (kept for reference) */
-function __OLD_MERGE_VARIANT_DO_NOT_USE__() {
-// ============ DECLARE initializeAppData FIRST ============
-function initializeAppData() {
-    console.log("Initializing app data...");
-    // loadProducts removido - já é carregado pelo firebase-loader.js
-    updateCartBadge();
-    loadSearchHistory();
-    loadFavorites();
-    populateFilters();
-    
-    // Renderizar produtos do localStorage (já carregados pelo firebase-loader)
-    if (typeof window.renderProducts === 'function') {
-        window.renderProducts();
-        console.log('✅ Produtos renderizados no initializeAppData');
-    }
-}
 
-// Função para popular os filtros (chama updateFilterOptions quando disponível)
-function populateFilters() {
-    console.log('📋 Populando filtros...');
-    // updateFilterOptions será chamado dentro do DOMContentLoaded
-    setTimeout(() => {
-        if (typeof updateFilterOptions === 'function') {
-            updateFilterOptions();
-            console.log('✅ Filtros atualizados');
-        }
-    }, 100);
-}
-
-// Função para carregar histórico de pesquisa
-function loadSearchHistory() {
-    console.log('📜 Carregando histórico de pesquisa...');
-    setTimeout(() => {
-        if (typeof renderSearchHistory === 'function') {
-            renderSearchHistory();
-        }
-    }, 100);
-}
-
-// Função para carregar favoritos
-function loadFavorites() {
-    console.log('⭐ Carregando favoritos...');
-    setTimeout(() => {
-        if (typeof renderFavorites === 'function') {
-            renderFavorites();
-        }
-    }, 100);
-}
-
-// Função para atualizar badge do carrinho
-function updateCartBadge() {
-    console.log('🛒 Atualizando badge do carrinho...');
-    const cart = JSON.parse(sessionStorage.getItem('cart') || '[]');
-    const badge = document.querySelector('.cart-badge');
-    if (badge) {
-        const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
-        badge.textContent = totalItems;
-        badge.style.display = totalItems > 0 ? 'flex' : 'none';
-    }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
     // Definir a URL da imagem padrão
     const DEFAULT_IMAGE_URL = "https://png.pngtree.com/png-vector/20241025/ourmid/png-tree-grocery-cart-filled-with-fresh-vegetables-png-image_14162473.png";
 
@@ -4226,6 +4164,3 @@ window.addEventListener('productsLoaded', (event) => {
         console.warn('Falha ao processar productsLoaded externo:', e);
     }
 });
-}
-// end of removed old variant
-}
