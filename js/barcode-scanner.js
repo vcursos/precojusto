@@ -378,8 +378,29 @@
                 scannerModal.style.display = 'none';
             }, 300);
         }
-        
-        document.body.classList.remove('modal-open');
+
+        // Desbloquear scroll de forma robusta (compatível com script.js)
+        try {
+            // Remover classe de bloqueio
+            document.body.classList.remove('modal-open');
+            // Se existir função global de desbloqueio, usar
+            if (typeof window.unlockBodyScroll === 'function') {
+                window.unlockBodyScroll();
+            } else {
+                // Fallback: limpar estilos inline que possam ter sido aplicados
+                const prevTop = document.body.style.top;
+                document.body.style.position = '';
+                document.body.style.top = '';
+                document.body.style.width = '';
+                // Restaurar posição de scroll se necessário
+                if (prevTop) {
+                    const y = parseInt(prevTop || '0') * -1;
+                    if (!isNaN(y)) window.scrollTo(0, y);
+                }
+            }
+        } catch (_) {
+            // segurança
+        }
     }
 
     // Event listeners
