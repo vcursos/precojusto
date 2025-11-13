@@ -2614,20 +2614,20 @@ button[aria-label="Abrir leitor de código de barras"],
         justify-content: center;
     }
     .barcode-scanner-content {
-        max-width: 380px;
-        max-height: 450px;
+        max-width: 720px;
+        max-height: 520px;
         border-radius: 16px;
         margin: auto;
     }
     #scanner-container {
-        max-width: 340px;
-        max-height: 280px;
+        max-width: 680px;
+        max-height: 380px;
         border-radius: 12px;
         margin: auto;
     }
     #scanner-target {
-        max-width: 340px;
-        max-height: 280px;
+        max-width: 680px;
+        max-height: 380px;
         border-radius: 12px;
         margin: auto;
     }
