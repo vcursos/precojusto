@@ -552,11 +552,12 @@
                             scannerModal.style.display = 'none';
                             scannerModal.classList.remove('active');
                             
-                            // Remove modal-open class safely
+                            // Remove modal-open and scanner-active classes safely
                             try {
                                 document.body.classList.remove('modal-open');
+                                document.body.classList.remove('scanner-active');
                             } catch (classError) {
-                                console.warn('Error removing modal-open class:', classError);
+                                console.warn('Error removing modal classes:', classError);
                             }
                         }
                         
@@ -656,6 +657,7 @@
                             scannerModal.style.display = 'block';
                             scannerModal.classList.add('active');
                             document.body.classList.add('modal-open');
+                            document.body.classList.add('scanner-active');
                             
                             // Start camera after modal is visible
                             setTimeout(() => {
