@@ -422,6 +422,15 @@ body.modal-open {
     margin-top: 5px; /* Adiciona um pequeno espaço abaixo do label */
 }
 
+/* Container para opções de imagem + botão de busca */
+.image-options-container {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 5px;
+}
+
 .brand-options label,
 .image-options label {
     display: inline-block;
@@ -1145,40 +1154,29 @@ body.modal-open {
 }
 
 /* Estilos para busca de imagem */
-.image-input-group {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    position: relative;
-}
-
-.image-input-group input {
-    flex: 1;
-}
-
 .btn-search-image {
     background: linear-gradient(135deg, #28a745, #218838);
     color: white;
     border: none;
-    padding: 8px 12px;
-    border-radius: 4px;
+    padding: 10px 16px;
+    border-radius: 6px;
     cursor: pointer;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 6px;
     transition: all 0.3s ease;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    min-width: 120px;
-    height: 38px;
+    box-shadow: 0 2px 6px rgba(40, 167, 69, 0.3);
     white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .btn-search-image:hover {
     background: linear-gradient(135deg, #218838, #1e7e34);
-    transform: translateY(-1px);
-    box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(40, 167, 69, 0.4);
 }
 
 .btn-search-image:active {
@@ -1413,21 +1411,20 @@ body.modal-open {
         font-size: 14px;
     }
     
-    .image-input-group {
+    .image-options-container {
         flex-direction: column;
-        gap: 8px;
+        align-items: stretch;
     }
     
     .btn-search-image {
         width: 100%;
         padding: 12px;
         font-size: 14px;
-        min-width: unset;
     }
     
     .image-selection-content {
-        margin: 20px;
-        max-height: 90vh;
+        margin: 10px;
+        max-height: 95vh;
         overflow-y: auto;
     }
     
