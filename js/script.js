@@ -1709,12 +1709,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (saved && typeof setLastSearched === 'function') setLastSearched(saved);
     } catch (initErr) { /* ignore */ }
 
-    // Handler para CTA de código de barras (apenas foca o campo de busca para teste)
+    // Handler para CTA de código de barras: abrir scanner sem focar input para evitar teclado móvel
     const barcodeBtn = document.getElementById('barcode-search-btn');
-    if (barcodeBtn && productSearchBar) {
-        barcodeBtn.addEventListener('click', () => {
-            productSearchBar.focus();
-            // Sugestão: você pode abrir a câmera aqui para escanear; por enquanto, focamos o input.
+    if (barcodeBtn) {
+        barcodeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Evitar que algum input permaneça focado
+            try {
+                if (document.activeElement && document.activeElement !== document.body) {
+                    document.activeElement.blur();
+                }
+            } catch(_) {}
+            // Usar implementação central
+            if (typeof window.openBarcodeScanner === 'function') {
+                window.openBarcodeScanner();
+            }
         });
     }
 
@@ -3771,12 +3780,19 @@ window.addEventListener('productsLoaded', (event) => {
         if (saved && typeof setLastSearched === 'function') setLastSearched(saved);
     } catch (initErr) { /* ignore */ }
 
-    // Handler para CTA de código de barras (apenas foca o campo de busca para teste)
+    // Handler duplicado (segunda seção) substituído: abrir scanner sem focar input
     const barcodeBtn = document.getElementById('barcode-search-btn');
-    if (barcodeBtn && productSearchBar) {
-        barcodeBtn.addEventListener('click', () => {
-            productSearchBar.focus();
-            // Sugestão: você pode abrir a câmera aqui para escanear; por enquanto, focamos o input.
+    if (barcodeBtn) {
+        barcodeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            try {
+                if (document.activeElement && document.activeElement !== document.body) {
+                    document.activeElement.blur();
+                }
+            } catch(_) {}
+            if (typeof window.openBarcodeScanner === 'function') {
+                window.openBarcodeScanner();
+            }
         });
     }
 

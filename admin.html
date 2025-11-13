@@ -296,10 +296,29 @@
     </div>
 
     <!-- Modal do Scanner de Código de Barras -->
-    <div id="scanner-modal" class="modal barcode-scanner-modal">
-        <div class="barcode-scanner-content">
+    <!-- MODAL CONFIRMAÇÃO ANTES DE ABRIR CÂMERA -->
+    <div id="scanner-confirm-modal" class="modal barcode-scanner-modal" role="dialog" aria-modal="true" aria-labelledby="scanner-confirm-title" aria-describedby="scanner-confirm-message" tabindex="-1" style="display:none; z-index:1000000;">
+        <div class="modal-content barcode-scanner-content" role="document">
             <div class="scanner-header">
-                <h3>Scanner de Código de Barras</h3>
+                <h3 id="scanner-confirm-title">Confirmação</h3>
+                <button id="close-scanner-confirm" class="close-scanner-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="scanner-body">
+                <div class="scanner-info">
+                    <p id="scanner-confirm-message" aria-live="polite">Para abrir a câmera e escanear o código de barras, confirme abaixo.<br><b>O teclado será ocultado e só será possível digitar após fechar o leitor.</b></p>
+                </div>
+            </div>
+            <div class="scanner-controls">
+                <button id="confirm-open-scanner" class="scanner-btn" style="font-weight:bold;">OK</button>
+            </div>
+        </div>
+    </div>
+    <div id="scanner-modal" class="modal barcode-scanner-modal" role="dialog" aria-modal="true" aria-labelledby="scanner-title" aria-describedby="scanner-message">
+        <div class="barcode-scanner-content" role="document">
+            <div class="scanner-header">
+                <h3 id="scanner-title">Scanner de Código de Barras</h3>
                 <button id="close-scanner" class="close-scanner-btn">
                     <i class="fas fa-times"></i>
                 </button>
@@ -318,8 +337,8 @@
                     </div>
                 </div>
                 <div class="scanner-info">
-                    <p id="scanner-message">Posicione o código de barras dentro da área destacada</p>
-                    <div id="scanner-result" class="scanner-result"></div>
+                    <p id="scanner-message" aria-live="polite">Posicione o código de barras dentro da área destacada</p>
+                    <div id="scanner-result" class="scanner-result" aria-live="assertive"></div>
                 </div>
             </div>
             <div class="scanner-controls">
@@ -602,5 +621,6 @@
             background: #545b62;
         }
     </style>
+    <script src="js/scanner-unify.js"></script>
 </body>
 </html>

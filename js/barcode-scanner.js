@@ -2,6 +2,106 @@
 // Sistema completo de scanner com flash, trocar câmera, beep e mensagens
 
 (function() {
+    // --- MODAL DE CONFIRMAÇÃO ANTES DE ABRIR SCANNER (APLICA EM TODAS VERSÕES) ---
+    function showScannerConfirmModal() {
+        var confirmModal = document.getElementById('scanner-confirm-modal');
+        if (!confirmModal) return;
+        confirmModal.style.display = 'block';
+        confirmModal.setAttribute('aria-hidden', 'false');
+        confirmModal.focus();
+        document.body.classList.add('modal-open');
+    }
+    function hideScannerConfirmModal() {
+        var confirmModal = document.getElementById('scanner-confirm-modal');
+        if (!confirmModal) return;
+        confirmModal.style.display = 'none';
+        confirmModal.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('modal-open');
+    }
+    window.openBarcodeScanner = function() {
+        showScannerConfirmModal();
+    };
+    document.addEventListener('DOMContentLoaded', function() {
+        var okBtn = document.getElementById('confirm-open-scanner');
+        if (okBtn) {
+            okBtn.addEventListener('click', function(e) {
+                hideScannerConfirmModal();
+                if (window.__realOpenBarcodeScanner) {
+                    window.__realOpenBarcodeScanner();
+                }
+            });
+        }
+        var closeBtn = document.getElementById('close-scanner-confirm');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function(e) {
+                hideScannerConfirmModal();
+            });
+        }
+    });
+    if (!window.__realOpenBarcodeScanner) {
+        window.__realOpenBarcodeScanner = function() {
+            if (typeof window.__startScannerModal === 'function') {
+                window.__startScannerModal();
+            } else if (typeof window.__legacyOpenBarcodeScanner === 'function') {
+                window.__legacyOpenBarcodeScanner();
+            }
+        };
+    }
+    // --- MODAL DE CONFIRMAÇÃO ANTES DE ABRIR SCANNER ---
+    function showScannerConfirmModal() {
+        const confirmModal = document.getElementById('scanner-confirm-modal');
+        if (!confirmModal) return;
+        confirmModal.style.display = 'block';
+        confirmModal.setAttribute('aria-hidden', 'false');
+        confirmModal.focus();
+        // Bloquear scroll e interação
+        document.body.classList.add('modal-open');
+    }
+
+    function hideScannerConfirmModal() {
+        const confirmModal = document.getElementById('scanner-confirm-modal');
+        if (!confirmModal) return;
+        confirmModal.style.display = 'none';
+        confirmModal.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('modal-open');
+    }
+
+    // Interceptar todos triggers do scanner para exibir confirmação
+    window.openBarcodeScanner = function() {
+        showScannerConfirmModal();
+    };
+
+    // Botão OK do modal de confirmação
+    document.addEventListener('DOMContentLoaded', function() {
+        const okBtn = document.getElementById('confirm-open-scanner');
+        if (okBtn) {
+            okBtn.addEventListener('click', function(e) {
+                hideScannerConfirmModal();
+                // Chamar scanner real
+                if (window.__realOpenBarcodeScanner) {
+                    window.__realOpenBarcodeScanner();
+                }
+            });
+        }
+        const closeBtn = document.getElementById('close-scanner-confirm');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function(e) {
+                hideScannerConfirmModal();
+            });
+        }
+    });
+
+    // Guardar referência real do scanner
+    if (!window.__realOpenBarcodeScanner) {
+        window.__realOpenBarcodeScanner = function() {
+            // ...código original de abrir scanner...
+            if (typeof window.__startScannerModal === 'function') {
+                window.__startScannerModal();
+            } else if (typeof window.__legacyOpenBarcodeScanner === 'function') {
+                window.__legacyOpenBarcodeScanner();
+            }
+        };
+    }
     'use strict';
 
     // Elementos do DOM
@@ -23,6 +123,9 @@
     let availableCameras = [];
     let scannerActive = false;
     let isSwitchingCamera = false; // Flag para suprimir erros durante troca
+    let previousFocusedElement = null; // Para restaurar foco ao fechar
+    let tempLockedInputs = []; // Inputs bloqueados para evitar teclado
+    let mainContainerRef = null; // referência para inert
 
     // Beep sonoro ao detectar código
     function playBeep() {
@@ -436,6 +539,62 @@
     }
 
     // Abrir modal do scanner
+    // Guardar listener de focusin apenas uma vez
+    if (!window.__scannerFocusGuardAttached) {
+        document.addEventListener('focusin', function(e) {
+            try {
+                if (scannerModal && scannerModal.classList.contains('show')) {
+                    const t = e.target;
+                    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) {
+                        // Evitar foco em inputs enquanto scanner está aberto
+                        t.blur();
+                        e.stopPropagation();
+                        e.preventDefault();
+                    }
+                }
+            } catch(_) {}
+        }, true);
+        window.__scannerFocusGuardAttached = true;
+    }
+
+    // BLOQUEIO ABSOLUTO: Interceptar QUALQUER tentativa de input enquanto scanner aberto
+    if (!window.__scannerInputBlockAttached) {
+        // Bloqueia eventos de teclado (keydown, keypress, keyup, input)
+        ['keydown', 'keypress', 'keyup', 'input', 'beforeinput'].forEach(eventType => {
+            document.addEventListener(eventType, function(e) {
+                if (scannerModal && scannerModal.classList.contains('show')) {
+                    const t = e.target;
+                    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) {
+                        // Bloquear completamente
+                        e.stopPropagation();
+                        e.preventDefault();
+                        e.stopImmediatePropagation();
+                        // Forçar blur se ainda estiver focado
+                        try { t.blur(); } catch(_) {}
+                        return false;
+                    }
+                }
+            }, true);
+        });
+        
+        // Bloquear eventos de touch/click em inputs quando scanner aberto
+        ['touchstart', 'touchend', 'mousedown', 'click'].forEach(eventType => {
+            document.addEventListener(eventType, function(e) {
+                if (scannerModal && scannerModal.classList.contains('show')) {
+                    const t = e.target;
+                    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA') && !scannerModal.contains(t)) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        e.stopImmediatePropagation();
+                        return false;
+                    }
+                }
+            }, true);
+        });
+        
+        window.__scannerInputBlockAttached = true;
+    }
+
     function openScannerModal() {
         if (!scannerModal) return;
         
@@ -448,11 +607,15 @@
             console.log('Dispositivo iOS detectado');
         }
         
+        // Guardar elemento previamente focado
+        previousFocusedElement = document.activeElement && document.activeElement !== document.body ? document.activeElement : null;
+
+        // GARANTIR z-index máximo para modal ficar acima de tudo
+        scannerModal.style.zIndex = '99999';
+        
         scannerModal.classList.add('show');
         scannerModal.style.display = 'flex';
-        document.body.classList.add('modal-open');
-
-        // Remover foco de qualquer campo de entrada para evitar teclado aberto / digitação indevida
+        document.body.classList.add('modal-open');        // Remover foco de qualquer campo de entrada para evitar teclado aberto / digitação indevida
         try {
             const blurIds = ['product-search-bar', 'barcode-search-bar'];
             blurIds.forEach(id => {
@@ -471,6 +634,62 @@
             scannerModal.setAttribute('tabindex', '-1');
         }
         try { scannerModal.focus(); } catch (_) {}
+
+        // FORÇA BLUR IMEDIATO em todos inputs da página (antes de qualquer timeout)
+        document.querySelectorAll('input, textarea').forEach(input => {
+            if (!scannerModal.contains(input)) {
+                try { input.blur(); } catch(_) {}
+            }
+        });
+
+        // Tornar região principal inert (evita interação/foco fora do modal)
+        mainContainerRef = document.getElementById('app-container');
+        if (mainContainerRef) {
+            try { mainContainerRef.setAttribute('inert', ''); } catch(_) {}
+        }
+
+        // Bloquear inputs fora do modal para evitar abertura de teclado
+        tempLockedInputs = Array.from(document.querySelectorAll('input, textarea'))
+            .filter(el => !scannerModal.contains(el));
+        tempLockedInputs.forEach(el => {
+            if (!el.readOnly) {
+                el.dataset.prevReadonly = 'false';
+                el.setAttribute('readonly', 'readonly');
+            }
+            // Adicionar desabilitação visual e de interação
+            el.style.pointerEvents = 'none';
+            el.setAttribute('tabindex', '-1');
+            // Garante que não fique focado
+            try { el.blur(); } catch(_) {}
+        });
+
+        // Ciclo extra de blur para casos em que o foco volta automaticamente (Android/iOS)
+        setTimeout(() => {
+            try {
+                if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
+                    document.activeElement.blur();
+                }
+                // Forçar blur em TODOS inputs novamente (iOS específico)
+                tempLockedInputs.forEach(el => {
+                    try { el.blur(); } catch(_) {}
+                });
+            } catch(_) {}
+        }, 120);
+        
+        // Ciclo adicional para iOS (às vezes precisa de mais tempo)
+        if (isIOS) {
+            setTimeout(() => {
+                try {
+                    tempLockedInputs.forEach(el => {
+                        try { el.blur(); } catch(_) {}
+                    });
+                    // Garantir que nada está focado
+                    if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+                        document.activeElement.blur();
+                    }
+                } catch(_) {}
+            }, 300);
+        }
         
         // Resetar flash
         flashEnabled = false;
@@ -522,6 +741,32 @@
         } catch (_) {
             // segurança
         }
+
+        // Remover inert da região principal
+        if (mainContainerRef) {
+            try { mainContainerRef.removeAttribute('inert'); } catch(_) {}
+            mainContainerRef = null;
+        }
+
+        // Restaurar inputs bloqueados
+        if (tempLockedInputs && tempLockedInputs.length) {
+            tempLockedInputs.forEach(el => {
+                if (el.dataset.prevReadonly === 'false') {
+                    el.removeAttribute('readonly');
+                }
+                delete el.dataset.prevReadonly;
+                // Restaurar interação
+                el.style.pointerEvents = '';
+                el.removeAttribute('tabindex');
+            });
+        }
+        tempLockedInputs = [];
+
+        // Restaurar foco ao elemento que acionou
+        if (previousFocusedElement && typeof previousFocusedElement.focus === 'function') {
+            try { previousFocusedElement.focus(); } catch(_) {}
+        }
+        previousFocusedElement = null;
     }
 
     // Event listeners
