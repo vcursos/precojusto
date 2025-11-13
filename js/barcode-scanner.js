@@ -45,6 +45,12 @@
 
     // Mostrar mensagem no scanner
     function showScannerMessage(message, type = 'info') {
+        // Não mostrar mensagens de erro durante troca de câmera
+        if (type === 'error' && isSwitchingCamera) {
+            console.log('Mensagem de erro suprimida (trocando câmera):', message);
+            return;
+        }
+        
         if (!scannerResult) return;
         scannerResult.textContent = message;
         scannerResult.className = 'scanner-result show';
@@ -150,11 +156,11 @@
             if (switchCameraBtn) {
                 switchCameraBtn.disabled = availableCameras.length <= 1;
             }
-            // Desativar flag após troca completa
+            // Desativar flag após troca completa (dar tempo extra para Quagga estabilizar)
             setTimeout(() => {
                 isSwitchingCamera = false;
                 console.log('=== TROCA DE CÂMERA CONCLUÍDA ===');
-            }, 500);
+            }, 1000); // Aumentado de 500ms para 1000ms
         }, delay);
     }
 
@@ -296,13 +302,8 @@
                 }, function(err) {
                     if (err) {
                         console.error('Erro ao inicializar Quagga:', err);
-                        
-                        // Não mostrar erro ao usuário se estiver trocando câmera (é temporário)
-                        if (!isSwitchingCamera) {
-                            showScannerMessage('Erro ao inicializar scanner: ' + (err.message || err), 'error');
-                        } else {
-                            console.log('Erro durante troca de câmera (ignorado):', err);
-                        }
+                        // showScannerMessage já verifica isSwitchingCamera
+                        showScannerMessage('Erro ao inicializar scanner: ' + (err.message || err), 'error');
                         return;
                     }
 
@@ -322,23 +323,15 @@
                         }
                     } catch (startErr) {
                         console.error('Erro ao iniciar Quagga:', startErr);
-                        
-                        // Não mostrar erro ao usuário se estiver trocando câmera
-                        if (!isSwitchingCamera) {
-                            showScannerMessage('Erro ao iniciar scanner: ' + startErr.message, 'error');
-                        }
+                        // showScannerMessage já verifica isSwitchingCamera
+                        showScannerMessage('Erro ao iniciar scanner: ' + startErr.message, 'error');
                         quaggaInitialized = false;
                     }
                 });
             } catch (initErr) {
                 console.error('Erro síncrono ao inicializar Quagga:', initErr);
-                
-                // Não mostrar erro ao usuário se estiver trocando câmera
-                if (!isSwitchingCamera) {
-                    showScannerMessage('Erro ao configurar scanner: ' + initErr.message, 'error');
-                } else {
-                    console.log('Erro síncrono durante troca (ignorado):', initErr);
-                }
+                // showScannerMessage já verifica isSwitchingCamera
+                showScannerMessage('Erro ao configurar scanner: ' + initErr.message, 'error');
             }
 
         } catch (error) {
