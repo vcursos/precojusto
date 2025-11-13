@@ -124,9 +124,9 @@
             await startCamera();
             // Reabilitar botão após reinicialização
             if (switchCameraBtn) {
-                switchCameraBtn.disabled = false;
+                switchCameraBtn.disabled = availableCameras.length <= 1;
             }
-        }, 500);
+        }, 600);
     }
 
     // Parar stream da câmera
@@ -137,7 +137,7 @@
             // Primeiro para o Quagga antes do stream
             if (quaggaInitialized && typeof Quagga !== 'undefined') {
                 try {
-                    Quagga.offDetected(); // Remove listeners
+                    Quagga.offDetected(handleBarcodeDetection); // Remove listener específico
                     Quagga.stop();
                     console.log('Quagga parado');
                 } catch (e) {
@@ -161,9 +161,15 @@
             }
             
             scannerActive = false;
+            flashEnabled = false;
+            
+            // Resetar botão de flash
+            if (toggleFlashBtn) {
+                toggleFlashBtn.innerHTML = '<i class="fas fa-bolt"></i> Flash';
+            }
             
             // Aguardar um pouco para garantir limpeza completa
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await new Promise(resolve => setTimeout(resolve, 150));
             
         } catch (error) {
             console.error('Erro ao parar câmera:', error);
@@ -210,6 +216,9 @@
             scannerActive = true;
 
             console.log('Stream da câmera obtido com sucesso');
+
+            // Atualizar controles ANTES de inicializar Quagga
+            updateCameraControls();
 
             // Inicializar Quagga
             if (typeof Quagga === 'undefined') {
@@ -259,49 +268,7 @@
             });
 
             // Detectar código de barras
-            Quagga.onDetected(function(data) {
-                if (!scannerActive) return;
-                
-                const barcode = data.codeResult.code;
-                console.log('Código detectado:', barcode);
-                
-                // Tocar beep
-                playBeep();
-                
-                // Buscar produto
-                const products = JSON.parse(localStorage.getItem('products') || '[]');
-                const product = products.find(p => String(p.barcode) === String(barcode));
-                
-                if (product) {
-                    showScannerMessage(`✓ ${product.name}`, 'success');
-                    
-                    // Preencher campo de busca
-                    const barcodeSearchBar = document.getElementById('barcode-search-bar');
-                    if (barcodeSearchBar) {
-                        barcodeSearchBar.value = barcode;
-                        barcodeSearchBar.dispatchEvent(new Event('input', { bubbles: true }));
-                    }
-                    
-                    // Abrir comparação após breve delay
-                    setTimeout(() => {
-                        closeScannerModal();
-                        if (typeof openCompareModal === 'function') {
-                            openCompareModal(product.name);
-                        }
-                    }, 800);
-                } else {
-                    showScannerMessage('✗ Produto não encontrado', 'error');
-                    
-                    // Preencher campo mesmo assim
-                    const barcodeSearchBar = document.getElementById('barcode-search-bar');
-                    if (barcodeSearchBar) {
-                        barcodeSearchBar.value = barcode;
-                    }
-                    
-                    // Fechar após mostrar mensagem
-                    setTimeout(() => closeScannerModal(), 2000);
-                }
-            });
+            Quagga.onDetected(handleBarcodeDetection);
 
         } catch (error) {
             console.error('Erro ao acessar câmera:', error);
@@ -356,6 +323,84 @@
             if (isIOS && scannerMessage) {
                 scannerMessage.innerHTML = errorMessage + '<br><small>Certifique-se de estar usando o Safari.</small>';
             }
+        }
+    }
+
+    // Handler de detecção de código (separado para poder remover listener)
+    function handleBarcodeDetection(data) {
+        if (!scannerActive || !data || !data.codeResult) return;
+        
+        const barcode = data.codeResult.code;
+        console.log('Código detectado:', barcode);
+        
+        // Tocar beep
+        playBeep();
+        
+        // Buscar produto
+        const products = JSON.parse(localStorage.getItem('products') || '[]');
+        const product = products.find(p => String(p.barcode) === String(barcode));
+        
+        if (product) {
+            showScannerMessage(`✓ ${product.name}`, 'success');
+            
+            // Preencher campo de busca
+            const barcodeSearchBar = document.getElementById('barcode-search-bar');
+            if (barcodeSearchBar) {
+                barcodeSearchBar.value = barcode;
+                barcodeSearchBar.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+            
+            // Abrir comparação após breve delay
+            setTimeout(() => {
+                closeScannerModal();
+                if (typeof openCompareModal === 'function') {
+                    openCompareModal(product.name);
+                }
+            }, 800);
+        } else {
+            showScannerMessage('✗ Produto não encontrado', 'error');
+            
+            // Preencher campo mesmo assim
+            const barcodeSearchBar = document.getElementById('barcode-search-bar');
+            if (barcodeSearchBar) {
+                barcodeSearchBar.value = barcode;
+            }
+            
+            // Fechar após mostrar mensagem
+            setTimeout(() => closeScannerModal(), 2000);
+        }
+    }
+
+    // Atualizar controles da câmera (flash, trocar câmera)
+    function updateCameraControls() {
+        if (!currentStream) return;
+        
+        try {
+            const track = currentStream.getVideoTracks()[0];
+            const capabilities = track.getCapabilities();
+            const settings = track.getSettings();
+            
+            console.log('Câmera ativa:', settings.facingMode || 'desconhecida');
+            
+            // Verificar suporte ao flash
+            if (toggleFlashBtn) {
+                if (capabilities.torch) {
+                    toggleFlashBtn.style.display = 'inline-block';
+                    toggleFlashBtn.disabled = false;
+                    console.log('✓ Flash disponível nesta câmera');
+                } else {
+                    toggleFlashBtn.style.display = 'none';
+                    flashEnabled = false;
+                    console.log('✗ Flash não disponível nesta câmera');
+                }
+            }
+            
+            // Atualizar botão de trocar câmera
+            if (switchCameraBtn) {
+                switchCameraBtn.disabled = availableCameras.length <= 1;
+            }
+        } catch (err) {
+            console.error('Erro ao atualizar controles:', err);
         }
     }
 
