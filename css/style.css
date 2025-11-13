@@ -14,6 +14,11 @@ body {
     font-size: 18px;
 }
 
+/* Em dispositivos móveis, evitar background fixo (Safari iOS bug) */
+@media (max-width: 900px) {
+    body { background-attachment: scroll; }
+}
+
 /* Subtle vignette to darken corners and focus center */
 body::after {
     content: '';
@@ -483,12 +488,9 @@ body::before {
 
 /* Modal Lock - Bloquear página quando modal estiver aberto */
 body.modal-open {
+    /* Bloqueia somente o scroll da página sem travar o layout */
     overflow: hidden !important;
-    position: fixed !important;
-    width: 100% !important;
-    height: 100% !important;
-    overscroll-behavior: none !important;
-    touch-action: none !important;
+    overscroll-behavior: contain !important;
 }
 
 /* Toast notifications */
