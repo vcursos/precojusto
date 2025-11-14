@@ -192,7 +192,7 @@ class BarcodeProductSearch {
                     modal.dataset.query = query;
                     
                     // Bloqueia scroll da página de fundo APENAS para este modal
-                    document.body.classList.add('google-image-modal-open');
+                    document.body.classList.add('admin-google-image-modal-open');
                     
                     // Preenche campo de termo da busca no modal
                     const searchTermInputEl = document.getElementById('serpapi-search-term');
@@ -246,7 +246,7 @@ class BarcodeProductSearch {
                         urlInput.value = '';
                         if (resultsDiv) resultsDiv.innerHTML = '';
                         // Libera scroll da página
-                        document.body.classList.remove('google-image-modal-open');
+                        document.body.classList.remove('admin-google-image-modal-open');
                     };
                 }
                 
@@ -259,7 +259,7 @@ class BarcodeProductSearch {
                             urlInput.value = '';
                             if (resultsDiv) resultsDiv.innerHTML = '';
                             // Libera scroll da página
-                            document.body.classList.remove('google-image-modal-open');
+                            document.body.classList.remove('admin-google-image-modal-open');
                         }
                     };
                 }
@@ -479,7 +479,7 @@ class BarcodeProductSearch {
                                             urlInput.value = '';
                                             if (resultsDiv) resultsDiv.innerHTML = '';
                                             // Libera scroll da página
-                                            document.body.classList.remove('google-image-modal-open');
+                                            document.body.classList.remove('admin-google-image-modal-open');
                                         }, 300); // Pequeno delay para feedback visual
                                     };
                                     resultsDiv.appendChild(imgEl);
@@ -531,7 +531,7 @@ class BarcodeProductSearch {
                         urlInput.value = '';
                         if (resultsDiv) resultsDiv.innerHTML = '';
                         // Libera scroll da página
-                        document.body.classList.remove('google-image-modal-open');
+                        document.body.classList.remove('admin-google-image-modal-open');
                     };
                 }
             }
