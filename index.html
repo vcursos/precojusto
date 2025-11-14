@@ -446,7 +446,7 @@
                 <ul class="nav-list">
                     <li><a href="index.html" class="nav-icon" title="Início"><i class="fas fa-home"></i> <span class="nav-label">Início</span></a></li>
                     <li><a href="#search-history-section" class="nav-icon" title="Histórico"><i class="fas fa-history"></i></a></li>
-                    <li><a href="#favorites-modal" class="nav-icon" title="Favoritos"><i class="fas fa-heart"></i></a></li>
+                    <li><a href="#favorites-modal" class="nav-icon" title="Favoritos" onclick="__forceOpenFavoritesModal(); return false;"><i class="fas fa-heart"></i></a></li>
                     <li><a href="#cart-modal" class="nav-icon" title="Carrinho"><i class="fas fa-shopping-cart"></i></a></li>
                     <li><a href="admin.html" class="nav-icon" title="Painel do Administrador"><i class="fas fa-user-shield"></i></a></li>
                     <li><button id="install-app-btn" style="display:none; background:#16a34a; color:#fff; border:none; padding:6px 10px; border-radius:6px; font-weight:600; cursor:pointer; font-size:0.85rem;">Instalar App</button></li>
@@ -555,15 +555,64 @@
 
     <div id="favorites-modal" class="modal">
         <div class="modal-content">
-            <span class="close-btn" id="close-favorites-btn">&times;</span>
+            <span class="close-btn" id="close-favorites-btn" onclick="__forceCloseFavoritesModal()">&times;</span>
             <h2><i class="fas fa-heart"></i> Meus Favoritos</h2>
             <div id="favorites-products-list" class="favorites-products-list"></div>
-             <p id="no-favorites-message" class="empty-message">Não há nenhum produto aos favoritos.</p>
-                     <div class="favorites-summary">
-                         <button class="checkout-btn close-btn">Fechar</button>
+            <p id="no-favorites-message" class="empty-message">Não há nenhum produto aos favoritos.</p>
+            <div class="favorites-summary">
+                <button class="checkout-btn" id="favorites-manual-close" onclick="__forceCloseFavoritesModal()">Fechar</button>
             </div>
         </div>
     </div>
+
+    <script>
+        // Fallback helpers to open/close favorites modal if global listeners fail
+        function __lockBodyScroll() {
+            try {
+                var scrollY = window.scrollY || document.documentElement.scrollTop || 0;
+                document.body.dataset.scrollY = scrollY;
+                document.body.style.position = 'fixed';
+                document.body.style.top = '-' + scrollY + 'px';
+                document.body.style.width = '100%';
+            } catch (_) {}
+        }
+        function __unlockBodyScroll() {
+            try {
+                var scrollY = document.body.dataset.scrollY || '0';
+                document.body.style.position = '';
+                document.body.style.top = '';
+                document.body.style.width = '';
+                delete document.body.dataset.scrollY;
+                window.scrollTo(0, parseInt(scrollY));
+            } catch (_) {}
+        }
+        function __forceOpenFavoritesModal() {
+            try {
+                var modal = document.getElementById('favorites-modal');
+                if (!modal) return;
+                __lockBodyScroll();
+                modal.classList.remove('closing');
+                modal.classList.add('show');
+                modal.style.display = 'flex';
+                setTimeout(function(){ modal.classList.add('visible'); }, 10);
+                console.log('✔ Favorites modal aberto (fallback)');
+            } catch (e) { console.warn('Falha ao abrir favorites (fallback):', e); }
+        }
+        function __forceCloseFavoritesModal() {
+            try {
+                var modal = document.getElementById('favorites-modal');
+                if (!modal) return;
+                modal.classList.remove('visible');
+                modal.classList.add('closing');
+                setTimeout(function(){
+                    modal.classList.remove('show','closing');
+                    modal.style.display = 'none';
+                    __unlockBodyScroll();
+                    console.log('✔ Favorites modal fechado (fallback)');
+                }, 240);
+            } catch (e) { console.warn('Falha ao fechar favorites (fallback):', e); }
+        }
+    </script>
 
     <div id="suggestion-modal" class="modal">
         <div class="modal-content">

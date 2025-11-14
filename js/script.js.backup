@@ -58,7 +58,8 @@ function updateCartBadge() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => { console.log('DOMConteudo iniciado');
+document.addEventListener('DOMContentLoaded', () => {
+    // Definir a URL da imagem padrão
     const DEFAULT_IMAGE_URL = "https://png.pngtree.com/png-vector/20241025/ourmid/png-tree-grocery-cart-filled-with-fresh-vegetables-png-image_14162473.png";
 
     // Elementos do DOM
@@ -87,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => { console.log('DOMConteudo i
     const historyDropdown = document.getElementById('history-dropdown');
     const clearHistoryBtn = document.getElementById('clear-history');
     const closeFavoritesBottomBtn = document.getElementById('close-favorites-bottom');
-    console.log('Variaveis do DOM declaradas. closeModalBtns:', closeModalBtns);
+    
     // Elementos do modal de sugestão
     const modalSuggestionForm = document.getElementById('modal-suggestion-form');
     const modalSuggestionProductName = document.getElementById('modal-suggestion-product-name');
@@ -1616,9 +1617,9 @@ document.addEventListener('DOMContentLoaded', () => { console.log('DOMConteudo i
         setTimeout(() => modal.classList.add('visible'), 10);
     };
 
-    const closeModal = (modal) => { console.log('?? closeModal chamada para:', modal);
-        if (!modal) { console.log('?? Modal � null, abortando'); return; }
-        console.log('? Fechando modal:', modal.id);
+    const closeModal = (modal) => {
+        if (!modal) return;
+        
         modal.classList.remove('visible');
         modal.classList.add('closing');
         
@@ -1628,7 +1629,7 @@ document.addEventListener('DOMContentLoaded', () => { console.log('DOMConteudo i
             modal.style.display = 'none';
             
             // Desbloquear scroll da página
-            unlockBodyScroll(); console.log('? Modal fechado completamente:', modal.id);
+            unlockBodyScroll();
         }, 240);
     };
 
@@ -1645,29 +1646,21 @@ document.addEventListener('DOMContentLoaded', () => { console.log('DOMConteudo i
     });
 
     // Fechar modais com animação
-    console.log('🔍 Registrando event listeners dos modais - closeModalBtns:', closeModalBtns);
     closeModalBtns.forEach(btn => {
-        console.log('🔍 Registrando listener para botão:', btn);
         btn.addEventListener('click', () => {
-            console.log('✅ Botão de fechar clicado!');
             const modal = btn.closest('.modal');
-            console.log('🔍 Modal encontrado:', modal);
             closeModal(modal);
         });
     });
 
-    console.log('🔍 Registrando listener para closeCartBtn:', closeCartBtn);
     closeCartBtn.addEventListener('click', () => {
-        console.log('✅ closeCartBtn clicado!');
         closeModal(cartModal);
     });
 
     // Fechar modais clicando fora (backdrop) - genérico para qualquer modal
-    console.log('🔍 Registrando listener para clique fora do modal');
     window.addEventListener('click', (e) => {
         try {
             if (e.target && e.target.classList && e.target.classList.contains('modal')) {
-                console.log('✅ Clicou fora do modal:', e.target);
                 closeModal(e.target);
             }
         } catch (err) {
@@ -3723,29 +3716,29 @@ window.addEventListener('productsLoaded', (event) => {
         renderFavorites();
     });
 
-    // COMENTADO: // Fechar modais com animação
-    // COMENTADO: closeModalBtns.forEach(btn => {
-    // COMENTADO: btn.addEventListener('click', () => {
-    // COMENTADO: const modal = btn.closest('.modal');
-    // COMENTADO: closeModal(modal);
-    // COMENTADO: });
-    // COMENTADO: });
-    // COMENTADO: 
-    // COMENTADO: closeCartBtn.addEventListener('click', () => {
-    // COMENTADO: closeModal(cartModal);
-    // COMENTADO: });
-    // COMENTADO: 
-    // COMENTADO: // Fechar modais clicando fora (backdrop) - genérico para qualquer modal
-    // COMENTADO: window.addEventListener('click', (e) => {
-    // COMENTADO: try {
-    // COMENTADO: if (e.target && e.target.classList && e.target.classList.contains('modal')) {
-    // COMENTADO: closeModal(e.target);
-    // COMENTADO: }
-    // COMENTADO: } catch (err) {
-    // COMENTADO: // segurança contra ambientes inesperados
-    // COMENTADO: console.error('Erro ao avaliar clique no backdrop do modal:', err);
-    // COMENTADO: }
-    // COMENTADO: });
+    // Fechar modais com animação
+    closeModalBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const modal = btn.closest('.modal');
+            closeModal(modal);
+        });
+    });
+
+    closeCartBtn.addEventListener('click', () => {
+        closeModal(cartModal);
+    });
+
+    // Fechar modais clicando fora (backdrop) - genérico para qualquer modal
+    window.addEventListener('click', (e) => {
+        try {
+            if (e.target && e.target.classList && e.target.classList.contains('modal')) {
+                closeModal(e.target);
+            }
+        } catch (err) {
+            // segurança contra ambientes inesperados
+            console.error('Erro ao avaliar clique no backdrop do modal:', err);
+        }
+    });
 
     // Lógica para os botões de scroll da lista de produtos
     if (scrollContainer && prevBtn && nextBtn) {

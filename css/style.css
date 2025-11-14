@@ -491,15 +491,18 @@ body.modal-open {
     /* Bloqueia somente o scroll da página sem travar o layout */
     overflow: hidden !important;
     overscroll-behavior: contain !important;
-    /* iOS específico: forçar altura fixa para evitar resize de teclado */
-    position: fixed !important;
-    width: 100% !important;
 }
 
-/* Bloquear interação com elementos do fundo quando modal aberto */
-body.modal-open > *:not(.barcode-scanner-modal):not(script):not(style) {
-    pointer-events: none !important;
-    user-select: none !important;
+/* Bloquear interação com elementos do fundo quando modal aberto - APENAS MODAIS */
+.modal.show ~ *:not(.modal):not(script):not(style) {
+    pointer-events: none;
+}
+
+/* Admin-specific class for Google Image modal */
+body.admin-google-image-modal-open {
+    overflow: hidden !important;
+    position: fixed !important;
+    width: 100% !important;
 }
 
 /* Toast notifications */
