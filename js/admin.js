@@ -5,60 +5,6 @@ class BarcodeProductSearch {
     constructor() {
         this.productDatabase = {
             // CÓDIGOS REAIS DE PRODUTOS PORTUGUESES (verificados nas múltiplas bases)
-            '5601009997596': {
-                name: 'Produto Mimosa (Código OpenBeautyFacts)',
-                brand: 'Mimosa',
-                category: 'higiene',
-                unit: 'unidade',
-                quantity: 1,
-                price: null,
-                description: 'Produto encontrado no OpenBeautyFacts'
-            },
-            '5601049132995': {
-                name: 'Leite Meio-Gordo Mimosa 1L',
-                brand: 'Mimosa',
-                category: 'frios',
-                unit: 'L',
-                quantity: 1,
-                price: 0.69,
-                description: 'Leite Meio-Gordo UHT 1L'
-            },
-            '5449000054227': {
-                name: 'Coca-Cola Original Taste 1L',
-                brand: 'Coca-Cola',
-                category: 'bebidas',
-                unit: 'L',
-                quantity: 1,
-                price: 1.65,
-                description: 'Refrigerante Coca-Cola Original 1L'
-            },
-            '5449000130389': {
-                name: 'Coca-Cola Original Taste 1,75L',
-                brand: 'Coca-Cola',
-                category: 'bebidas',
-                unit: 'L',
-                quantity: 1.75,
-                price: 2.25,
-                description: 'Refrigerante Coca-Cola Original 1,75L'
-            },
-            '5000112541007': {
-                name: 'Coca-Cola Sabor Original 330ml',
-                brand: 'Coca-Cola',
-                category: 'bebidas',
-                unit: 'ml',
-                quantity: 330,
-                price: 0.85,
-                description: 'Refrigerante Coca-Cola Original 330ml'
-            },
-            '5000112519945': {
-                name: 'Coca-Cola Zero 330ml',
-                brand: 'Coca-Cola',
-                category: 'bebidas',
-                unit: 'ml',
-                quantity: 330,
-                price: 0.85,
-                description: 'Refrigerante Coca-Cola Zero 330ml'
-            },
             '5604172000360': {
                 name: 'Água Mineral Natural Monchique 1,5L',
                 brand: 'Monchique',
@@ -225,28 +171,256 @@ class BarcodeProductSearch {
             console.error('❌ Botão de busca de nomes não encontrado!');
         }
 
-        // Botão de busca de imagens no Google
-        const searchImageButton = document.getElementById('search-image-btn');
-        if (searchImageButton) {
-            console.log('✅ Botão de busca de imagens encontrado');
-            searchImageButton.addEventListener('click', () => {
-                console.log('🖼️ Clique no botão de busca de imagens detectado');
-                const productName = document.getElementById('product-name').value;
-                const brand = document.getElementById('product-brand').value || '';
-                
-                console.log('🖼️ Dados para busca de imagem:', { productName, brand });
-                
-                if (productName && productName.trim()) {
-                    console.log('🖼️ Chamando searchProductImages...');
-                    this.searchProductImages(productName, brand);
-                } else {
-                    console.warn('⚠️ Campo nome vazio');
-                    alert('Por favor, preencha o campo nome do produto primeiro');
+            // Botão de busca de imagens no Google
+            const searchImageButton = document.getElementById('search-image-btn');
+            if (searchImageButton) {
+                searchImageButton.addEventListener('click', () => {
+                    const modal = document.getElementById('google-image-modal');
+                    const productName = document.getElementById('product-name').value.trim();
+                    const brand = document.getElementById('product-brand').value.trim();
+                    let query = '';
+                    if (productName && brand) {
+                        query = `${brand} ${productName}`;
+                    } else if (productName) {
+                        query = productName;
+                    } else if (brand) {
+                        query = brand;
+                    } else {
+                        query = '';
+                    }
+                    modal.style.display = 'flex';
+                    modal.dataset.query = query;
+                    // Preenche campo de termo da busca no modal
+                    const searchTermInputEl = document.getElementById('serpapi-search-term');
+                    if (searchTermInputEl) {
+                        searchTermInputEl.value = query || `${brand} ${productName}`.trim();
+                    }
+                    // Limpa resultados anteriores
+                    const resultsDiv = document.getElementById('serpapi-image-results');
+                    if (resultsDiv) resultsDiv.innerHTML = '';
+                    // Preenche chave salva (se existir)
+                    try {
+                        const savedKey = localStorage.getItem('serpapi_key');
+                        const serpapiKeyInput = document.getElementById('serpapi-key');
+                        if (savedKey && serpapiKeyInput && !serpapiKeyInput.value) {
+                            serpapiKeyInput.value = savedKey;
+                        }
+                        // Se houver query e chave, roda a busca automaticamente
+                        const keyToUse = serpapiKeyInput ? serpapiKeyInput.value.trim() : '';
+                        if (query && keyToUse) {
+                            setTimeout(() => {
+                                const btn = document.getElementById('open-google-images-btn');
+                                if (btn) btn.click();
+                            }, 50);
+                        }
+                    } catch (_) {}
+                });
+
+                // Modal logic
+                const modal = document.getElementById('google-image-modal');
+                const closeBtn = document.getElementById('close-google-image-modal');
+                const openGoogleBtn = document.getElementById('open-google-images-btn');
+                const urlInput = document.getElementById('google-image-url-input');
+                const useBtn = document.getElementById('use-google-image-btn');
+                const serpapiKeyInput = document.getElementById('serpapi-key');
+                const saveKeyBtn = document.getElementById('save-serpapi-key');
+                const testKeyBtn = document.getElementById('test-serpapi-key');
+                const keyStatus = document.getElementById('serpapi-key-status');
+
+                // Adiciona container para resultados se não existir
+                if (!document.getElementById('serpapi-image-results')) {
+                    const resultsDiv = document.createElement('div');
+                    resultsDiv.id = 'serpapi-image-results';
+                    resultsDiv.style = 'margin:10px 0; display:flex; flex-wrap:wrap; gap:10px; justify-content:center;';
+                    useBtn.parentNode.insertBefore(resultsDiv, useBtn);
                 }
-            });
-        } else {
-            console.error('❌ Botão de busca de imagens não encontrado!');
-        }
+                const resultsDiv = document.getElementById('serpapi-image-results');
+
+                if (closeBtn) {
+                    closeBtn.onclick = () => {
+                        modal.style.display = 'none';
+                        urlInput.value = '';
+                        if (resultsDiv) resultsDiv.innerHTML = '';
+                    };
+                }
+                if (saveKeyBtn) {
+                    saveKeyBtn.onclick = () => {
+                        const key = serpapiKeyInput.value.trim();
+                        if (!key) return;
+                        try {
+                            localStorage.setItem('serpapi_key', key);
+                            if (keyStatus) {
+                                keyStatus.style.display = 'block';
+                                keyStatus.textContent = 'Chave salva!';
+                                setTimeout(() => keyStatus.style.display = 'none', 2000);
+                            }
+                        } catch (_) {}
+                    };
+                }
+                if (testKeyBtn) {
+                    testKeyBtn.onclick = () => {
+                        let key = serpapiKeyInput.value.trim();
+                        if (!key) {
+                            try { key = localStorage.getItem('serpapi_key') || ''; } catch(_) {}
+                        }
+                        if (!key) {
+                            if (keyStatus) {
+                                keyStatus.style.display = 'block';
+                                keyStatus.style.color = '#dc2626';
+                                keyStatus.textContent = 'Cole a chave para testar.';
+                                setTimeout(() => keyStatus.style.display = 'none', 2500);
+                            }
+                            return;
+                        }
+                        // Abre teste em nova aba (evita bloqueios CORS/SW)
+                        const testUrl = `https://serpapi.com/account.json?api_key=${encodeURIComponent(key)}`;
+                        window.open(testUrl, '_blank', 'noopener,noreferrer');
+                        
+                        // Salva a chave e mostra mensagem
+                        try { localStorage.setItem('serpapi_key', key); } catch(_) {}
+                        if (keyStatus) {
+                            keyStatus.style.display = 'block';
+                            keyStatus.style.color = '#2563eb';
+                            keyStatus.textContent = 'Teste aberto em nova aba. Se ver JSON com account_status: "Active", está válida!';
+                            setTimeout(() => keyStatus.style.display = 'none', 5000);
+                        }
+                    };
+                }
+                if (openGoogleBtn) {
+                    openGoogleBtn.onclick = async () => {
+                        const inputTerm = (document.getElementById('serpapi-search-term')?.value || '').trim();
+                        const query = inputTerm || (modal.dataset.query || '');
+                        let apiKey = serpapiKeyInput.value.trim();
+                        if (!apiKey) {
+                            try {
+                                const saved = localStorage.getItem('serpapi_key');
+                                if (saved) {
+                                    apiKey = saved;
+                                    serpapiKeyInput.value = saved;
+                                }
+                            } catch (_) {}
+                        }
+                        if (!apiKey) {
+                            alert('Insira sua chave SerpAPI para buscar imagens automaticamente.');
+                            return;
+                        }
+                        if (!query) {
+                            resultsDiv.innerHTML = '<div style="color:#dc3545; font-size:14px;">Preencha o termo de busca.</div>';
+                            return;
+                        }
+                        
+                        openGoogleBtn.disabled = true;
+                        openGoogleBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Buscando...';
+                        resultsDiv.innerHTML = '<div style="color:#2563eb; font-size:14px;">Carregando imagens...</div>';
+                        
+                        try {
+                            // Usa proxy CORS para contornar bloqueio
+                            const tryFetchImages = async (engineName) => {
+                                const apiUrl = `https://serpapi.com/search.json?engine=${engineName}&hl=pt-BR&gl=pt&google_domain=google.pt&safe=active&q=${encodeURIComponent(query)}&ijn=0&api_key=${encodeURIComponent(apiKey)}`;
+                                // Proxy CORS público para desenvolvimento
+                                const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`;
+                                console.log('Tentando via proxy:', proxyUrl);
+                                
+                                const resp = await fetch(proxyUrl, { 
+                                    method: 'GET',
+                                    cache: 'no-store'
+                                });
+                                
+                                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                                return await resp.json();
+                            };
+                            
+                            let data = null;
+                            let usedEngine = 'google_images';
+                            
+                            // Tenta google_images_light primeiro (mais confiável)
+                            try {
+                                data = await tryFetchImages('google_images_light');
+                                usedEngine = 'google_images_light';
+                                console.log('✅ Sucesso com google_images_light');
+                            } catch (e1) {
+                                console.warn('❌ google_images_light falhou:', e1);
+                                // Fallback para google_images
+                                try {
+                                    data = await tryFetchImages('google_images');
+                                    usedEngine = 'google_images';
+                                    console.log('✅ Sucesso com google_images');
+                                } catch (e2) {
+                                    console.error('❌ google_images também falhou:', e2);
+                                    throw e2;
+                                }
+                            }
+
+                            const images = (data && data.images_results) ? data.images_results : [];
+                            console.log(`📊 Recebidas ${images.length} imagens`);
+
+                            if (data && data.error) {
+                                console.error('SerpAPI error:', data.error);
+                                resultsDiv.innerHTML = `<div style="color:#dc3545; font-size:14px;">Erro da API: ${data.error}</div>`;
+                            } else if (images && images.length > 0) {
+                                resultsDiv.innerHTML = '';
+                                images.slice(0, 18).forEach((img, idx) => {
+                                    const imgEl = document.createElement('img');
+                                    const imgSrc = img.thumbnail || img.original || img.link;
+                                    imgEl.src = imgSrc;
+                                    imgEl.alt = img.title || `Imagem ${idx + 1}`;
+                                    imgEl.title = (img.title || img.link || '') + ` • ${usedEngine}`;
+                                    imgEl.style = 'width:90px; height:90px; object-fit:cover; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.08); cursor:pointer; border:2px solid #eee; margin:4px;';
+                                    imgEl.onerror = () => {
+                                        console.warn('Erro ao carregar miniatura:', imgSrc);
+                                        imgEl.style.opacity = '0.3';
+                                    };
+                                    imgEl.onclick = () => {
+                                        const finalUrl = img.original || img.link || img.thumbnail;
+                                        urlInput.value = finalUrl;
+                                        console.log('Imagem selecionada:', finalUrl);
+                                        Array.from(resultsDiv.children).forEach(child => child.style.border = '2px solid #eee');
+                                        imgEl.style.border = '2px solid #2563eb';
+                                    };
+                                    resultsDiv.appendChild(imgEl);
+                                });
+                                console.log('✅ Miniaturas renderizadas');
+                            } else {
+                                resultsDiv.innerHTML = '<div style="color:#6b7280; font-size:14px;">Nenhuma imagem encontrada para esta busca.</div>';
+                            }
+                        } catch (err) {
+                            console.error('❌ Erro geral:', err);
+                            resultsDiv.innerHTML = `<div style="color:#dc3545; font-size:14px;">Erro ao buscar imagens: ${err.message}<br><small>Verifique console (F12) para detalhes.</small></div>`;
+                        }
+                        
+                        openGoogleBtn.disabled = false;
+                        openGoogleBtn.innerHTML = '<i class="fas fa-search"></i> Buscar';
+                    };
+                }
+                if (useBtn) {
+                    useBtn.onclick = () => {
+                        const imageUrl = urlInput.value.trim();
+                        if (!imageUrl) {
+                            alert('Selecione ou cole o link da imagem para usar.');
+                            return;
+                        }
+                        // Troca imagem do produto
+                        const imageInput = document.getElementById('product-image');
+                        if (imageInput) {
+                            imageInput.value = imageUrl;
+                            imageInput.style.background = 'linear-gradient(90deg, #e8f5e8 0%, #ffffff 100%)';
+                            imageInput.title = 'Imagem selecionada do Google';
+                            setTimeout(() => { imageInput.style.background = ''; }, 3000);
+                            // Garantir opção de URL personalizada ativada
+                            const customImageRadio = document.getElementById('use-custom-image');
+                            if (customImageRadio) customImageRadio.checked = true;
+                        }
+                        // Fecha modal
+                        modal.style.display = 'none';
+                        urlInput.value = '';
+                        if (resultsDiv) resultsDiv.innerHTML = '';
+                        // Mostra preview se função existir
+                        if (typeof this.showImagePreview === 'function') {
+                            this.showImagePreview(imageUrl);
+                        }
+                    };
+                }
+            }
     }
 
     async searchProductByBarcode(barcode) {
@@ -1961,234 +2135,6 @@ class BarcodeProductSearch {
         const dropdown = document.querySelector('.name-options-dropdown');
         if (dropdown) {
             dropdown.style.display = 'none';
-        }
-    }
-
-    // Buscar imagens do produto no Google
-    async searchProductImages(productName, brand) {
-        console.log('🖼️ Iniciando busca de imagens para:', productName, brand);
-        
-        // Construir query de busca
-        const searchQuery = brand ? `${brand} ${productName}` : productName;
-        
-        // Abrir modal de seleção de imagens
-        const modal = document.getElementById('image-selection-modal');
-        const queryDisplay = document.getElementById('image-search-query');
-        const imageGrid = document.getElementById('image-grid');
-        const imageLoading = document.getElementById('image-loading');
-        const btnUseImage = document.getElementById('btn-use-image');
-        
-        if (!modal) {
-            console.error('❌ Modal de seleção de imagens não encontrado');
-            return;
-        }
-        
-        // Mostrar modal
-        modal.style.display = 'block';
-        queryDisplay.textContent = searchQuery;
-        imageGrid.innerHTML = '';
-        imageLoading.style.display = 'block';
-        btnUseImage.disabled = true;
-        
-        try {
-            // Buscar imagens (simulado - em produção usaria uma API real)
-            const images = await this.fetchProductImages(searchQuery);
-            
-            imageLoading.style.display = 'none';
-            
-            if (images && images.length > 0) {
-                this.displayImageOptions(images);
-            } else {
-                imageGrid.innerHTML = '<p style="text-align:center;color:#6c757d;padding:40px;">Nenhuma imagem encontrada. Tente um nome diferente.</p>';
-            }
-        } catch (error) {
-            console.error('❌ Erro ao buscar imagens:', error);
-            imageLoading.style.display = 'none';
-            imageGrid.innerHTML = '<p style="text-align:center;color:#dc3545;padding:40px;">Erro ao buscar imagens. Tente novamente.</p>';
-        }
-    }
-
-    async fetchProductImages(searchQuery) {
-        console.log('🔍 Buscando imagens para:', searchQuery);
-        
-        // SIMULAÇÃO: Em produção, você usaria APIs como:
-        // - Google Custom Search API
-        // - Unsplash API
-        // - Pexels API
-        // - SerpAPI
-        
-        // Por enquanto, vamos simular com imagens de placeholder baseadas no tipo de produto
-        const images = [];
-        const lowerQuery = searchQuery.toLowerCase();
-        
-        // Base de imagens reais de produtos portugueses comuns
-        const productImageDatabase = {
-            // Bebidas
-            'coca-cola': [
-                'https://www.continente.pt/dw/image/v2/BDVS_PRD/on/demandware.static/-/Sites-col-master-catalog/default/dwc8f8e8f4/images/col/449/4490002540227-frente.jpg',
-                'https://www.pingodoce.pt/wp-content/uploads/2019/02/coca-cola-1-5l.jpg',
-                'https://imgs.search.brave.com/vJEqQFmCOqGDMzMH8kHvfzGZ6m9RJ0DqYxMPKQVfaL8/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tLm1l/ZGlhLWFtYXpvbi5j/b20vaW1hZ2VzL0kv/NTFNb1FKOW5Fb0wu/anBn'
-            ],
-            'leite': [
-                'https://www.continente.pt/dw/image/v2/BDVS_PRD/on/demandware.static/-/Sites-col-master-catalog/default/dw9a7f0f6a/images/col/560/5601049132995-frente.jpg',
-                'https://www.pingodoce.pt/wp-content/uploads/2019/02/leite-meio-gordo-mimosa-1l.jpg',
-                'https://imgs.search.brave.com/KZYjhLf5tS5YGvL7pE6vKQwZKKOXqZQ8nGZLKmQfZxA/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/bWltb3NhLnB0L3dw/LWNvbnRlbnQvdXBs/b2Fkcy8yMDIwLzA3/L0xlaXRlLVVIVC1N/ZWlvLUdvcmRvLmpw/Zw'
-            ],
-            'agua': [
-                'https://www.continente.pt/dw/image/v2/BDVS_PRD/on/demandware.static/-/Sites-col-master-catalog/default/dw1c8d3e4c/images/col/560/5604172000360-frente.jpg',
-                'https://imgs.search.brave.com/r9UJZv_kEQQR8VqF_hYKBqB9fMOKGqB9fMOKGqB9fMM/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/YXVjaGFuLnB0L2R3/L2ltYWdlL3YyL0JE/VlNfUFJEL29uL2Rl/bWFuZHdhcmUuc3Rh/dGljLy0vU2l0ZXMt/Y29sLW1hc3Rlci1j/YXRhbG9nL2RlZmF1/bHQvZHc3ZjNmM2Yw/YS9pbWFnZXMvY29s/LzU2MC81NjA0MTcy/MDAwMzYwLWZyZW50/ZS5qcGc',
-                'https://www.pingodoce.pt/wp-content/uploads/2019/02/agua-monchique-1-5l.jpg'
-            ],
-            'chocolate': [
-                'https://www.continente.pt/dw/image/v2/BDVS_PRD/on/demandware.static/-/Sites-col-master-catalog/default/dw8f3b7a9c/images/col/789/7891000369098-frente.jpg',
-                'https://imgs.search.brave.com/QqWX5vK8pNqYxMH8kHvfzGZ6m9RJ0DqYxMPKQVfaL8/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9tLm1l/ZGlhLWFtYXpvbi5j/b20vaW1hZ2VzL0kv/NzFoR3JRTEpYM0wu/anBn',
-                'https://www.auchan.pt/dw/image/v2/BDVS_PRD/on/demandware.static/-/Sites-col-master-catalog/default/dw9f3f3e4c/images/col/789/7891000369098-frente.jpg'
-            ],
-            'iogurte': [
-                'https://www.continente.pt/dw/image/v2/BDVS_PRD/on/demandware.static/-/Sites-col-master-catalog/default/dw7f3b9a8c/images/col/560/5601050036541-frente.jpg',
-                'https://imgs.search.brave.com/vMH8kHvfzGZ6m9RJ0DqYxMPKQVfaL8QqWX5vK8pNqY/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/ZGFub25lLnB0L3dw/LWNvbnRlbnQvdXBs/b2Fkcy8yMDIwLzA3/L09pa29zLU5hdHVy/YWwuanBn',
-                'https://www.pingodoce.pt/wp-content/uploads/2019/02/oikos-natural-4x110g.jpg'
-            ]
-        };
-        
-        // Tentar encontrar imagens específicas
-        for (const [key, urls] of Object.entries(productImageDatabase)) {
-            if (lowerQuery.includes(key)) {
-                console.log(`✅ Encontradas ${urls.length} imagens para ${key}`);
-                return urls.map((url, index) => ({
-                    url: url,
-                    thumbnail: url,
-                    title: `${searchQuery} - Opção ${index + 1}`,
-                    source: 'Catálogo de Supermercados PT'
-                }));
-            }
-        }
-        
-        // Fallback: Imagens genéricas baseadas em categoria
-        const categoryImages = {
-            'bebida': [
-                'https://png.pngtree.com/png-vector/20241025/ourmid/pngtree-grocery-cart-filled-with-fresh-vegetables-png-image_14162473.png',
-                'https://png.pngtree.com/png-vector/20220705/ourmid/pngtree-soft-drink-bottle-png-image_5683092.png',
-                'https://png.pngtree.com/png-vector/20220705/ourmid/pngtree-water-bottle-png-image_5683091.png'
-            ],
-            'alimento': [
-                'https://png.pngtree.com/png-vector/20241025/ourmid/pngtree-grocery-cart-filled-with-fresh-vegetables-png-image_14162473.png',
-                'https://png.pngtree.com/png-vector/20220705/ourmid/pngtree-food-package-png-image_5683093.png'
-            ],
-            'higiene': [
-                'https://png.pngtree.com/png-vector/20220705/ourmid/pngtree-shampoo-bottle-png-image_5683094.png',
-                'https://png.pngtree.com/png-vector/20220705/ourmid/pngtree-soap-bar-png-image_5683095.png'
-            ]
-        };
-        
-        // Detectar categoria e retornar imagens genéricas
-        for (const [category, urls] of Object.entries(categoryImages)) {
-            if (lowerQuery.includes(category)) {
-                return urls.map((url, index) => ({
-                    url: url,
-                    thumbnail: url,
-                    title: `${searchQuery} - Imagem ${index + 1}`,
-                    source: 'Imagens Genéricas'
-                }));
-            }
-        }
-        
-        // Se não encontrou nada, retorna imagem padrão
-        return [{
-            url: 'https://png.pngtree.com/png-vector/20241025/ourmid/pngtree-grocery-cart-filled-with-fresh-vegetables-png-image_14162473.png',
-            thumbnail: 'https://png.pngtree.com/png-vector/20241025/ourmid/pngtree-grocery-cart-filled-with-fresh-vegetables-png-image_14162473.png',
-            title: `${searchQuery} - Imagem Padrão`,
-            source: 'Imagem Genérica'
-        }];
-    }
-
-    displayImageOptions(images) {
-        const imageGrid = document.getElementById('image-grid');
-        const btnUseImage = document.getElementById('btn-use-image');
-        
-        imageGrid.innerHTML = '';
-        
-        let selectedImageUrl = null;
-        
-        images.forEach((image, index) => {
-            const imageOption = document.createElement('div');
-            imageOption.className = 'image-option';
-            imageOption.dataset.url = image.url;
-            
-            imageOption.innerHTML = `
-                <img src="${image.thumbnail}" alt="${image.title}" loading="lazy">
-                <div class="image-option-info">
-                    <div style="font-weight: 600; color: #212529; margin-bottom: 2px;">${image.source}</div>
-                    <div>${image.title}</div>
-                </div>
-            `;
-            
-            imageOption.addEventListener('click', () => {
-                // Remove seleção anterior
-                document.querySelectorAll('.image-option').forEach(opt => {
-                    opt.classList.remove('selected');
-                });
-                
-                // Seleciona atual
-                imageOption.classList.add('selected');
-                selectedImageUrl = image.url;
-                btnUseImage.disabled = false;
-                
-                console.log('🖼️ Imagem selecionada:', selectedImageUrl);
-            });
-            
-            imageGrid.appendChild(imageOption);
-        });
-        
-        // Botão para usar imagem selecionada
-        btnUseImage.onclick = () => {
-            if (selectedImageUrl) {
-                const imageInput = document.getElementById('product-image');
-                const useCustomRadio = document.getElementById('use-custom-image');
-                
-                if (imageInput && useCustomRadio) {
-                    imageInput.value = selectedImageUrl;
-                    useCustomRadio.checked = true;
-                    
-                    // Mostrar o grupo de URL de imagem
-                    const imageUrlGroup = document.querySelector('.image-url-group');
-                    if (imageUrlGroup) {
-                        imageUrlGroup.style.display = 'block';
-                    }
-                    
-                    // Anima o campo preenchido
-                    imageInput.style.background = 'linear-gradient(90deg, #d4edda 0%, #ffffff 100%)';
-                    setTimeout(() => { imageInput.style.background = ''; }, 3000);
-                    
-                    // Mostrar preview
-                    this.showImagePreview(selectedImageUrl);
-                    
-                    alert('✅ Imagem selecionada com sucesso!');
-                    this.closeImageModal();
-                }
-            }
-        };
-        
-        // Botões de fechar modal
-        const closeBtn = document.getElementById('close-image-modal');
-        const cancelBtn = document.getElementById('btn-cancel-image');
-        
-        closeBtn.onclick = () => this.closeImageModal();
-        cancelBtn.onclick = () => this.closeImageModal();
-        
-        // Fechar ao clicar fora
-        const modal = document.getElementById('image-selection-modal');
-        modal.onclick = (e) => {
-            if (e.target === modal) {
-                this.closeImageModal();
-            }
-        };
-    }
-
-    closeImageModal() {
-        const modal = document.getElementById('image-selection-modal');
-        if (modal) {
-            modal.style.display = 'none';
         }
     }
 }
