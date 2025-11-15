@@ -2754,8 +2754,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const brandTypeSpecific = document.getElementById('brand-is-specific');
     const brandInputGroup = document.querySelector('.brand-input-group');
     const productBrandInput = document.getElementById('product-brand');
-    const marketParishInput = document.getElementById('market-parish');
-    const parishDatalist = document.getElementById('parish-list');
     
     const productImageUrlInput = document.getElementById('product-image');
     const useDefaultImageRadio = document.getElementById('use-default-image');
@@ -3050,7 +3048,6 @@ document.addEventListener('DOMContentLoaded', () => {
             productBrandInput.value = product.brand || '';
         }
         document.getElementById('market-zone').value = product.zone || '';
-        marketParishInput.value = product.parish || '';
         if (product.imageUrl === DEFAULT_IMAGE_URL) {
             useDefaultImageRadio.checked = true;
             imageUrlGroup.style.display = 'none';
@@ -3394,7 +3391,6 @@ document.addEventListener('DOMContentLoaded', () => {
             // Atualizar interface
             updateCounts();
             updateFilterOptions();
-            getUniqueParishes();
             renderProducts();
             // populate camera list for admin scanner
             try { await populateAdminCameraList(); } catch (e) { /* ignore */ }
@@ -3444,7 +3440,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const brandType = document.querySelector('input[name="brand-type"]:checked').value;
         const brand = brandType === 'generic' ? 'Marca Branca' : productBrandInput.value;
         const zone = document.getElementById('market-zone').value;
-        const parish = marketParishInput.value;
         let imageUrl = productImageUrlInput.value;
 
         // Se "Outro" for selecionado, usa o valor do campo de texto
@@ -3471,7 +3466,6 @@ document.addEventListener('DOMContentLoaded', () => {
             category,
             brand,
             zone,
-            parish,
             barcode: productBarcodeInput ? productBarcodeInput.value.trim() : '',
             imageUrl
         };
@@ -3620,13 +3614,6 @@ document.addEventListener('DOMContentLoaded', () => {
         productBrandFilter.innerHTML = '<option value="all">Todas as Marcas</option>' + uniqueBrands.map(b => `<option value="${b}">${b}</option>`).join('');
     };
 
-    const getUniqueParishes = () => {
-        const products = getFromLocalStorage('products');
-        const parishes = products.map(p => p.parish).filter(p => p);
-        const uniqueParishes = [...new Set(parishes)].sort();
-        parishDatalist.innerHTML = uniqueParishes.map(p => `<option value="${p}">`).join('');
-    };
-
     // Lógica de TABS
     document.querySelectorAll('.tab-button').forEach(button => {
         button.addEventListener('click', () => {
@@ -3745,7 +3732,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 document.getElementById('market-zone').value = product.zone;
-                marketParishInput.value = product.parish;
 
                 // ÚLTIMO: Trata a URL da imagem DEPOIS de limpar
                 if (product.imageUrl === DEFAULT_IMAGE_URL || !product.imageUrl) {
