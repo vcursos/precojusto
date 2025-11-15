@@ -2654,10 +2654,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Guard de autenticação: usar Firebase (fonte da verdade) + fallback localStorage
     let adminInitialized = false;
+    let authSettled = false; // marca quando já decidimos mostrar login ou admin
     const authLoadingEl = document.getElementById('auth-loading');
     const showAdmin = () => {
         if (!adminInitialized) {
             adminInitialized = true;
+            authSettled = true;
             if (authLoadingEl) authLoadingEl.style.display = 'none';
             loginContainer.style.display = 'none';
             adminPanel.style.display = 'block';
@@ -2668,6 +2670,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     const showLogin = () => {
+        authSettled = true;
         if (authLoadingEl) authLoadingEl.style.display = 'none';
         loginContainer.style.display = 'block';
         adminPanel.style.display = 'none';
@@ -2698,6 +2701,14 @@ document.addEventListener('DOMContentLoaded', () => {
         );
         if (legacyLogged) showAdmin(); else showLogin();
     }
+
+    // Fallback: se em 3s não definimos tela, mostra login para não travar na "Verificando sessão"
+    setTimeout(() => {
+        if (!authSettled) {
+            console.warn('[auth] Timeout - exibindo tela de login por fallback');
+            showLogin();
+        }
+    }, 3000);
 
     if (loginForm) {
         loginForm.addEventListener('submit', async function(e) {
