@@ -1053,44 +1053,7 @@ body.modal-open {
 }
 
 /* Botão de busca de produto (Google Shopping) */
-.btn-search-product {
-    background: linear-gradient(135deg, #16a34a, #15803d);
-    color: white;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-    font-size: 12px;
-    font-weight: 600;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    min-width: 100px;
-    height: 38px;
-    white-space: nowrap;
-}
-
-.btn-search-product:hover {
-    background: linear-gradient(135deg, #15803d, #14532d);
-    transform: translateY(-1px);
-    box-shadow: 0 3px 6px rgba(0,0,0,0.15);
-}
-
-.btn-search-product:active {
-    transform: translateY(0);
-}
-
-.btn-search-product:disabled {
-    background: #6c757d;
-    cursor: not-allowed;
-    opacity: 0.6;
-}
-
-.btn-search-product i {
-    font-size: 14px;
-}
+/* styles for .btn-search-product removed as feature was deprecated */
 
 /* Dropdown de sugestões de nomes */
 .name-suggestions-dropdown {

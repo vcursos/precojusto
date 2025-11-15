@@ -61,27 +61,7 @@
         </div>
     </div>
 
-    <!-- Modal para Busca de Produtos (Google Shopping) -->
-    <div id="product-search-modal" class="google-image-modal-backdrop" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:10001; align-items:center; justify-content:center; overflow:hidden;">
-        <div class="google-image-modal-content" style="background:#fff; border-radius:10px; max-width:700px; width:95%; max-height:90vh; display:flex; flex-direction:column; box-shadow:0 4px 24px rgba(0,0,0,0.25); position:relative; overflow:hidden;">
-            <!-- Header fixo -->
-            <div style="padding:18px; border-bottom:1px solid #e5e7eb; flex-shrink:0;">
-                <button id="close-product-search-modal" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:22px; color:#333; cursor:pointer;"><i class="fas fa-times"></i></button>
-                <h3 style="margin:0 0 10px 0; font-size:1.2rem; color:#16a34a;"><i class="fas fa-shopping-cart"></i> Buscar Produto no Google Shopping</h3>
-                
-                <!-- Busca -->
-                <div style="display:flex; gap:8px; align-items:center;">
-                    <input type="text" id="product-search-term" placeholder="Ex: pingo doce creatina" style="flex:1; padding:8px; border-radius:6px; border:1px solid #ccc;">
-                    <button id="search-products-btn" style="background:#16a34a; color:#fff; border:none; border-radius:6px; padding:8px 12px; font-size:15px; cursor:pointer; white-space:nowrap;">
-                        <i class="fas fa-search"></i> Buscar
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Área de resultados com scroll -->
-            <div id="product-search-results" style="flex:1; overflow-y:auto; padding:16px; min-height:200px; max-height:calc(90vh - 200px);"></div>
-        </div>
-    </div>
+    
 
     <div id="auth-loading" style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#333;">
         <div style="text-align:center;">
@@ -164,10 +144,6 @@
                             <label for="product-name">Nome do Produto:</label>
                             <div class="name-input-group">
                                 <input type="text" id="product-name">
-                                <button type="button" id="search-product-info-btn" class="btn-search-product" title="Buscar produto no Google Shopping">
-                                    <i class="fas fa-shopping-cart"></i>
-                                    <span style="margin-left: 4px; font-size: 10px;">Buscar Produto</span>
-                                </button>
                                 <button type="button" id="search-name-btn" class="btn-search-name" title="Buscar nome correto no Google">
                                     <i class="fas fa-search"></i>
                                     <span style="margin-left: 4px; font-size: 10px;">Google</span>
