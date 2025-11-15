@@ -2737,6 +2737,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // O resto do código continua dentro do eventListener
     const DEFAULT_IMAGE_URL = "https://png.pngtree.com/png-vector/20241025/ourmid/pngtree-grocery-cart-filled-with-fresh-vegetables-png-image_14162473.png";
+    
+    // API KEY do SerpAPI (gravada no código)
+    const SERPAPI_KEY = "d27f53a7fa18f2cda6c4dd5a929c0f9f9c7d3e4a1a3ac8b5c00d38f6f2f03d62";
 
     // Elementos do DOM
     const productForm = document.getElementById('product-form');
@@ -3580,6 +3583,151 @@ document.addEventListener('DOMContentLoaded', () => {
             productImageUrlInput.value = ''; // Limpar o valor
         }
     });
+
+    // Capitalizar primeira letra automaticamente no campo nome
+    const productNameInput = document.getElementById('product-name');
+    if (productNameInput) {
+        productNameInput.addEventListener('input', (e) => {
+            const value = e.target.value;
+            if (value.length > 0) {
+                e.target.value = value.charAt(0).toUpperCase() + value.slice(1);
+            }
+        });
+    }
+
+    // Modal de busca de produtos (Google Shopping)
+    const productSearchModal = document.getElementById('product-search-modal');
+    const closeProductSearchModal = document.getElementById('close-product-search-modal');
+    const searchProductInfoBtn = document.getElementById('search-product-info-btn');
+    const searchProductsBtn = document.getElementById('search-products-btn');
+    const productSearchTerm = document.getElementById('product-search-term');
+    const productSearchResults = document.getElementById('product-search-results');
+
+    // Abrir modal de busca de produtos
+    if (searchProductInfoBtn) {
+        searchProductInfoBtn.addEventListener('click', () => {
+            const productName = productNameInput.value.trim();
+            if (productName) {
+                productSearchTerm.value = productName;
+            }
+            productSearchModal.style.display = 'flex';
+            document.body.classList.add('admin-google-image-modal-open');
+        });
+    }
+
+    // Fechar modal de busca de produtos
+    if (closeProductSearchModal) {
+        closeProductSearchModal.addEventListener('click', () => {
+            productSearchModal.style.display = 'none';
+            document.body.classList.remove('admin-google-image-modal-open');
+        });
+    }
+
+    // Fechar ao clicar fora
+    productSearchModal.addEventListener('click', (e) => {
+        if (e.target === productSearchModal) {
+            productSearchModal.style.display = 'none';
+            document.body.classList.remove('admin-google-image-modal-open');
+        }
+    });
+
+    // Buscar produtos no Google Shopping
+    if (searchProductsBtn) {
+        searchProductsBtn.addEventListener('click', async () => {
+            const searchTerm = productSearchTerm.value.trim();
+            if (!searchTerm) {
+                alert('Digite um termo de busca');
+                return;
+            }
+
+            productSearchResults.innerHTML = '<div style="text-align:center; padding:20px;"><i class="fas fa-spinner fa-spin" style="font-size:24px; color:#16a34a;"></i><p style="margin-top:10px;">Buscando produtos...</p></div>';
+
+            try {
+                const response = await fetch(`https://serpapi.com/search.json?engine=google_shopping&q=${encodeURIComponent(searchTerm)}&api_key=${SERPAPI_KEY}&gl=pt&hl=pt`);
+                const data = await response.json();
+
+                if (data.shopping_results && data.shopping_results.length > 0) {
+                    productSearchResults.innerHTML = data.shopping_results.slice(0, 10).map(product => `
+                        <div style="border:1px solid #e5e7eb; border-radius:8px; padding:12px; margin-bottom:12px; display:flex; gap:12px; align-items:start; cursor:pointer; transition:all 0.2s;" class="product-result-item" data-product='${JSON.stringify({
+                            name: product.title,
+                            price: product.extracted_price || 0,
+                            source: product.source
+                        })}'>
+                            ${product.thumbnail ? `<img src="${product.thumbnail}" style="width:80px; height:80px; object-fit:contain; border-radius:6px; border:1px solid #e5e7eb;">` : ''}
+                            <div style="flex:1;">
+                                <h4 style="margin:0 0 6px 0; font-size:14px; color:#1f2937; font-weight:600;">${product.title}</h4>
+                                <p style="margin:0 0 4px 0; font-size:13px; color:#16a34a; font-weight:bold;">${product.price || 'Preço não disponível'}</p>
+                                <p style="margin:0; font-size:12px; color:#6b7280;"><i class="fas fa-store"></i> ${product.source}</p>
+                            </div>
+                            <button style="background:#16a34a; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px; white-space:nowrap;">
+                                <i class="fas fa-check"></i> Usar
+                            </button>
+                        </div>
+                    `).join('');
+
+                    // Event listeners para os resultados
+                    document.querySelectorAll('.product-result-item').forEach(item => {
+                        item.addEventListener('click', (e) => {
+                            const productData = JSON.parse(item.dataset.product);
+                            
+                            // Preencher formulário
+                            document.getElementById('product-name').value = productData.name;
+                            document.getElementById('product-price').value = productData.price;
+                            
+                            // Tentar identificar o mercado
+                            const source = productData.source.toLowerCase();
+                            const marketMapping = {
+                                'continente': 'Continente',
+                                'pingo doce': 'Pingo Doce',
+                                'pingodoce': 'Pingo Doce',
+                                'lidl': 'Lidl',
+                                'aldi': 'Aldi',
+                                'auchan': 'Auchan',
+                                'minipreço': 'Minipreço',
+                                'minipreco': 'Minipreço',
+                                'mercadona': 'Mercadona'
+                            };
+                            
+                            let marketFound = false;
+                            for (const [key, value] of Object.entries(marketMapping)) {
+                                if (source.includes(key)) {
+                                    document.getElementById('product-market').value = value;
+                                    marketFound = true;
+                                    break;
+                                }
+                            }
+                            
+                            if (!marketFound) {
+                                document.getElementById('product-market').value = 'Outro';
+                                document.getElementById('custom-market-name').value = productData.source;
+                                document.getElementById('custom-market-name').style.display = 'block';
+                            }
+                            
+                            // Fechar modal
+                            productSearchModal.style.display = 'none';
+                            document.body.classList.remove('admin-google-image-modal-open');
+                            
+                            alert('✅ Dados do produto preenchidos! Confira e ajuste se necessário.');
+                        });
+                    });
+                } else {
+                    productSearchResults.innerHTML = '<div style="text-align:center; padding:40px; color:#6b7280;"><i class="fas fa-search" style="font-size:48px; opacity:0.3;"></i><p style="margin-top:12px;">Nenhum produto encontrado</p></div>';
+                }
+            } catch (error) {
+                console.error('Erro ao buscar produtos:', error);
+                productSearchResults.innerHTML = '<div style="text-align:center; padding:40px; color:#dc2626;"><i class="fas fa-exclamation-triangle" style="font-size:48px;"></i><p style="margin-top:12px;">Erro ao buscar produtos. Tente novamente.</p></div>';
+            }
+        });
+    }
+
+    // Permitir buscar com Enter
+    if (productSearchTerm) {
+        productSearchTerm.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                searchProductsBtn.click();
+            }
+        });
+    }
 
     // Lógica da tabela e filtros
     const filterProducts = () => {
