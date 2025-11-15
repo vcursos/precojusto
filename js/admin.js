@@ -2961,7 +2961,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('product-id').value = product.id || '';
         document.getElementById('product-name').value = product.name || '';
         document.getElementById('product-price').value = product.price || '';
-        if (['Continente', 'Pingo Doce', 'Lidl', 'Makro', 'Recheio', 'Aldi', 'Auchan', 'Minipreço'].includes(product.market)) {
+        if (['Continente', 'Pingo Doce', 'Lidl', 'Makro', 'Recheio', 'Aldi', 'Auchan', 'Minipreço', 'Mercadona'].includes(product.market)) {
             productMarket.value = product.market;
             otherMarketGroup.style.display = 'none';
         } else if (product.market) {
@@ -3648,7 +3648,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('product-price').value = product.price;
                 
                 // Trata o mercado
-                if (['Continente', 'Pingo Doce', 'Lidl', 'Makro', 'Recheio', 'Aldi', 'Auchan', 'Minipreço'].includes(product.market)) {
+                if (['Continente', 'Pingo Doce', 'Lidl', 'Makro', 'Recheio', 'Aldi', 'Auchan', 'Minipreço', 'Mercadona'].includes(product.market)) {
                     productMarket.value = product.market;
                     otherMarketGroup.style.display = 'none';
                 } else {
