@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width,initial-scale=1" />
+	<title>Comparar - Preço Certo</title>
+	<link rel="stylesheet" href="css/style.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+	<style>
+		/* Minimal mobile styles for the comparison list */
+		body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; background:#f3f4f6; color:#111827; }
+		.header { position:fixed; top:0; left:0; right:0; height:56px; background:#fff; display:flex; align-items:center; gap:8px; padding:0 12px; box-shadow:0 1px 2px rgba(0,0,0,0.05); z-index:10; }
+		.back { background:none; border:none; color:#2563eb; font-size:18px; display:flex; align-items:center; gap:6px; }
+		.title { flex:1; text-align:center; font-weight:600; }
+		.content { padding:72px 12px 20px; }
+		.status { text-align:center; color:#6b7280; padding:36px 8px; }
+		.compare-list { display:flex; flex-direction:column; gap:10px; max-width:720px; margin:0 auto; }
+		.item { background:#fff; border-radius:8px; padding:12px; display:flex; gap:12px; align-items:center; border:1px solid #e5e7eb; }
+		.img { width:64px; height:64px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:#fafafa; border-radius:6px; overflow:hidden; border:1px solid #eee; }
+		.img img { width:100%; height:100%; object-fit:contain; display:block; }
+		.info { flex:1; min-width:0; }
+		.name { font-weight:600; font-size:0.95rem; margin:0 0 4px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+		.market { font-size:0.8rem; color:#6b7280; margin:0 0 8px; }
+		.price-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+		.price { color:#1d4ed8; font-weight:700; font-size:1.05rem; }
+		.diff { font-size:0.78rem; padding:4px 8px; border-radius:999px; }
+		.diff.positive { background:#fee2e2; color:#b91c1c; }
+		.best { background:#ecfdf5; color:#047857; padding:3px 8px; border-radius:999px; font-weight:600; font-size:0.78rem; }
+	</style>
+</head>
+<body>
+	<header class="header">
+		<button class="back" onclick="history.back();"><i class="fas fa-arrow-left"></i><span>Voltar</span></button>
+		<div class="title">Comparar Produtos</div>
+		<div style="width:40px"></div>
+	</header>
+
+	<main class="content">
+		<div id="status" class="status"><i class="fas fa-spinner fa-spin"></i> Carregando comparação...</div>
+		<div id="list" class="compare-list" style="display:none"></div>
+	</main>
+
+	<script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const statusEl = document.getElementById('status');
+        const listEl = document.getElementById('list');
+
+        function showMessage(html) {
+            statusEl.style.display = '';
+            statusEl.innerHTML = html;
+            listEl.style.display = 'none';
+        }
+
+        function parsePrice(value) {
+            if (value === undefined || value === null) return NaN;
+            return parseFloat(String(value).replace(/[^\d,.,-]/g, '').replace(',', '.'));
+        }
+
+        function getStoredConfig() {
+            try { return JSON.parse(sessionStorage.getItem('firebaseConfig') || ''); }
+            catch { return null; }
+        }
+
+        function getBaseProduct() {
+            try {
+                const raw = sessionStorage.getItem('compareProductData');
+                if (!raw) return null;
+                const product = JSON.parse(raw);
+                product.name = (product.name || '').trim();
+                product._price = parsePrice(product.price);
+                return product.name ? product : null;
+            } catch {
+                return null;
+            }
+        }
+
+        function render(items) {
+            if (!items.length) {
+                showMessage('<i class="fas fa-search-minus"></i><p>Nenhum produto similar encontrado.</p>');
+                return;
+            }
+            const lowest = items.find(p => isFinite(p._price))?._price ?? NaN;
+            const html = items.map((item, index) => {
+                const price = isFinite(item._price) ? item._price.toFixed(2) : '—';
+                let diff = '';
+                if (index === 0) {
+                    diff = '<span class="best">Melhor preço</span>';
+                } else if (isFinite(lowest) && lowest > 0 && isFinite(item._price)) {
+                    const delta = item._price - lowest;
+                    const pct = Math.round((delta / lowest) * 100);
+                    diff = `<span class="diff positive">+${delta.toFixed(2)}€ (+${pct}%)</span>`;
+                }
+                return `
+                    <div class="item">
+                        <div class="img">
+                            ${item.image ? `<img src="${item.image}" alt="${item.name}" onerror="this.remove()">` : '<i class="fas fa-box-open" style="color:#9ca3af"></i>'}
+                        </div>
+                        <div class="info">
+                            <div class="name">${item.name}</div>
+                            <div class="market">${item.market || 'Mercado não informado'}</div>
+                            <div class="price-row">
+                                <div class="price">€${price}</div>
+                                ${diff}
+                            </div>
+                        </div>
+                    </div>`;
+            }).join('');
+
+            listEl.innerHTML = html;
+            listEl.style.display = '';
+            statusEl.style.display = 'none';
+        }
+
+        async function loadAndRender() {
+            const config = getStoredConfig();
+            if (!config) {
+                showMessage('<i class="fas fa-exclamation-triangle"></i><p>Configuração do Firebase ausente. Volte e tente novamente.</p>');
+                return;
+            }
+
+            const base = getBaseProduct();
+            if (!base) {
+                showMessage('<i class="fas fa-search"></i><p>Nenhum produto seleccionado para comparação.</p>');
+                return;
+            }
+
+            try {
+                const app = initializeApp(config);
+                const db = getDatabase(app);
+                const snapshot = await get(ref(db, 'products'));
+
+                if (!snapshot.exists()) {
+                    showMessage('<i class="fas fa-box-open"></i><p>Nenhum produto encontrado.</p>');
+                    return;
+                }
+
+                const baseName = base.name.toLowerCase();
+                const similar = [];
+
+                snapshot.forEach(child => {
+                    const data = { id: child.key, ...child.val() };
+                    if (!data.name) return;
+                    const name = String(data.name).toLowerCase();
+                    if (name.includes(baseName) || baseName.includes(name)) {
+                        data._price = parsePrice(data.price);
+                        similar.push(data);
+                    }
+                });
+
+                if (!similar.some(p => p.id === base.id)) {
+                    similar.push({ ...base });
+                }
+
+                similar.sort((a, b) => {
+                    const pa = isFinite(a._price) ? a._price : Number.POSITIVE_INFINITY;
+                    const pb = isFinite(b._price) ? b._price : Number.POSITIVE_INFINITY;
+                    return pa - pb;
+                });
+
+                render(similar);
+            } catch (error) {
+                console.error('Erro ao carregar comparação:', error);
+                showMessage('<i class="fas fa-exclamation-circle"></i><p>Erro ao carregar comparação. Verifique a consola.</p>');
+            }
+        }
+
+        loadAndRender();
+    </script>
+</body>
+</html>
+    </main>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const firebaseConfig = {
+                apiKey: "AIzaSyAf9fJHKPYrpTskpeglXDcS3sSgKrL4CXQ",
+                authDomain: "precomercado-23f20.firebaseapp.com",
+                databaseURL: "https://precomercado-23f20-default-rtdb.europe-west1.firebasedatabase.app",
+                projectId: "precomercado-23f20",
+                storageBucket: "precomercado-23f20.firebasestorage.app",
+                messagingSenderId: "899496513372",
+                appId: "1:899496513372:web:7ef9a274652bc4a8d07b99"
+            };
+
+            const app = firebase.initializeApp(firebaseConfig);
+            const database = firebase.database();
+
+            const loadingEl = document.getElementById('compare-loading');
+            const emptyEl = document.getElementById('compare-empty');
+            const listEl = document.getElementById('mobile-compare-list');
+
+            const formatPrice = (price) => '€' + parseFloat(price).toFixed(2);
+
+            function renderItems(items) {
+                loadingEl.style.display = 'none';
+                if (!items || items.length === 0) {
+                    emptyEl.style.display = 'block';
+                    listEl.style.display = 'none';
+                    return;
+                }
+
+                listEl.innerHTML = '';
+                items.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+                const lowestPrice = parseFloat(items[0].price);
+
+                items.forEach((item, index) => {
+                    const itemPrice = parseFloat(item.price);
+                    const priceDiff = itemPrice - lowestPrice;
+                    const percentDiff = lowestPrice > 0 ? (priceDiff / lowestPrice) * 100 : 0;
+                    const isBestPrice = index === 0;
+
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'compare-item';
+                    
+                    const imageHTML = `<div class="product-img-container"><img src="${item.image || ''}" alt="${item.name}" onerror="this.parentElement.innerHTML = '<div class=\\'default-img\\'><i class=\\'fas fa-shopping-basket\\'></i></div>'"></div>`;
+                    
+                    const infoHTML = `
+                        <div class="product-info">
+                            <h3 class="product-name">${item.name}</h3>
+                            <p class="product-market">${item.market || 'N/A'}</p>
+                            <div style="display: flex; align-items: center;">
+                                <span class="product-price">${formatPrice(item.price)}</span>
+                                ${!isBestPrice ? `<span class="price-diff positive">+${formatPrice(priceDiff)} (+${percentDiff.toFixed(0)}%)</span>` : ''}
+                            </div>
+                            ${isBestPrice ? '<span class="best-price-tag">Melhor preço</span>' : ''}
+                        </div>`;
+
+                    itemElement.innerHTML = imageHTML + infoHTML;
+                    listEl.appendChild(itemElement);
+                });
+
+                listEl.style.display = 'block';
+                emptyEl.style.display = 'none';
+            }
+
+            async function main() {
+                try {
+                    const productDataJson = sessionStorage.getItem('compareProductData');
+                    if (!productDataJson) {
+                        emptyEl.querySelector('p').textContent = "Nenhum produto selecionado para comparação.";
+                        renderItems([]);
+                        return;
+                    }
+
+                    const baseProduct = JSON.parse(productDataJson);
+                    console.log("Base product for comparison:", baseProduct);
+
+                    const productsRef = database.ref('products');
+                    const snapshot = await productsRef.once('value');
+                    const allProducts = [];
+                    if (snapshot.exists()) {
+                        snapshot.forEach(childSnapshot => {
+                            allProducts.push({ id: childSnapshot.key, ...childSnapshot.val() });
+                        });
+                    }
+
+                    if (allProducts.length === 0) {
+                        renderItems([]);
+                        return;
+                    }
+
+                    const baseName = baseProduct.name.toLowerCase().trim();
+                    const similarProducts = allProducts.filter(p => 
+                        p.name && p.name.toLowerCase().trim().includes(baseName)
+                    );
+                    
+                    // Ensure the originally clicked product is in the list, even if its name doesn't match perfectly
+                    if (!similarProducts.some(p => p.id === baseProduct.id)) {
+                        similarProducts.push(baseProduct);
+                    }
+
+                    console.log(`Found ${similarProducts.length} similar products.`);
+                    renderItems(similarProducts);
+
+                } catch (error) {
+                    console.error("Error loading comparison data:", error);
+                    emptyEl.querySelector('p').textContent = "Erro ao carregar os dados da comparação.";
+                    renderItems([]);
+                } finally {
+                    sessionStorage.removeItem('compareProductId');
+                    sessionStorage.removeItem('compareProductData');
+                }
+            }
+
+            main();
+        });
+    </script>
+</body>
+</html>
+            }
+
+            if (productDataJson) {
+                console.log("Falling back to session storage data.");
+                return JSON.parse(productDataJson);
+            }
+
+            return null;
+        }
+
+        async function findSimilarProducts(baseProduct) {
+            if (!baseProduct || !baseProduct.name) return [baseProduct].filter(Boolean);
+
+            const similarProducts = [baseProduct];
+            const baseName = baseProduct.name.toLowerCase();
+
+            try {
+                const productsRef = ref(database, "products");
+                const snapshot = await get(productsRef);
+
+                if (snapshot.exists()) {
+                    snapshot.forEach(childSnapshot => {
+                        const product = { id: childSnapshot.key, ...childSnapshot.val() };
+                        if (product.id !== baseProduct.id && product.name && product.name.toLowerCase().includes(baseName)) {
+                            similarProducts.push(product);
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error("Error finding similar products:", error);
+            }
+            
+            // Remove duplicates
+            return [...new Map(similarProducts.map(item => [item['id'], item])).values()];
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const product = await getProductFromSession();
+
+            if (product) {
+                const similarProducts = await findSimilarProducts(product);
+                renderComparisonItems(similarProducts);
+            } else {
+                // If no product is selected, maybe show all products or an error
+                const loading = document.getElementById('compare-loading');
+                const empty = document.getElementById('compare-empty');
+                loading.style.display = 'none';
+                empty.style.display = 'block';
+                empty.querySelector('p').textContent = "Nenhum produto selecionado para comparação.";
+            }
+
+            sessionStorage.removeItem('compareProductId');
+            sessionStorage.removeItem('compareProductData');
+        });
+    </script>
+</body>
+</html>
+                
+                // Create product info container
+                const infoContainer = document.createElement('div');
+                infoContainer.className = 'product-info';
+                
+                // Product name
+                const nameElem = document.createElement('h3');
+                nameElem.className = 'product-name';
+                nameElem.textContent = item.name;
+                infoContainer.appendChild(nameElem);
+                
+                // Market
+                const marketElem = document.createElement('p');
+                marketElem.className = 'product-market';
+                marketElem.textContent = item.market || 'Mercado não especificado';
+                infoContainer.appendChild(marketElem);
+                
+                // Brand (if available)
+                if (item.brand) {
+                    const brandElem = document.createElement('p');
+                    brandElem.className = 'product-details';
+                    const brandSpan = document.createElement('span');
+                    brandSpan.className = 'product-brand';
+                    brandSpan.textContent = item.brand;
+                    brandElem.appendChild(brandSpan);
+                    infoContainer.appendChild(brandElem);
+                }
+                
+                // Price and difference
+                const priceContainer = document.createElement('div');
+                priceContainer.style.display = 'flex';
+                priceContainer.style.alignItems = 'center';
+                
+                const priceElem = document.createElement('span');
+                priceElem.className = 'product-price';
+                priceElem.textContent = formatPrice(item.price);
+                priceContainer.appendChild(priceElem);
+                
+                if (!isBestPrice) {
+                    const diffElem = document.createElement('span');
+                    diffElem.className = 'price-diff positive';
+                    diffElem.textContent = `+${formatPrice(priceDiff)} (+${percentDiff.toFixed(0)}%)`;
+                    priceContainer.appendChild(diffElem);
+                }
+                
+                infoContainer.appendChild(priceContainer);
+                
+                // Best price tag
+                if (isBestPrice) {
+                    const bestPriceElem = document.createElement('span');
+                    bestPriceElem.className = 'best-price-tag';
+                    bestPriceElem.textContent = 'Melhor preço';
+                    infoContainer.appendChild(bestPriceElem);
+                }
+                
+                // Action buttons
+                const actionsElem = document.createElement('div');
+                actionsElem.className = 'product-actions';
+                
+                // Cart button
+                const cartBtn = document.createElement('button');
+                cartBtn.className = 'action-btn add-to-cart';
+                cartBtn.onclick = function() { addToCart(item.id); };
+                
+                const cartIcon = document.createElement('i');
+                cartIcon.className = 'fas fa-shopping-cart';
+                cartBtn.appendChild(cartIcon);
+                cartBtn.appendChild(document.createTextNode(' Carrinho'));
+                actionsElem.appendChild(cartBtn);
+                
+                // Favorite button
+                const favBtn = document.createElement('button');
+                favBtn.className = 'action-btn add-to-favorites';
+                favBtn.onclick = function() { addToFavorites(item.id); };
+                
+                const favIcon = document.createElement('i');
+                favIcon.className = 'fas fa-heart';
+                favBtn.appendChild(favIcon);
+                favBtn.appendChild(document.createTextNode(' Favorito'));
+                actionsElem.appendChild(favBtn);
+                
+                infoContainer.appendChild(actionsElem);
+                
+                // Add to item element
+                itemElement.appendChild(imgContainer);
+                itemElement.appendChild(infoContainer);
+                
+                // Add to container
+                container.appendChild(itemElement);
+            });
+        }
+
+        // Function to load product from sessionStorage
+        async function loadProductFromSession() {
+            // First check if we have product data in sessionStorage
+            const productId = sessionStorage.getItem('compareProductId');
+            const productDataJson = sessionStorage.getItem('compareProductData');
+            
+            console.log("Retrieved product ID:", productId);
+            console.log("Retrieved product data:", productDataJson);
+            
+            if (productId) {
+                try {
+                    // Try to load from firebase first
+                    console.log("Trying to load product from Firebase with ID:", productId);
+                    const productRef = ref(database, `products/${productId}`);
+                    const snapshot = await get(productRef);
+                    
+                    // If found in Firebase, use that data
+                    if (snapshot.exists()) {
+                        const firebaseProduct = {
+                            id: productId,
+                            ...snapshot.val()
+                        };
+                        console.log("Found product in Firebase:", firebaseProduct);
+                        return firebaseProduct;
+                    } 
+                    // If not found in Firebase but we have session data
+                    else if (productDataJson) {
+                        const sessionProduct = JSON.parse(productDataJson);
+                        console.log("Using product data from session:", sessionProduct);
+                        return sessionProduct;
+                    }
+                } catch (error) {
+                    console.error("Error loading product from Firebase:", error);
+                    
+                    // Fall back to session data if available
+                    if (productDataJson) {
+                        try {
+                            const sessionProduct = JSON.parse(productDataJson);
+                            console.log("Falling back to session data:", sessionProduct);
+                            return sessionProduct;
+                        } catch (e) {
+                            console.error("Error parsing session data:", e);
+                        }
+                    }
+                }
+            }
+            
+            // If we get here, we didn't find a valid product
+            console.error("No valid product found in sessionStorage");
+            return null;
+        }
+
+        // Function to find similar products
+        async function findSimilarProducts(product) {
+            console.log("Finding similar products for:", product);
+            
+            // If we don't have a valid product, we can't find similar ones
+            if (!product || !product.name) {
+                console.error("No valid product to compare");
+                return [product]; // Return just this product
+            }
+            
+            const similarProducts = [];
+            
+            // Add the original product to the list
+            similarProducts.push(product);
+            
+            try {
+                // Try to find products with similar names
+                console.log("Searching for products with similar names");
+                const productsRef = ref(database, "products");
+                const allProductsSnapshot = await get(productsRef);
+                
+                if (allProductsSnapshot.exists()) {
+                    const productName = product.name.toLowerCase();
+                    
+                    allProductsSnapshot.forEach((childSnapshot) => {
+                        const childProduct = {
+                            id: childSnapshot.key,
+                            ...childSnapshot.val()
+                        };
+                        
+                        // Skip the original product
+                        if (childProduct.id === product.id) {
+                            return;
+                        }
+                        
+                        // Match by name (contains)
+                        if (childProduct.name && 
+                            (childProduct.name.toLowerCase().includes(productName) || 
+                             productName.includes(childProduct.name.toLowerCase()))) {
+                            similarProducts.push(childProduct);
+                        }
+                    });
+                    
+                    console.log(`Found ${similarProducts.length} similar products`);
+                } else {
+                    console.error("No products found in Firebase");
+                }
+            } catch (error) {
+                console.error("Error finding similar products:", error);
+            }
+            
+            return similarProducts;
+        }
+
+        // Main function to load and display comparison data
+        async function loadComparisonData() {ta() {
+            try {
+                console.log("Starting comparison data loading...");arison data loading...");
+                
+                // First, try to load the selected producted product
+                const product = await loadProductFromSession();uctFromSession();
+                
+                if (product) {
+                    console.log("Successfully loaded product:", product);ct:", product);
+                    
+                    // Try to find similar products  // Try to find similar products
+                    const similarProducts = await findSimilarProducts(product);   const similarProducts = await findSimilarProducts(product);
+                    
+                    // Render the comparison
+                    if (similarProducts.length > 0) {gth > 0) {
+                        renderComparisonItems(similarProducts);arisonItems(similarProducts);
+                    } else {
+                        // If no similar products, just show the current product no similar products, just show the current product
+                        console.log("No similar products found, showing just the current product");       console.log("No similar products found, showing just the current product");
+                        renderComparisonItems([product]);          renderComparisonItems([product]);
+                    }        }
+                } else {
+                    console.error("Failed to load product");           console.error("Failed to load product");
+                    document.getElementById('compare-loading').style.display = 'none';                    document.getElementById('compare-loading').style.display = 'none';
+                    document.getElementById('compare-empty').style.display = 'block';'block';
+                    document.getElementById('compare-empty').querySelector('p').textContent = compare-empty').querySelector('p').textContent = 
+                        "Produto não encontrado. Tente novamente.";       "Produto não encontrado. Tente novamente.";
+                }
+            } catch (error) {ror) {
+                console.error("Error in loadComparisonData:", error);
+                document.getElementById('compare-loading').style.display = 'none';
+                document.getElementById('compare-empty').style.display = 'block';document.getElementById('compare-empty').style.display = 'block';
+                document.getElementById('compare-empty').querySelector('p').textContent = ementById('compare-empty').querySelector('p').textContent = 
+                    "Erro ao carregar comparação: " + error.message;
+            } finally {
+                // Clean up session storage
+                sessionStorage.removeItem('compareProductId');
+                sessionStorage.removeItem('compareProductData');moveItem('compareProductData');
+            }
+        }        }
+
+        // On page load        // On page load
+        document.addEventListener('DOMContentLoaded', function() {        document.addEventListener('DOMContentLoaded', function() {
+            console.log("Page loaded, starting comparison...");            console.log("Page loaded, starting comparison...");
+            loadComparisonData();            loadComparisonData();
+        });        });
+    </script>    </script>
+</body></body>
+</html></html>
+ 

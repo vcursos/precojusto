@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Preço Certo</title>
+    <link rel="stylesheet" href="css/login-style.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
+</head>
+<body>
+    <script>
+        // Redireciona para a tela única de administração
+        try { window.location.replace('admin.html'); } catch (e) { window.location.href = 'admin.html'; }
+    </script>
+    <noscript>
+        <div style="padding:16px; text-align:center; font-family: system-ui, sans-serif;">
+            A página de login foi unificada. Acesse <a href="admin.html">admin.html</a>.
+        </div>
+    </noscript>
+    <div class="container">
+        <div class="login-card">
+            <a href="index.html" class="back-button">← Voltar</a>
+            <h1>Login do Administrador</h1>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" name="email" placeholder="Digite seu e-mail" required>
+                </div>
+                <div class="form-group">
+                    <label for="senha">Senha:</label>
+                    <input type="password" id="senha" name="senha" placeholder="Digite sua senha" required>
+                </div>
+                <div id="errorMessage" class="error-message"></div>
+                <button type="submit" class="btn-entrar">Entrar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notification container -->
+    <div id="notification" class="notification">
+        <div class="notification-content">
+            <span id="notification-message"></span>
+            <button class="notification-close" onclick="closeNotification()">&times;</button>
+        </div>
+    </div>
+
+    <!-- Configuração do Firebase -->
+    <script>
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAf9fJHKPYrpTskpeglXDcS3sSgKrL4CXQ",
+            authDomain: "precomercado-23f20.firebaseapp.com",
+            databaseURL: "https://precomercado-23f20-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "precomercado-23f20",
+            storageBucket: "precomercado-23f20.firebasestorage.app",
+            messagingSenderId: "899496513372",
+            appId: "1:899496513372:web:7ef9a274652bc4a8d07b99",
+            measurementId: "G-NRTEC32Z42"
+        };
+
+        // Inicializar Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+            firebase.analytics();
+        }
+    </script>
+    
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const senha = document.getElementById('senha').value;
+            const errorMessage = document.getElementById('errorMessage');
+            
+            // Firebase authentication
+            firebase.auth().signInWithEmailAndPassword(email, senha)
+                .then((userCredential) => {
+                    // Login bem-sucedido
+                    const user = userCredential.user;
+                    localStorage.setItem('adminLogado', 'true');
+                    localStorage.setItem('adminEmail', email);
+                    
+                    // Caminho correto para a página de admin
+                    const adminPath = 'admin.html';
+                    
+                    // Redirecionar para o dashboard
+                    errorMessage.textContent = "Login bem-sucedido! Redirecionando...";
+                    errorMessage.style.color = "green";
+                    
+                    setTimeout(() => {
+                        window.location.href = adminPath;
+                    }, 500);
+                })
+                .catch((error) => {
+                    // Log detailed error to console for debugging
+                    console.error("Erro de autenticação:", error);
+                    
+                    // Show user-friendly messages
+                    const errorCode = error.code;
+                    let message = '';
+                    let icon = '';
+                    
+                    switch(errorCode) {
+                        case 'auth/wrong-password':
+                            message = 'Senha incorreta. Por favor, verifique e tente novamente.';
+                            icon = '🔒';
+                            break;
+                        case 'auth/user-not-found':
+                            message = 'Usuário não encontrado. Verifique seu email.';
+                            icon = '🔍';
+                            break;
+                        case 'auth/invalid-email':
+                            message = 'Formato de email inválido.';
+                            icon = '✉️';
+                            break;
+                        case 'auth/too-many-requests':
+                            message = 'Muitas tentativas. Tente novamente mais tarde.';
+                            icon = '⏱️';
+                            break;
+                        default:
+                            message = 'Falha no login. Verifique suas credenciais.';
+                            icon = '❌';
+                    }
+                    
+                    // Mostrar notificação flutuante com ícone
+                    showNotification(icon + ' ' + message, 'error');
+                    
+                    // Manter também a mensagem no formulário (sem detalhes técnicos)
+                    errorMessage.textContent = message;
+                });
+        });
+        
+        // Funções para controlar a notificação
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            const notificationMessage = document.getElementById('notification-message');
+            
+            notificationMessage.innerHTML = message;
+            notification.className = 'notification';
+            notification.classList.add('show', type);
+            
+            // Animar ao mostrar
+            notification.style.animation = 'notification-slide-in 0.4s forwards';
+            
+            // Fechar automaticamente após 5 segundos
+            setTimeout(function() {
+                closeNotification();
+            }, 5000);
+        }
+        
+        function closeNotification() {
+            const notification = document.getElementById('notification');
+            
+            // Animar ao fechar
+            notification.style.animation = 'notification-slide-out 0.4s forwards';
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 400);
+        }
+    </script>
+    
+    <style>
+        /* Estilo para notificação flutuante */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            min-width: 280px;
+            max-width: 350px;
+            background-color: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            border-radius: 8px;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+            visibility: hidden;
+            z-index: 1000;
+            font-weight: 500;
+        }
+        
+        .notification.show {
+            opacity: 1;
+            transform: translateY(0);
+            visibility: visible;
+        }
+        
+        .notification.error {
+            border-left: 4px solid #e74c3c;
+        }
+        
+        .notification.success {
+            border-left: 4px solid #2ecc71;
+        }
+        
+        .notification-content {
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .notification-close {
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            font-size: 20px;
+            margin-left: 10px;
+            transition: color 0.2s;
+        }
+        
+        .notification-close:hover {
+            color: #333;
+        }
+        
+        /* Animações para a notificação */
+        @keyframes notification-slide-in {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes notification-slide-out {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        
+        /* Melhoria na aparência da mensagem de erro no formulário */
+        .error-message {
+            color: #e74c3c;
+            font-size: 14px;
+            margin: 10px 0;
+            text-align: center;
+            min-height: 20px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+    </style>
+</body>
+</html>

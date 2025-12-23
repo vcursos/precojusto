@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Administração - Preço Certo</title>
+    <link rel="stylesheet" href="css/style-admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Quagga library DEVE ser carregado ANTES do barcode-scanner.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+    <style>
+        /* Classe específica para bloquear scroll quando modal de imagens do ADMIN está aberto */
+        body.admin-google-image-modal-open {
+            overflow: hidden !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Modal de Busca de Imagens Google -->
+    <div id="google-image-modal" class="google-image-modal-backdrop" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); z-index:10001; align-items:center; justify-content:center; overflow:hidden;">
+        <div class="google-image-modal-content" style="background:#fff; border-radius:10px; max-width:600px; width:95%; max-height:90vh; display:flex; flex-direction:column; box-shadow:0 4px 24px rgba(0,0,0,0.25); position:relative; overflow:hidden;">
+            <!-- Header fixo -->
+            <div style="padding:18px; border-bottom:1px solid #e5e7eb; flex-shrink:0;">
+                <button id="close-google-image-modal" style="position:absolute; top:10px; right:10px; background:none; border:none; font-size:22px; color:#333; cursor:pointer;"><i class="fas fa-times"></i></button>
+                <h3 style="margin:0 0 10px 0; font-size:1.2rem; color:#2563eb;"><i class="fas fa-image"></i> Selecionar Imagem do Google</h3>
+                
+                <!-- Chave SerpAPI -->
+                <div style="margin-bottom:10px;">
+                    <label for="serpapi-key" style="font-size:13px; color:#2563eb; font-weight:500;">Chave SerpAPI:</label>
+                    <div style="display:flex; gap:8px; align-items:center; margin-top:4px; flex-wrap:wrap;">
+                        <input type="text" id="serpapi-key" placeholder="Cole sua chave SerpAPI aqui" style="flex:1; padding:6px; border-radius:6px; border:1px solid #ccc; font-size:13px;">
+                        <button id="save-serpapi-key" title="Salvar chave" style="white-space:nowrap; background:#10b981; color:#fff; border:none; border-radius:6px; padding:6px 10px; font-size:13px; cursor:pointer;">
+                            <i class="fas fa-save"></i> Salvar
+                        </button>
+                        <button id="test-serpapi-key" title="Testar chave" style="white-space:nowrap; background:#2563eb; color:#fff; border:none; border-radius:6px; padding:6px 10px; font-size:13px; cursor:pointer;">
+                            <i class="fas fa-vial"></i> Testar
+                        </button>
+                    </div>
+                    <div id="serpapi-key-status" style="font-size:12px; color:#16a34a; margin-top:4px; display:none;">Chave salva!</div>
+                </div>
+                
+                <!-- Busca -->
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <input type="text" id="serpapi-search-term" placeholder="Termo da busca (ex.: Marca + Nome)" style="flex:1; padding:8px; border-radius:6px; border:1px solid #ccc;">
+                    <button id="open-google-images-btn" style="background:#2563eb; color:#fff; border:none; border-radius:6px; padding:8px 12px; font-size:15px; cursor:pointer; white-space:nowrap;">
+                        <i class="fas fa-search"></i> Buscar
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Área de resultados com scroll -->
+            <div id="serpapi-image-results" style="flex:1; overflow-y:auto; padding:16px; display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-content:flex-start; min-height:200px; max-height:calc(90vh - 280px);"></div>
+            
+            <!-- Footer fixo -->
+            <div style="padding:12px 18px; border-top:1px solid #e5e7eb; flex-shrink:0;">
+                <input type="url" id="google-image-url-input" placeholder="Cole aqui o link da imagem..." style="width:100%; margin-bottom:10px; padding:8px; border-radius:6px; border:1px solid #ccc;">
+                <button id="use-google-image-btn" style="background:#16a34a; color:#fff; border:none; border-radius:6px; padding:8px 16px; font-size:15px; cursor:pointer; width:100%;">
+                    <i class="fas fa-check"></i> Usar Imagem
+                </button>
+            </div>
+        </div>
+    </div>
+
+    
+
+    <div id="auth-loading" style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#333;">
+        <div style="text-align:center;">
+            <div style="margin-bottom:12px;">
+                <i class="fas fa-spinner fa-spin" style="font-size:22px;color:#007bff;"></i>
+            </div>
+            <div style="font-weight:600;">Verificando sessão…</div>
+            <div style="font-size:12px;color:#666;margin-top:6px;">Aguarde um instante</div>
+        </div>
+    </div>
+    <div id="login-container" class="login-container" style="display: none;">
+        <form id="admin-login-form" class="login-form">
+            <a href="index.html" class="back-to-home-btn" title="Voltar ao Início">
+                <i class="fas fa-arrow-left"></i> Voltar ao Início
+            </a>
+            <div class="login-logo" style="text-align:center;margin-bottom:12px;margin-top:10px;">
+                <i class="fas fa-cart-shopping" style="font-size:48px;color:#2563eb;"></i>
+            </div>
+            <h1 style="text-align:center;margin-bottom:8px;font-size:1.8rem;">
+                <span style="color:#2563eb;">Preço</span> <span style="color:#16a34a;">Certo</span>
+            </h1>
+            <h2 style="text-align:center;margin-bottom:20px;font-size:1.1rem;color:#666;">
+                <i class="fas fa-user-shield"></i> Acesso Restrito
+            </h2>
+            <div class="form-group">
+                <label for="admin-email">E-mail</label>
+                <input type="email" id="admin-email" placeholder="admin@exemplo.com">
+            </div>
+            <div class="form-group password-field">
+                <label for="admin-password">Senha</label>
+                <input type="password" id="admin-password" placeholder="••••••">
+                <button type="button" id="toggle-password" class="toggle-password-btn" aria-label="Mostrar senha">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+
+            <div class="login-options" style="display:flex;align-items:center;justify-content:space-between;margin:6px 2px 10px 2px;gap:12px;">
+                <label for="remember-me" class="remember-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;">
+                    <input type="checkbox" id="remember-me" style="width:16px;height:16px;">
+                    <span>Lembrar sessão</span>
+                </label>
+                <a href="#" class="forgot-link" style="font-size:0.9rem;color:#2563eb;text-decoration:none;">Esqueci a senha</a>
+            </div>
+            <button type="submit" class="btn-submit">Entrar</button>
+            <p id="login-error" class="error-message" style="display: none;"></p>
+        </form>
+    </div>
+
+    <div id="admin-panel" style="display: none;">
+        <main class="admin-container">
+            <header class="admin-header">
+                <h1><i class="fas fa-user-shield"></i> Painel de Administração</h1>
+                <div>
+                    <a href="index.html" class="btn-back"><i class="fas fa-home"></i> Início</a>
+                    <button id="btn-return-to-add-product" class="btn-back"><i class="fas fa-arrow-left"></i> Voltar</button>
+                    <button id="admin-logout-btn" class="btn-back" title="Sair da conta"><i class="fas fa-right-from-bracket"></i> Sair</button>
+                </div>
+            </header>
+
+            <div class="tabs">
+                <button class="tab-button active" id="tab-add-product-btn" data-tab="tab-add-product">
+                    <i class="fas fa-plus-circle"></i> Adicionar Produto
+                </button>
+                <button class="tab-button" data-tab="tab-view-products">
+                    <i class="fas fa-list-alt"></i> Produtos Cadastrados
+                    <span id="products-count" class="badge">0</span>
+                </button>
+                <button class="tab-button" data-tab="tab-suggestions">
+                    <i class="fas fa-check-double"></i> Sugestões
+                    <span id="suggestions-count" class="badge">0</span>
+                </button>
+            </div>
+
+            <div id="tab-add-product" class="tab-content active">
+                <section class="admin-section">
+                    <h2><i class="fas fa-edit"></i> Formulário de Produto</h2>
+                    <form id="product-form" class="admin-form">
+                        <input type="hidden" id="product-id">
+                        <div class="form-group">
+                            <label for="product-name">Nome do Produto:</label>
+                            <div class="name-input-group">
+                                <input type="text" id="product-name">
+                                <button type="button" id="search-name-btn" class="btn-search-name" title="Buscar nome correto no Google">
+                                    <i class="fas fa-search"></i>
+                                    <span style="margin-left: 4px; font-size: 10px;">Google</span>
+                                </button>
+                            </div>
+                            <div id="name-suggestions" class="suggestions-dropdown"></div>
+                        </div>
+
+                        <!-- Campo de Código de Barras -->
+                        <div class="form-group">
+                            <label for="product-barcode">Código de Barras:</label>
+                            <div class="barcode-input-group">
+                                <input type="text" id="product-barcode" placeholder="Digite ou escaneie o código de barras">
+                                <button type="button" id="scan-barcode-btn" class="btn-scan">
+                                    <i class="fas fa-camera"></i> Câmera
+                                </button>
+                            </div>
+                            <small class="help-text">Digite o código e pressione Enter para buscar automaticamente</small>
+                            <div class="loading-indicator" style="display: none;">
+                                <i class="fas fa-spinner fa-spin"></i> Buscando produto...
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="product-market">Mercado:</label>
+                            <select id="product-market">
+                                <option value="">Selecione um Mercado</option>
+                                <option value="Continente">Continente</option>
+                                <option value="Pingo Doce">Pingo Doce</option>
+                                <option value="Lidl">Lidl</option>
+                                <option value="Makro">Makro</option>
+                                <option value="Recheio">Recheio</option>
+                                <option value="Aldi">Aldi</option>
+                                <option value="Auchan">Auchan</option>
+                                <option value="Minipreço">Minipreço</option>
+                                <option value="Mercadona">Mercadona</option>
+                                <option value="Outro">Outro</option>
+                            </select>
+                            <input type="text" id="custom-market-name" placeholder="Digite o nome do mercado" style="display: none;">
+                        </div>
+
+                        <div class="form-group-inline">
+                            <div class="form-group">
+                                <label for="product-price">Preço (€):</label>
+                                <div class="price-input-group">
+                                    <input type="number" id="product-price" step="0.01">
+                                    <button type="button" id="search-price-btn" class="btn-search-price" title="Buscar preço atualizado online">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="product-unit">Unidade de Medida:</label>
+                                <select id="product-unit">
+                                    <option value="unidade">Unidade</option>
+                                    <option value="kg">kg</option>
+                                    <option value="g">g</option>
+                                    <option value="L">L</option>
+                                    <option value="ml">ml</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="product-quantity">Quantidade:</label>
+                                <input type="number" id="product-quantity" step="1" value="1">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Tipo de Marca:</label>
+                            <div class="brand-options">
+                                <input type="radio" id="brand-is-generic" name="brand-type" value="generic" checked>
+                                <label for="brand-is-generic">Marca Branca</label>
+                                <input type="radio" id="brand-is-specific" name="brand-type" value="specific">
+                                <label for="brand-is-specific">Marca Específica</label>
+                            </div>
+                        </div>
+                        <div class="form-group brand-input-group" style="display: none;">
+                            <label for="product-brand">Nome da Marca:</label>
+                            <input type="text" id="product-brand" placeholder="Ex: Milka, Nestlé, etc.">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="product-category">Categoria:</label>
+                            <select id="product-category">
+                                <option value="">Selecione uma Categoria</option>
+                                <option value="alimentos">Alimentos</option>
+                                <option value="talho">Talho</option>
+                                <option value="eletros">Eletros</option>
+                                <option value="limpeza">Limpeza</option>
+                                <option value="higiene">Higiene Pessoal</option>
+                                <option value="bebidas">Bebidas</option>
+                                <option value="frios">Laticínios e Frios</option>
+                                <option value="congelados">Congelados</option>
+                                <option value="padaria">Padaria e Pastelaria</option>
+                                <option value="suplementos">Suplementos e Nutrição Desportiva</option>
+                                <option value="pets">Animais de Estimação</option>
+                                <option value="casa">Casa e Decoração</option>
+                                <option value="cozinha">Cozinha e Mesa</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="market-zone">País:</label>
+                            <select id="market-zone">
+                                <option value="">Sem definir</option>
+                                <option value="Portugal">Portugal</option>
+                                <option value="Espanha">Espanha</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Opção de Imagem:</label>
+                            <div class="image-options">
+                                <input type="radio" id="use-custom-image" name="image-type" value="custom" checked>
+                                <label for="use-custom-image">URL Personalizada</label>
+                                <input type="radio" id="use-default-image" name="image-type" value="default">
+                                <label for="use-default-image">Imagem Padrão</label>
+                            </div>
+                        </div>
+
+                        <div class="form-group image-url-group">
+                            <label for="product-image">URL da Imagem:</label>
+                            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                <input type="url" id="product-image" placeholder="URL da imagem (Opcional)" style="flex:1; min-width:260px;">
+                                <div style="display:flex; gap:8px;">
+                                    <button type="button" id="search-image-btn" class="btn-search-image" title="Buscar imagem no Google" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #ccc; background: #f3f3f3; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                        <i class="fas fa-image"></i>
+                                        <span style="font-size: 11px;">Google Imagens</span>
+                                    </button>
+                                    <button type="button" id="preview-image-btn" title="Ver imagem atual" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #ccc; background:#fff; cursor:pointer; display:flex; align-items:center; gap:6px;">
+                                        <i class="fas fa-eye"></i>
+                                        <span style="font-size:11px;">Ver imagem atual</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn-submit" id="form-submit-btn">Adicionar Produto</button>
+                            <button type="button" class="btn-delete" id="delete-product-btn" style="display: none;">
+                                <i class="fas fa-trash-alt"></i> Deletar Produto
+                            </button>
+                        </div>
+                    </form>
+                </section>
+            </div>
+
+            <div id="tab-view-products" class="tab-content" style="display: none;">
+                <section class="admin-section">
+                    <h2><i class="fas fa-list-alt"></i> Produtos Cadastrados</h2>
+                    <div class="product-search-bar">
+                        <input type="text" id="product-search-input" placeholder="Pesquisar por nome...">
+                        <select id="product-market-filter">
+                            <option value="all">Todos os Mercados</option>
+                        </select>
+                        <select id="product-brand-filter">
+                            <option value="all">Todas as Marcas</option>
+                        </select>
+                        <select id="product-category-filter">
+                            <option value="all">Todas as Categorias</option>
+                            <option value="alimentos">Alimentos</option>
+                            <option value="talho">Talho</option>
+                            <option value="eletros">Eletros</option>
+                            <option value="limpeza">Limpeza</option>
+                            <option value="higiene">Higiene Pessoal</option>
+                            <option value="bebidas">Bebidas</option>
+                            <option value="frios">Laticínios e Frios</option>
+                            <option value="congelados">Congelados</option>
+                            <option value="padaria">Padaria e Pastelaria</option>
+                        </select>
+                    </div>
+                    <div class="products-table-container">
+                        <table id="products-table">
+                            <thead>
+                                <tr>
+                                    <th data-sort="name">Nome <i class="fas fa-sort"></i></th>
+                                    <th data-sort="barcode">Código de Barras <i class="fas fa-sort"></i></th>
+                                    <th data-sort="market">Mercado <i class="fas fa-sort"></i></th>
+                                    <th data-sort="price">Preço <i class="fas fa-sort"></i></th>
+                                    <th data-sort="unit">Unidade <i class="fas fa-sort"></i></th>
+                                    <th data-sort="brand">Marca <i class="fas fa-sort"></i></th>
+                                    <th data-sort="zone">Zona <i class="fas fa-sort"></i></th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="products-table-body"></tbody>
+                        </table>
+                    </div>
+                    <p id="no-products" class="no-suggestions" style="display: none;">Não há produtos cadastrados.</p>
+                </section>
+            </div>
+
+            <div id="tab-suggestions" class="tab-content" style="display: none;">
+                <section class="admin-section">
+                    <h2><i class="fas fa-check-double"></i> Sugestões de Preço Pendentes</h2>
+                    <div id="suggestions-list" class="suggestions-list"></div>
+                    <p id="no-suggestions" class="no-suggestions" style="display: none;">Não há sugestões de preço pendentes no momento.</p>
+                </section>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Modal simples para visualizar imagem atual do produto -->
+    <div id="current-image-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:10002; align-items:center; justify-content:center;">
+        <div style="background:#fff; border-radius:10px; padding:14px; max-width:90vw; max-height:90vh; display:flex; flex-direction:column; position:relative;">
+            <button id="close-current-image-modal" style="position:absolute; top:8px; right:8px; background:none; border:none; font-size:22px; cursor:pointer;">
+                <i class="fas fa-times"></i>
+            </button>
+            <div id="current-image-container" style="display:flex; align-items:center; justify-content:center; width:70vw; max-width:720px; height:70vh; max-height:80vh; overflow:hidden; background:#f9fafb; border-radius:8px;">
+                <img id="current-image-preview" src="" alt="Imagem do produto" style="max-width:100%; max-height:100%; object-fit:contain;">
+            </div>
+            <div id="current-image-caption" style="margin-top:8px; font-size:12px; color:#555; text-align:center;"></div>
+        </div>
+    </div>
+
+    <!-- Modal do Scanner de Código de Barras -->
+    <!-- MODAL CONFIRMAÇÃO ANTES DE ABRIR CÂMERA -->
+    <div id="scanner-confirm-modal" class="modal barcode-scanner-modal" role="dialog" aria-modal="true" aria-labelledby="scanner-confirm-title" aria-describedby="scanner-confirm-message" tabindex="-1" style="display:none; z-index:1000000;">
+        <div class="modal-content barcode-scanner-content" role="document">
+            <div class="scanner-header">
+                <h3 id="scanner-confirm-title">Confirmação</h3>
+                <button id="close-scanner-confirm" class="close-scanner-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="scanner-body">
+                <div class="scanner-info">
+                    <p id="scanner-confirm-message" aria-live="polite">Para abrir a câmera e escanear o código de barras, confirme abaixo.<br><b>O teclado será ocultado e só será possível digitar após fechar o leitor.</b></p>
+                </div>
+            </div>
+            <div class="scanner-controls">
+                <button id="confirm-open-scanner" class="scanner-btn" style="font-weight:bold;">OK</button>
+            </div>
+        </div>
+    </div>
+    <div id="scanner-modal" class="modal barcode-scanner-modal" role="dialog" aria-modal="true" aria-labelledby="scanner-title" aria-describedby="scanner-message">
+        <div class="barcode-scanner-content" role="document">
+            <div class="scanner-header">
+                <h3 id="scanner-title">Scanner de Código de Barras</h3>
+                <button id="close-scanner" class="close-scanner-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="scanner-body">
+                <div id="scanner-container">
+                    <div id="scanner-target"></div>
+                    <div class="scanner-overlay">
+                        <div class="scanner-line"></div>
+                        <div class="scanner-corners">
+                            <div class="corner top-left"></div>
+                            <div class="corner top-right"></div>
+                            <div class="corner bottom-left"></div>
+                            <div class="corner bottom-right"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="scanner-info">
+                    <p id="scanner-message" aria-live="polite">Posicione o código de barras dentro da área destacada</p>
+                    <div id="scanner-result" class="scanner-result" aria-live="assertive"></div>
+                </div>
+            </div>
+            <div class="scanner-controls">
+                <button id="toggle-flash" class="scanner-btn">
+                    <i class="fas fa-flashlight"></i> Flash
+                </button>
+                <button id="switch-camera" class="scanner-btn">
+                    <i class="fas fa-camera-rotate"></i> Trocar Câmera
+                </button>
+                <button id="stop-scanner" class="scanner-btn scanner-btn-danger">
+                    <i class="fas fa-stop"></i> Parar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Error Modal for better error handling -->
+    <div id="error-modal" class="error-modal" style="display: none;">
+        <div class="error-modal-content">
+            <div class="error-header">
+                <h3><i class="fas fa-exclamation-triangle"></i> Erro</h3>
+                <button id="close-error" class="close-error-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="error-body">
+                <p id="error-message">Ocorreu um erro inesperado.</p>
+                <div class="error-details" id="error-details" style="display: none;">
+                    <h4>Detalhes técnicos:</h4>
+                    <pre id="error-stack"></pre>
+                </div>
+            </div>
+            <div class="error-actions">
+                <button id="reload-page" class="btn-error-action">
+                    <i class="fas fa-refresh"></i> Recarregar Página
+                </button>
+                <button id="close-error-btn" class="btn-error-action">
+                    <i class="fas fa-times"></i> Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/admin.js"></script>
+    <script>
+        // Mostrar/ocultar senha
+        document.addEventListener('DOMContentLoaded', function(){
+            const toggleBtn = document.getElementById('toggle-password');
+            const pwd = document.getElementById('admin-password');
+            if (toggleBtn && pwd) {
+                toggleBtn.addEventListener('click', function(){
+                    const isText = pwd.type === 'text';
+                    pwd.type = isText ? 'password' : 'text';
+                    const icon = this.querySelector('i');
+                    if (icon) icon.className = isText ? 'fas fa-eye' : 'fas fa-eye-slash';
+                    this.setAttribute('aria-label', isText ? 'Mostrar senha' : 'Ocultar senha');
+                });
+            }
+        });
+    </script>
+    <script>
+        // Root-scoped Service Worker registration for direct admin access
+        (function() {
+            try {
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.register('/service-worker.js?v=20251112')
+                        .then(reg => {
+                            console.log('SW registrado (admin):', reg.scope);
+                            if (reg.waiting) { reg.waiting.postMessage({ type: 'SKIP_WAITING' }); }
+                            reg.addEventListener('updatefound', () => {
+                                const nw = reg.installing;
+                                if (!nw) return;
+                                nw.addEventListener('statechange', () => {
+                                    if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+                                        nw.postMessage({ type: 'SKIP_WAITING' });
+                                    }
+                                });
+                            });
+                            let refreshing = false;
+                            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                                if (refreshing) return;
+                                refreshing = true;
+                                window.location.reload();
+                            });
+                        })
+                        .catch(err => console.error('SW registro falhou (admin):', err));
+                }
+            } catch (e) { console.warn('SW indisponível:', e); }
+        })();
+    </script>
+    
+    <!-- Usar o mesmo scanner que funciona no index.html -->
+    <script src="js/barcode-scanner.js?v=turn-off-flash-on-detect"></script>
+    <script>
+        // Adaptar scanner para preencher campo de código de barras do admin
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Admin scanner adapter loaded');
+            
+            // Hook para preencher o campo product-barcode quando o scanner detectar código
+            // O barcode-scanner.js vai preencher barcode-search-bar (index), então interceptamos
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'value') {
+                        const barcodeSearchBar = document.getElementById('barcode-search-bar');
+                        const productBarcode = document.getElementById('product-barcode');
+                        
+                        if (barcodeSearchBar && productBarcode && barcodeSearchBar.value) {
+                            // Copiar valor detectado para o campo do admin
+                            productBarcode.value = barcodeSearchBar.value;
+                            const event = new Event('input', { bubbles: true });
+                            productBarcode.dispatchEvent(event);
+                            console.log('Código copiado para product-barcode:', barcodeSearchBar.value);
+                        }
+                    }
+                });
+            });
+            
+            // Criar campo invisível barcode-search-bar para o scanner funcionar
+            if (!document.getElementById('barcode-search-bar')) {
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.id = 'barcode-search-bar';
+                document.body.appendChild(hiddenInput);
+                
+                // Observar mudanças no campo oculto
+                observer.observe(hiddenInput, { attributes: true, attributeOldValue: true });
+                
+                // Também observar via evento de input direto
+                hiddenInput.addEventListener('input', function() {
+                    const productBarcode = document.getElementById('product-barcode');
+                    if (productBarcode && this.value) {
+                        productBarcode.value = this.value;
+                        const event = new Event('input', { bubbles: true });
+                        productBarcode.dispatchEvent(event);
+                        console.log('Código detectado (via input):', this.value);
+                    }
+                });
+            }
+            
+            // Garantir que o botão scan-barcode-btn abra o scanner
+            const scanBarcodeBtn = document.getElementById('scan-barcode-btn');
+            if (scanBarcodeBtn) {
+                // Remover listeners antigos se houver
+                const newBtn = scanBarcodeBtn.cloneNode(true);
+                scanBarcodeBtn.parentNode.replaceChild(newBtn, scanBarcodeBtn);
+                
+                newBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('Scan barcode button clicked');
+                    
+                    if (typeof window.openBarcodeScanner === 'function') {
+                        window.openBarcodeScanner();
+                    } else {
+                        console.error('window.openBarcodeScanner não está disponível');
+                        alert('Erro: Scanner não inicializado. Recarregue a página.');
+                    }
+                });
+                
+                console.log('Botão scan-barcode-btn configurado');
+            } else {
+                console.error('Botão scan-barcode-btn não encontrado');
+            }
+        });
+    </script>
+    
+    <!-- Add CSS for error modal -->
+    <style>
+        .error-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .error-modal-content {
+            background: white;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .error-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: #dc3545;
+            color: white;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .error-header h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .close-error-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .error-body {
+            padding: 20px;
+        }
+
+        .error-body p {
+            margin: 0 0 15px 0;
+            color: #333;
+        }
+
+        .error-details {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 15px;
+        }
+
+        .error-details h4 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        .error-details pre {
+            background: #343a40;
+            color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            overflow-x: auto;
+            margin: 0;
+        }
+
+        .error-actions {
+            display: flex;
+            gap: 10px;
+            padding: 15px 20px;
+            border-top: 1px solid #dee2e6;
+            justify-content: flex-end;
+        }
+
+        .btn-error-action {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .btn-error-action:first-child {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-error-action:first-child:hover {
+            background: #0056b3;
+        }
+
+        .btn-error-action:last-child {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-error-action:last-child:hover {
+            background: #545b62;
+        }
+    </style>
+    <script src="js/scanner-unify.js"></script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Builds / outputs
+build/
+dist/
+.next/
+out/
+.tmp/
+.cache/
+coverage/
+
+# Env
+.env
+.env.*.local
+
+# Editor/OS
+.vscode/
+.DS_Store
+Thumbs.db
+*.swp
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Archives & large binaries
+*.zip
+*.rar
+*.7z
+*.tar
+*.tar.gz
+
+# Firebase & service files (optional; keep if needed)
+# .firebase/
+# firebase-debug.log
+
+# Lockfiles (keep to ensure reproducible installs)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml

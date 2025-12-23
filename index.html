@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <!-- Última atualização: 13/11/2025 às 01:20 - Build #127785a - Fix camera switch -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preço Certo</title>
+    <meta name="theme-color" content="#2563eb">
+    <link rel="manifest" href="/manifest.json">
+    <!-- iOS PWA meta tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Preço Certo">
+    <!-- Apple touch icon for iOS -->
+    <link rel="apple-touch-icon" href="images/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="images/icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="images/icons/icon-512.png">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Leitor de códigos robusto para Android e iOS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+    
+    <!-- CSS MOBILE LAYOUT FINAL - PRODUTO MAIS BARATO NO TOPO -->
+    <style>
+        @media (max-width: 720px) {
+            /* LAYOUT VERTICAL: Produto mais barato no topo, outras opções abaixo */
+            .mobile-compare-layout {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 16px !important;
+                width: 100% !important;
+                padding: 10px !important;
+            }
+            
+            /* Produto mais barato - ultra compacto */
+            .mobile-featured-product {
+                order: 1 !important;
+                width: 100% !important;
+                margin-bottom: 10px !important;
+                padding: 4px !important;
+                max-height: 100px !important;
+            }
+            
+            /* Card interno mais compacto */
+            .featured-product-card {
+                gap: 1px !important;
+                max-height: 90px !important;
+            }
+            
+            /* Imagem do produto principal */
+            .featured-image {
+                width: 50px !important;
+                height: 50px !important;
+                margin-top: 2px !important;
+            }
+            
+            /* Info do produto compacta */
+            .featured-info {
+                gap: 2px !important;
+            }
+            
+            /* Linha do preço + botões */
+            .featured-price-row {
+                margin-bottom: 1px !important;
+            }
+            
+            /* Preço menor */
+            .featured-price {
+                font-size: 1rem !important;
+            }
+            
+            /* Botões pequenos ao lado do preço - FORÇADO */
+            .featured-actions {
+                gap: 2px !important;
+                display: flex !important;
+                flex-shrink: 0 !important;
+            }
+            
+            /* BOTÕES COMPACTOS */
+            .mobile-featured-product .featured-actions .mobile-action-btn,
+            .mobile-featured-product .featured-actions button.mobile-action-btn {
+                padding: 2px 4px !important;
+                font-size: 0.6rem !important;
+                min-width: 25px !important;
+                height: 18px !important;
+                border: 1px solid #e5e7eb !important;
+                border-radius: 3px !important;
+                background: white !important;
+                color: #374151 !important;
+                cursor: pointer !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                position: relative !important;
+                z-index: 9999 !important;
+            }
+            
+            /* FORÇA linha preço + botões lado a lado - preço próximo aos ícones */
+            .mobile-featured-product .featured-info .featured-price-row {
+                display: flex !important;
+                justify-content: space-between !important;
+                align-items: center !important;
+                width: 100% !important;
+                margin-bottom: 1px !important;
+                gap: 8px !important;
+            }
+            
+            .mobile-featured-product .featured-price-row .featured-price {
+                font-size: 1rem !important;
+                margin: 0 !important;
+                flex-shrink: 0 !important;
+            }
+            
+            .mobile-featured-product .featured-price-row .featured-actions {
+                display: flex !important;
+                gap: 2px !important;
+                flex-shrink: 0 !important;
+            }
+
+            /* Grupo preço + ações para ficarem juntos */
+            .featured-price-actions-group {
+                display: flex !important;
+                align-items: center !important;
+                gap: 6px !important;
+                flex-shrink: 0 !important;
+            }
+
+            /* Mercado e nome compactos */
+            .featured-market {
+                font-size: 0.7rem !important;
+                margin: 0 !important;
+            }
+            
+            .featured-name {
+                font-size: 0.8rem !important;
+                margin: 0 !important;
+                line-height: 1.1 !important;
+            }
+            
+            .featured-brand {
+                font-size: 0.7rem !important;
+                margin: 0 !important;
+            }
+            
+            /* Outras opções - ultra compacta */
+            .mobile-other-products {
+                order: 2 !important;
+                background: white !important;
+                width: 100% !important;
+                padding: 8px !important;
+            }
+            
+            /* Título da seção menor */
+            .mobile-section-title {
+                font-size: 1rem !important;
+                margin-bottom: 8px !important;
+                padding-bottom: 6px !important;
+            }
+            
+            /* Lista de produtos super compacta */
+            .mobile-list-item {
+                padding: 6px 8px !important;
+                margin-bottom: 4px !important;
+                font-size: 0.8rem !important;
+                gap: 4px !important;
+            }
+            
+            .list-item-info {
+                gap: 2px !important;
+            }
+            
+            .list-item-name {
+                font-size: 0.8rem !important;
+                line-height: 1.1 !important;
+                margin-bottom: 1px !important;
+            }
+            
+            .list-item-market {
+                font-size: 0.7rem !important;
+            }
+            
+            .list-item-price-info {
+                margin-top: 4px !important;
+                padding-top: 4px !important;
+            }
+            
+            .list-item-price {
+                font-size: 0.9rem !important;
+            }
+            
+            .list-item-diff {
+                font-size: 0.7rem !important;
+                padding: 2px 6px !important;
+            }
+            
+            /* Remove qualquer flexbox conflitante */
+            .compare-columns {
+                display: block !important;
+            }
+            
+            /* FORÇA BRUTAL - CERTIFICA QUE OS BOTÕES APARECEM */
+            .compare-page-content .mobile-featured-product .featured-price-row,
+            .mobile-compare-layout .mobile-featured-product .featured-price-row {
+                display: flex !important;
+                justify-content: space-between !important;
+                align-items: center !important;
+            }
+            
+            .compare-page-content .mobile-featured-product .featured-actions,
+            .mobile-compare-layout .mobile-featured-product .featured-actions {
+                display: flex !important;
+                gap: 4px !important;
+            }
+            
+            .compare-page-content .mobile-action-btn,
+            .mobile-compare-layout .mobile-action-btn {
+                display: flex !important;
+                width: 25px !important;
+                height: 18px !important;
+                font-size: 10px !important;
+                padding: 1px !important;
+                border: 1px solid #ccc !important;
+                background: #f0f0f0 !important;
+                border-radius: 3px !important;
+            }
+
+            /* Hide search buttons on mobile */
+            .search-btn {
+                display: none !important;
+            }
+
+            /* Show compare button in product detail on mobile */
+            #detail-compare {
+                display: flex !important;
+            }
+
+            /* Stack filters vertically on mobile */
+            .modern-filters {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 10px !important;
+            }
+
+            .filter-item {
+                width: 100% !important;
+            }
+            
+            /* Modal fixes for mobile */
+            .modal {
+                padding: 0 !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }
+            
+            .modal-content {
+                width: 90% !important;
+                max-width: 90% !important;
+                max-height: 80vh !important;
+                margin: 10vh auto !important;
+                overflow-y: auto !important;
+                position: relative !important;
+                left: auto !important;
+                right: auto !important;
+                top: auto !important;
+                transform: none !important;
+                border-radius: 8px !important;
+            }
+            
+            .product-detail-grid {
+                padding: 10px !important;
+            }
+            
+            /* Ensure close button is accessible */
+            .close-btn {
+                position: absolute !important;
+                top: 10px !important;
+                right: 10px !important;
+                z-index: 10 !important;
+            }
+            
+            /* Adjust modal content for better mobile display */
+            .modal-content h2 {
+                font-size: 1.3rem !important;
+                margin-top: 5px !important;
+                margin-right: 30px !important; /* Space for close button */
+                padding-right: 0 !important;
+            }
+
+            /* Product image in modal for mobile */
+            .image-container {
+                width: 100px !important;
+                height: 100px !important;
+                margin: 0 auto !important;
+            }
+            
+            #detail-image {
+                max-width: 95% !important;
+                max-height: 95% !important;
+            }
+        }
+
+        /* New global styles for product images in comparison */
+        .compare-list img,
+        .compare-list-item img,
+        .product-img-container img,
+        #compare-list img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain !important;
+            border-radius: 6px;
+        }
+        
+        .compare-list .product-img-container,
+        .compare-list-item .product-img-container,
+        #compare-list .product-img-container {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            background: #f9f9f9;
+            margin: 0 auto;
+        }
+        
+        @media (max-width: 720px) {
+            /* Adjust compare modal product images for mobile */
+            .compare-list .product-img-container,
+            .compare-list-item .product-img-container,
+            #compare-list .product-img-container {
+                width: 80px !important;
+                height: 80px !important;
+            }
+        }
+        
+        /* More specific selectors for comparison modal */
+        .compare-list,
+        #compare-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        .compare-list-item,
+        .compare-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            padding: 15px;
+            width: 200px;
+            max-width: 100%;
+        }
+        
+        @media (max-width: 720px) {
+            /* Enhanced consistency for compare modal on mobile */
+            #compare-modal .modal-content {
+                padding: 10px !important;
+                width: 95% !important;
+                max-width: 95% !important;
+            }
+            
+            .compare-list,
+            #compare-list {
+                display: flex !important;
+                flex-direction: column !important;
+                width: 100% !important;
+                gap: 10px !important;
+                margin-top: 10px !important;
+            }
+            
+            .compare-list-item,
+            .compare-item {
+                width: 100% !important;
+                max-width: 100% !important;
+                flex-direction: row !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                padding: 8px !important;
+                gap: 10px !important;
+            }
+            
+            .compare-list-item .product-info,
+            .compare-item .product-info {
+                flex: 1 !important;
+                min-width: 0 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 4px !important;
+            }
+            
+            .compare-list_item .product-name,
+            .compare-item .product-name {
+                font-size: 0.9rem !important;
+                margin: 0 !important;
+                line-height: 1.2 !important;
+            }
+            
+            .compare-list-item .product-price,
+            .compare-item .product-price {
+                font-size: 1rem !important;
+                font-weight: bold !important;
+                margin: 0 !important;
+            }
+        }
+        
+        @media (max-width: 720px) {
+            /* Hide compare modal on mobile */
+            #compare-modal {
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
+            }
+            
+            /* Hide compare button in navbar on mobile */
+            .nav-list li a[href="#compare-modal"] {
+                pointer-events: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="main-header">
+        <div class="header-left">
+            </div>
+        <div class="header-center">
+            <h1 class="main-title">
+                <a href="index.html" class="logo-link" title="Início">
+                    <i class="fas fa-cart-shopping logo-icon" aria-hidden="true"></i>
+                    <span class="price-word">Preço</span> <span class="right-word">Certo</span>
+                    <span class="portugal-flag"></span>
+                </a>
+            </h1>
+            <p class="tagline">Compare e economize no supermercado</p>
+        </div>
+        <div class="header-right">
+            <nav class="main-nav">
+                <ul class="nav-list">
+                    <li><a href="index.html" class="nav-icon" title="Início"><i class="fas fa-home"></i> <span class="nav-label">Início</span></a></li>
+                    <li><a href="#search-history-section" class="nav-icon" title="Histórico"><i class="fas fa-history"></i></a></li>
+                    <li><a href="#favorites-modal" class="nav-icon" title="Favoritos" onclick="__forceOpenFavoritesModal(); return false;"><i class="fas fa-heart"></i></a></li>
+                    <li><a href="#cart-modal" class="nav-icon" title="Carrinho"><i class="fas fa-shopping-cart"></i></a></li>
+                    <li><a href="admin.html" class="nav-icon" title="Painel do Administrador"><i class="fas fa-user-shield"></i></a></li>
+                    <li><button id="install-app-btn" style="display:none; background:#16a34a; color:#fff; border:none; padding:6px 10px; border-radius:6px; font-weight:600; cursor:pointer; font-size:0.85rem;">Instalar App</button></li>
+                </ul>
+            </nav>
+            <div id="user-status-container" class="ml-4">
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="barcode-info-section">
+            <div class="barcode-info-content">
+                <div class="barcode-icon-container">
+                    <i class="fas fa-barcode barcode-icon-large"></i>
+                </div>
+                <h3>Pesquisar por Código de Barras</h3>
+                <p>Digite o código de barras ou use a câmera para escanear automaticamente.</p>
+                <small class="barcode-help">Exemplo: 7891000369098 (Chocolate Nestlé) | 8901030835715 (Produto exemplo)</small>
+                
+                <div class="barcode-scanner-section">
+                    <button id="barcode-search-btn" class="barcode-scanner-btn-main">
+                        <i class="fas fa-camera"></i>
+                        <span>Escanear com Câmera</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <section class="search-filters-section modern-search">
+            <div class="modern-search-row">
+                <!-- Campo de Pesquisa por Nome -->
+                <div class="modern-search-input">
+                    <i class="fas fa-search search-icon" aria-hidden="true"></i>
+                    <input type="text" id="product-search-bar" placeholder="Pesquisar produtos, marcas ou categorias..." oninput="handleSearch(event)" autocomplete="off">
+                    <button id="search-button" class="search-btn" title="Pesquisar">Pesquisar</button>
+                    <div id="history-dropdown" class="history-dropdown" aria-hidden="true"></div>
+                </div>
+                
+                <!-- Campo de Pesquisa por Código de Barras (CLONE EXATO DO CAMPO ACIMA) -->
+                <div class="modern-search-input">
+                    <i class="fas fa-barcode search-icon" aria-hidden="true"></i>
+                    <input type="text" id="barcode-search-bar" placeholder="Pesquisar por código de barras..." oninput="handleBarcodeSearch(event)" autocomplete="off">
+                    <button id="barcode-search-button" class="search-btn" title="Pesquisar">Pesquisar</button>
+                    <div id="history-dropdown-barcode" class="history-dropdown" aria-hidden="true"></div>
+                </div>
+            </div>
+
+                <div class="modern-filters">
+                    <div class="filter-item">
+                        <label for="market-filter" class="filter-label">Mercado</label>
+                        <select id="market-filter" class="filter-select">
+                            <option value="">Todos os Mercados</option>
+                        </select>
+                    </div>
+                    <div class="filter-item">
+                        <label for="brand-filter" class="filter-label">Marca</label>
+                        <select id="brand-filter" class="filter-select">
+                            <option value="">Todas as Marcas</option>
+                        </select>
+                    </div>
+                    <div class="filter-item">
+                        <label for="category-filter" class="filter-label">Categoria</label>
+                        <select id="category-filter" class="filter-select">
+                            <option value="">Todas as Categorias</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="search-history-section" class="search-history-section">
+            <h2><i class="fas fa-history"></i> Histórico de Pesquisa</h2>
+            <ul id="search-history-list" class="search-history-list"></ul>
+            <div class="history-actions">
+                <button id="clear-history" class="clear-history-btn">Limpar Histórico</button>
+            </div>
+            <p id="no-history-message" class="no-history-message">Nenhum histórico de pesquisa encontrado.</p>
+        </section>
+
+        <section class="products-section">
+            <h2 class="section-title"><i class="fas fa-list-ul"></i> Produtos Disponíveis</h2>
+            <div class="products-scroll-container">
+                <button class="scroll-btn prev-btn" title="Anterior"><i class="fas fa-chevron-left"></i></button>
+                <div id="products-list" class="products-grid">
+                    </div>
+                <button class="scroll-btn next-btn" title="Próximo"><i class="fas fa-chevron-right"></i></button>
+            </div>
+            <p id="no-products-message" class="no-products-message" style="display:none;">Nenhum produto encontrado. Tente ajustar os filtros ou pesquisar por outro termo.</p>
+        </section>
+    </main>
+
+    <div id="cart-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="close-cart-btn">&times;</span>
+            <h2><i class="fas fa-shopping-cart"></i> Meu Carrinho</h2>
+            <div id="cart-items-list" class="cart-items-list"></div>
+            <p id="empty-cart-message" class="empty-message">O seu carrinho está vazio.</p>
+            <div class="cart-summary">
+                <div class="cart-total">
+                    <span>Total:</span>
+                    <span id="cart-total" class="total-price">€0,00</span>
+                </div>
+                </div>
+        </div>
+    </div>
+
+    <div id="favorites-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="close-favorites-btn" onclick="__forceCloseFavoritesModal()">&times;</span>
+            <h2><i class="fas fa-heart"></i> Meus Favoritos</h2>
+            <div id="favorites-products-list" class="favorites-products-list"></div>
+            <p id="no-favorites-message" class="empty-message">Não há nenhum produto aos favoritos.</p>
+            <div class="favorites-summary">
+                <button class="checkout-btn" id="favorites-manual-close" onclick="__forceCloseFavoritesModal()">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Fallback helpers to open/close favorites modal if global listeners fail
+        function __lockBodyScroll() {
+            try {
+                var scrollY = window.scrollY || document.documentElement.scrollTop || 0;
+                document.body.dataset.scrollY = scrollY;
+                document.body.style.position = 'fixed';
+                document.body.style.top = '-' + scrollY + 'px';
+                document.body.style.width = '100%';
+            } catch (_) {}
+        }
+        function __unlockBodyScroll() {
+            try {
+                var scrollY = document.body.dataset.scrollY || '0';
+                document.body.style.position = '';
+                document.body.style.top = '';
+                document.body.style.width = '';
+                delete document.body.dataset.scrollY;
+                window.scrollTo(0, parseInt(scrollY));
+            } catch (_) {}
+        }
+        function __forceOpenFavoritesModal() {
+            try {
+                var modal = document.getElementById('favorites-modal');
+                if (!modal) return;
+                __lockBodyScroll();
+                modal.classList.remove('closing');
+                modal.classList.add('show');
+                modal.style.display = 'flex';
+                setTimeout(function(){ modal.classList.add('visible'); }, 10);
+                console.log('✔ Favorites modal aberto (fallback)');
+            } catch (e) { console.warn('Falha ao abrir favorites (fallback):', e); }
+        }
+        function __forceCloseFavoritesModal() {
+            try {
+                var modal = document.getElementById('favorites-modal');
+                if (!modal) return;
+                modal.classList.remove('visible');
+                modal.classList.add('closing');
+                setTimeout(function(){
+                    modal.classList.remove('show','closing');
+                    modal.style.display = 'none';
+                    __unlockBodyScroll();
+                    console.log('✔ Favorites modal fechado (fallback)');
+                }, 240);
+            } catch (e) { console.warn('Falha ao fechar favorites (fallback):', e); }
+        }
+    </script>
+
+    <div id="suggestion-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>Sugerir Novo Preço</h2>
+            <form id="modal-suggestion-form">
+                <input type="hidden" id="modal-suggestion-product-id">
+                <div class="form-group">
+                    <label for="modal-suggestion-product-name">Produto:</label>
+                    <input type="text" id="modal-suggestion-product-name" disabled>
+                </div>
+                <div class="form-group">
+                    <label for="modal-suggestion-market">Mercado:</label>
+                    <input type="text" id="modal-suggestion-market" disabled>
+                </div>
+                <!-- zona removida: apenas preço editável conforme solicitado -->
+                <div class="form-group">
+                    <label for="modal-suggestion-new-price">Novo Preço (€):</label>
+                    <input type="number" id="modal-suggestion-new-price" step="0.01" required>
+                </div>
+                <button type="submit" class="submit-suggestion-btn">Enviar Sugestão</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL CONFIRMAÇÃO ANTES DE ABRIR CÂMERA -->
+    <div id="scanner-confirm-modal" class="modal barcode-scanner-modal" role="dialog" aria-modal="true" aria-labelledby="scanner-confirm-title" aria-describedby="scanner-confirm-message" tabindex="-1" style="display:none; z-index:1000000;">
+        <div class="modal-content barcode-scanner-content" role="document">
+            <div class="scanner-header">
+                <h3 id="scanner-confirm-title">Confirmação</h3>
+                <button id="close-scanner-confirm" class="close-scanner-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="scanner-body">
+                <div class="scanner-info">
+                    <p id="scanner-confirm-message" aria-live="polite">Para abrir a câmera e escanear o código de barras, confirme abaixo.<br><b>O teclado será ocultado e só será possível digitar após fechar o leitor.</b></p>
+                </div>
+            </div>
+            <div class="scanner-controls">
+                <button id="confirm-open-scanner" class="scanner-btn" style="font-weight:bold;">OK</button>
+            </div>
+        </div>
+    </div>
+    <div id="scanner-modal" class="modal barcode-scanner-modal" role="dialog" aria-modal="true" aria-labelledby="scanner-title" aria-describedby="scanner-message">
+        <div class="modal-content barcode-scanner-content" role="document">
+            <div class="scanner-header">
+                <h3 id="scanner-title">Scanner de Código de Barras</h3>
+                <button id="close-scanner" class="close-scanner-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="scanner-body">
+                <div id="scanner-container">
+                    <div id="scanner-target"></div>
+                    <div class="scanner-overlay">
+                        <div class="scanner-line"></div>
+                        <div class="scanner-corners">
+                            <div class="corner top-left"></div>
+                            <div class="corner top-right"></div>
+                            <div class="corner bottom-left"></div>
+                            <div class="corner bottom-right"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="scanner-info">
+                    <p id="scanner-message" aria-live="polite">Posicione o código de barras dentro da área destacada</p>
+                    <div id="scanner-result" class="scanner-result" aria-live="assertive"></div>
+                </div>
+            </div>
+            <div class="scanner-controls">
+                <button id="toggle-flash" class="scanner-btn">
+                    <i class="fas fa-bolt"></i> Flash
+                </button>
+                <button id="switch-camera" class="scanner-btn">
+                    <i class="fas fa-camera-rotate"></i> Trocar
+                </button>
+                <button id="stop-scanner" class="scanner-btn scanner-btn-danger">
+                    <i class="fas fa-stop"></i> Parar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Comparação por Produto -->
+    <div id="compare-modal" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <span class="close-btn" id="close-compare-btn">&times;</span>
+            <h2 id="compare-modal-title"><i class="fas fa-boxes"></i> Comparar produtos</h2>
+            <div id="compare-list" class="compare-list"></div>
+            <p id="compare-empty" class="empty-message" style="display:none;">Nenhum produto similar encontrado.</p>
+        </div>
+    </div>
+    
+    <!-- Modal de Detalhe do Produto -->
+    <div id="product-detail-modal" class="modal" data-current-product-id="">
+        <div class="modal-content" style="max-width: 400px; width: 95%; max-height: 90vh; overflow-y: auto;">
+            <span class="close-btn" id="close-product-detail">&times;</span>
+            <div class="product-detail-grid" style="display: flex; flex-direction: column; gap: 20px;">
+                
+                <!-- Header com imagem e nome -->
+                <div style="display: flex; gap: 15px; align-items: flex-start;">
+                    <div class="image-container" style="width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 8px; border: 1px solid #ddd; flex-shrink: 0; background: #f9f9f9;">
+                        <img id="detail-image" src="" alt="Produto" class="detail-image" 
+                             style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px;">
+                    </div>
+                    
+                    <div style="flex: 1; min-width: 0;">
+                        <h2 id="detail-name" style="margin: 0 0 10px 0; font-size: 1.5em; color: #333; word-wrap: break-word;"></h2>
+                        <div id="detail-price" class="detail-price" style="font-size: 1.8em; font-weight: bold; color: #2563eb; margin-bottom: 15px;"></div>
+                        
+                        <!-- Botões de ação -->
+                        <div class="detail-actions" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px;">
+                            <button id="detail-fav" class="favorite-btn" title="Favoritar" 
+                                    style="padding: 8px 12px; border: 1px solid #e5e7eb; border-radius: 6px; background: white; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.2s;">
+                                <i class="fas fa-heart"></i><span style="font-size: 0.9em; white-space: nowrap;">Favorito</span>
+                            </button>
+                            <button id="detail-cart" class="add-to-cart-btn" title="Adicionar ao Carrinho"
+                                    style="padding: 8px 12px; border: 1px solid #e5e7eb; border-radius: 6px; background: white; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.2s;">
+                                <i class="fas fa-shopping-cart"></i><span style="font-size: 0.9em; white-space: nowrap;">Carrinho</span>
+                            </button>
+                            <button id="detail-compare" class="search-btn" title="Comparar"
+                                    style="padding: 8px 16px; border: none; border-radius: 6px; background: #2563eb; color: white; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.2s;">
+                                <i class="fas fa-balance-scale"></i><span style="font-size: 0.9em; white-space: nowrap;">Comparar</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Informações detalhadas -->
+                <div id="detail-meta" class="detail-meta" 
+                     style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb;">
+                </div>
+                
+                <!-- Descrição -->
+                <div id="detail-description-container" style="display: none;">
+                    <h3 style="margin: 0 0 10px 0; font-size: 1.1em; color: #374151;">Descrição</h3>
+                    <p id="detail-description" class="detail-description" 
+                       style="margin: 0; line-height: 1.5; color: #6b7280; background: #f9fafb; padding: 12px; border-radius: 6px; border: 1px solid #e5e7eb;">
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="main-footer">
+        <p>&copy; 2024 Preço Certo. Todos os direitos reservados.</p>
+    </footer>
+
+    <script src="js/script.js"></script>
+    <script src="js/barcode-scanner.js?v=turn-off-flash-on-detect"></script>
+    <script type="module" src="js/firebase-loader.js"></script>
+    <script>
+        // Root-scoped Service Worker registration (iOS-friendly)
+        (function() {
+            try {
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.register('/service-worker.js?v=20251112')
+                        .then(reg => {
+                            console.log('SW registrado (index):', reg.scope);
+                            if (reg.waiting) { reg.waiting.postMessage({ type: 'SKIP_WAITING' }); }
+                            reg.addEventListener('updatefound', () => {
+                                const nw = reg.installing;
+                                if (!nw) return;
+                                nw.addEventListener('statechange', () => {
+                                    if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+                                        nw.postMessage({ type: 'SKIP_WAITING' });
+                                    }
+                                });
+                            });
+                            let refreshing = false;
+                            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                                if (refreshing) return;
+                                refreshing = true;
+                                window.location.reload();
+                            });
+                        })
+                        .catch(err => console.error('SW registro falhou (index):', err));
+                }
+            } catch (e) { console.warn('SW indisponível:', e); }
+        })();
+    </script>
+        <script>
+            // Custom install prompt handling
+            let deferredPrompt = null;
+            const installBtn = document.getElementById('install-app-btn');
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                if (installBtn) installBtn.style.display = 'inline-block';
+            });
+            if (installBtn) {
+                installBtn.addEventListener('click', async () => {
+                    if (!deferredPrompt) return;
+                    installBtn.disabled = true;
+                    try {
+                        deferredPrompt.prompt();
+                        const choice = await deferredPrompt.userChoice;
+                        console.log('User install choice', choice.outcome);
+                        if (choice.outcome !== 'dismissed') {
+                            installBtn.textContent = 'Instalado';
+                            setTimeout(()=> installBtn.style.display='none', 2000);
+                        } else {
+                            installBtn.disabled = false;
+                        }
+                        deferredPrompt = null;
+                    } catch (err) {
+                        console.warn('Install prompt error', err);
+                        installBtn.disabled = false;
+                    }
+                });
+            }
+            window.addEventListener('appinstalled', () => {
+                console.log('PWA instalada');
+                if (installBtn) installBtn.style.display = 'none';
+            });
+        </script>
+    <script>
+        const __firebase_config = JSON.stringify({
+            "apiKey": "AIzaSyAf9fJHKPYrpTskpeglXDcS3sSgKrL4CXQ",
+            "authDomain": "precomercado-23f20.firebaseapp.com",
+            "databaseURL": "https://precomercado-23f20-default-rtdb.europe-west1.firebasedatabase.app",
+            "projectId": "precomercado-23f20",
+            "storageBucket": "precomercado-23f20.firebasestorage.app",
+            "messagingSenderId": "899496513372",
+            "appId": "1:899496513372:web:7ef9a274652bc4a8d07b99",
+            "measurementId": "G-NRTEC32XN6"
+        });
+
+        // Store Firebase config in sessionStorage for mobile-compare.html to access
+        sessionStorage.setItem('firebaseConfig', __firebase_config);
+    </script>
+
+    <script>
+        // Página de comparação mobile desativada; o modal padrão será utilizado.
+    </script>
+    <script src="js/scanner-unify.js"></script>
+</body>
+</html>
