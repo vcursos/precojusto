@@ -298,9 +298,9 @@ document.addEventListener('DOMContentLoaded', () => { console.log('DOMConteudo i
         if (!p) return;
         const formattedUnit = (p.unitDisplay || [p.quantity, p.unit].filter(Boolean).join(' ')).replace(/\s+/g, ' ').trim();
         const unitLabel = formattedUnit || 'N/A';
-        const countryLabel = (p.country || p.zone || '').trim() || 'N/A';
-        console.log('?? DEBUG - Produto selecionado:', p);
-        console.log('?? DEBUG - Campos:', { unit: p.unit, quantity: p.quantity, unitDisplay: p.unitDisplay, country: p.country || p.zone, barcode: p.barcode });
+    const countryLabel = (p.country || '').trim() || 'N/A';
+    console.log('?? DEBUG - Produto selecionado:', p);
+    console.log('?? DEBUG - Campos:', { unit: p.unit, quantity: p.quantity, unitDisplay: p.unitDisplay, country: p.country, barcode: p.barcode });
         detailImage.src = p.imageUrl || DEFAULT_IMAGE_URL;
         detailName.textContent = p.name;
         detailPrice.textContent = formatPrice(p.price);
@@ -311,7 +311,6 @@ document.addEventListener('DOMContentLoaded', () => { console.log('DOMConteudo i
             <div><strong>Categoria:</strong> ${p.category || '�'}</div>
             <div><strong>Unidade:</strong> ${unitLabel}</div>
             <div><strong>Pa�s:</strong> ${countryLabel}</div>
-            ${p.zone ? `<div><strong>Zona:</strong> ${p.zone}</div>` : ''}
             ${p.parish ? `<div><strong>Freguesia:</strong> ${p.parish}</div>` : ''}
         `;
         detailDescription.textContent = p.description || '';
@@ -2381,8 +2380,11 @@ window.addEventListener('productsLoaded', (event) => {
         const products = getFromLocalStorage('products');
         const p = products.find(x => String(x.id) === String(productId));
         if (!p) return;
+        const formattedUnit = (p.unitDisplay || [p.quantity, p.unit].filter(Boolean).join(' ')).replace(/\s+/g, ' ').trim();
+        const unitLabel = formattedUnit || 'N/A';
+        const countryLabel = (p.country || '').trim() || 'N/A';
         console.log('?? DEBUG - Produto selecionado:', p);
-        console.log('?? DEBUG - Campos:', { unit: p.unit, country: p.country, barcode: p.barcode });
+        console.log('?? DEBUG - Campos:', { unit: p.unit, quantity: p.quantity, unitDisplay: p.unitDisplay, country: p.country, barcode: p.barcode });
         detailImage.src = p.imageUrl || DEFAULT_IMAGE_URL;
         detailName.textContent = p.name;
         detailPrice.textContent = formatPrice(p.price);
@@ -2391,9 +2393,8 @@ window.addEventListener('productsLoaded', (event) => {
             <div><strong>Mercado:</strong> ${p.market || '�'}</div>
             <div><strong>Marca:</strong> ${p.brand || '�'}</div>
             <div><strong>Categoria:</strong> ${p.category || '�'}</div>
-            <div><strong>Unidade:</strong> ${p.unit || 'N/A'}</div>
-            <div><strong>Pa�s:</strong> ${p.country || 'N/A'}</div>
-            ${p.zone ? `<div><strong>Zona:</strong> ${p.zone}</div>` : ''}
+            <div><strong>Unidade:</strong> ${unitLabel}</div>
+            <div><strong>Pa�s:</strong> ${countryLabel}</div>
             ${p.parish ? `<div><strong>Freguesia:</strong> ${p.parish}</div>` : ''}
         `;
         detailDescription.textContent = p.description || '';
