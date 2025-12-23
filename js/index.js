@@ -65,6 +65,17 @@ function setupFirestoreListeners() {
         }
         products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         
+        // DEBUG: Log do primeiro produto para ver os campos
+        if (products.length > 0) {
+            console.log('🔍 DEBUG - Primeiro produto do Firebase:', products[0]);
+            console.log('🔍 DEBUG - Campos importantes:', {
+                unit: products[0].unit,
+                quantity: products[0].quantity,
+                zone: products[0].zone,
+                barcode: products[0].barcode
+            });
+        }
+        
         // Salvar produtos no localStorage para compatibilidade com script.js
         const productsForStorage = products.map(product => {
             const productPrices = prices.filter(p => p.productId === product.id);
@@ -73,6 +84,13 @@ function setupFirestoreListeners() {
             
             // Construir unidade completa: quantidade + unidade de medida
             const fullUnit = product.unit ? `${product.quantity || '1'} ${product.unit}` : (product.quantity || '1') + ' unidade';
+            
+            console.log(`🔍 DEBUG - Produto ${product.name}:`, {
+                unit: product.unit,
+                quantity: product.quantity,
+                zone: product.zone,
+                fullUnit: fullUnit
+            });
             
             return {
                 id: product.id,
@@ -88,6 +106,11 @@ function setupFirestoreListeners() {
                 quantity: product.quantity || '1'
             };
         });
+        
+        console.log('💾 DEBUG - Total de produtos mapeados:', productsForStorage.length);
+        if (productsForStorage.length > 0) {
+            console.log('💾 DEBUG - Primeiro produto para localStorage:', productsForStorage[0]);
+        }
         
         localStorage.setItem('products', JSON.stringify(productsForStorage));
         
