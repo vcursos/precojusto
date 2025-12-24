@@ -808,7 +808,7 @@
         (function() {
             try {
                 if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.register('/service-worker.js?v=20251112')
+                    navigator.serviceWorker.register('./service-worker.js?v=20251224-pathscope')
                         .then(reg => {
                             console.log('SW registrado (index):', reg.scope);
                             if (reg.waiting) { reg.waiting.postMessage({ type: 'SKIP_WAITING' }); }

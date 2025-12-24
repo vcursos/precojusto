@@ -1,24 +1,29 @@
 // Root-scoped Service Worker (controls entire site)
 // Keep this file at the site root to ensure scope='/' in all browsers, including iOS Safari
-// Version bump to force updates on clients - UTF-8 encoding fix + category-inject
-const CACHE_NAME = 'precomercado-v8-categories';
-const APP_SHELL = [
-  '/',
-  '/index.html',
-  '/produto.html',
-  '/admin.html',
-  '/manifest.json',
-  '/offline.html',
-  '/css/style.css',
-  '/css/style-admin.css',
-  '/js/script.js',
-  '/js/admin.js',
-  '/js/category-inject.js',
-  '/js/firebase-loader.js',
-  '/js/firebase-init.js',
-  '/images/icons/maskable-icon.svg',
-  '/images/cabecalho.png'
+// Version bump to force updates on clients - UTF-8 encoding fix + category-inject + scoped paths
+const CACHE_NAME = 'precomercado-v9-pathscope';
+
+// Lista relativa para funcionar em /precojusto/ (GitHub Pages) e em /
+const APP_SHELL_REL = [
+  './',
+  './index.html',
+  './produto.html',
+  './admin.html',
+  './manifest.json',
+  './offline.html',
+  './css/style.css',
+  './css/style-admin.css',
+  './js/script.js',
+  './js/admin.js',
+  './js/category-inject.js',
+  './js/firebase-loader.js',
+  './js/firebase-init.js',
+  './images/icons/maskable-icon.svg',
+  './images/cabecalho.png'
 ];
+
+// Normaliza para incluir o scope (/precojusto/) ou raiz
+const APP_SHELL = APP_SHELL_REL.map(p => new URL(p, self.registration?.scope || self.location).pathname);
 
 const RUNTIME_CACHE = 'runtime-precomercado';
 
@@ -27,11 +32,11 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then(async cache => {
         // Fazer fetch de cada recurso com headers UTF-8 explícitos
-        const cachePromises = APP_SHELL.map(async url => {
+        const cachePromises = APP_SHELL.map(async pathName => {
           try {
-            const response = await fetch(url, {
-              headers: { 'Accept-Charset': 'utf-8' }
-            });
+            const requestUrl = new URL(pathName, self.location.origin).toString();
+            const request = new Request(requestUrl, { headers: { 'Accept-Charset': 'utf-8' } });
+            const response = await fetch(request);
             // Para documentos HTML, garantir charset UTF-8
             if (response.headers.get('content-type')?.includes('text/html')) {
               const headers = new Headers(response.headers);
@@ -42,11 +47,11 @@ self.addEventListener('install', (event) => {
                 statusText: response.statusText,
                 headers: headers
               });
-              return cache.put(url, newResponse);
+              return cache.put(request, newResponse);
             }
-            return cache.put(url, response);
+            return cache.put(request, response);
           } catch (error) {
-            console.warn(`Failed to cache ${url}:`, error);
+            console.warn(`Failed to cache ${pathName}:`, error);
           }
         });
         await Promise.all(cachePromises);
