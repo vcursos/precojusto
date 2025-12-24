@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <!-- Última atualização: 13/11/2025 às 01:20 - Build #127785a - Fix camera switch -->
     <meta charset="UTF-8">
+    <!-- Última atualização: 24/12/2025 - Fix UTF-8 encoding on first load -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Preço Certo</title>
     <meta name="theme-color" content="#2563eb">
@@ -536,6 +536,27 @@
             </div>
             <p id="no-products-message" class="no-products-message" style="display:none;">Nenhum produto encontrado. Tente ajustar os filtros ou pesquisar por outro termo.</p>
         </section>
+
+        <section class="category-section">
+            <div class="category-header">
+                <div>
+                    <h2 class="section-title"><i class="fas fa-layer-group"></i> Categorias principais</h2>
+                    <p class="section-subtitle">Escolha uma categoria para ver os produtos relacionados</p>
+                </div>
+                <small class="category-hint">Versão otimizada para desktop e mobile</small>
+            </div>
+
+            <div id="category-tabs" class="category-tabs" aria-label="Categorias de produtos"></div>
+
+            <div class="category-scroll-container">
+                <button class="scroll-btn category-prev" id="category-prev" title="Anterior"><i class="fas fa-chevron-left"></i></button>
+                <div id="category-products" class="category-products-track"></div>
+                <button class="scroll-btn category-next" id="category-next" title="Próximo"><i class="fas fa-chevron-right"></i></button>
+            </div>
+            <p id="category-empty" class="category-empty" style="display:none;">
+                Nenhum produto disponível nesta categoria no momento.
+            </p>
+        </section>
     </main>
 
     <div id="cart-modal" class="modal">
@@ -720,10 +741,13 @@
                              style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px;">
                     </div>
                     
-                    <div style="flex: 1; min-width: 0;">
-                        <h2 id="detail-name" style="margin: 0 0 10px 0; font-size: 1.5em; color: #333; word-wrap: break-word;"></h2>
-                        <div id="detail-price" class="detail-price" style="font-size: 1.8em; font-weight: bold; color: #2563eb; margin-bottom: 15px;"></div>
-                        
+                    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px;">
+                        <div class="detail-header-top">
+                            <div class="detail-title-block">
+                                <h2 id="detail-name" style="margin: 0; font-size: 1.5em; color: #333; word-wrap: break-word;"></h2>
+                                <div id="detail-price" class="detail-price" style="font-size: 1.8em; font-weight: bold; color: #2563eb;"></div>
+                            </div>
+                        </div>
                         <!-- Botões de ação -->
                         <div class="detail-actions" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px;">
                             <button id="detail-fav" class="favorite-btn" title="Favoritar" 
@@ -734,7 +758,7 @@
                                     style="padding: 8px 12px; border: 1px solid #e5e7eb; border-radius: 6px; background: white; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.2s;">
                                 <i class="fas fa-shopping-cart"></i><span style="font-size: 0.9em; white-space: nowrap;">Carrinho</span>
                             </button>
-                            <button id="detail-compare" class="search-btn" title="Comparar"
+                            <button id="detail-compare" class="compare-action-btn" title="Comparar"
                                     style="padding: 8px 16px; border: none; border-radius: 6px; background: #2563eb; color: white; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.2s;">
                                 <i class="fas fa-balance-scale"></i><span style="font-size: 0.9em; white-space: nowrap;">Comparar</span>
                             </button>
@@ -742,9 +766,21 @@
                     </div>
                 </div>
                 
-                <!-- Informações detalhadas -->
-                <div id="detail-meta" class="detail-meta" 
-                     style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb;">
+                <!-- Informações detalhadas + logo do mercado ao lado -->
+                <div class="detail-meta-row">
+                    <div id="detail-meta" class="detail-meta" 
+                         style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb; flex:1;">
+                    </div>
+                    <!-- Badge do mercado com logo -->
+                    <div id="detail-market-chip" class="detail-market-chip" aria-label="Mercado do produto" style="display:none;">
+                        <div class="detail-market-logo-wrap">
+                            <img id="detail-market-logo" src="images/icons/icon-192.png" alt="Logo do mercado" class="detail-market-logo">
+                        </div>
+                        <div class="detail-market-text">
+                            <span class="detail-market-label">Mercado</span>
+                            <span id="detail-market-name" class="detail-market-name">—</span>
+                        </div>
+                    </div>
                 </div>
                 
                 <!-- Descrição -->
@@ -762,7 +798,9 @@
         <p>&copy; 2024 Preço Certo. Todos os direitos reservados.</p>
     </footer>
 
+    <!-- Temporarily usar backup estável enquanto o script principal é consolidado -->
     <script src="js/script.js"></script>
+    <script src="js/category-inject.js"></script>
     <script src="js/barcode-scanner.js?v=turn-off-flash-on-detect"></script>
     <script type="module" src="js/firebase-loader.js"></script>
     <script>
