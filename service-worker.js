@@ -1,7 +1,7 @@
 // Root-scoped Service Worker (controls entire site)
 // Keep this file at the site root to ensure scope='/' in all browsers, including iOS Safari
 // Version bump to force updates on clients - UTF-8 encoding fix + category-inject + scoped paths
-const CACHE_NAME = 'precomercado-v9-pathscope';
+const CACHE_NAME = 'precomercado-v10-pathscope2';
 
 // Lista relativa para funcionar em /precojusto/ (GitHub Pages) e em /
 const APP_SHELL_REL = [

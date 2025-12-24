@@ -808,27 +808,46 @@
         (function() {
             try {
                 if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.register('./service-worker.js?v=20251224-pathscope')
-                        .then(reg => {
-                            console.log('SW registrado (index):', reg.scope);
-                            if (reg.waiting) { reg.waiting.postMessage({ type: 'SKIP_WAITING' }); }
-                            reg.addEventListener('updatefound', () => {
-                                const nw = reg.installing;
-                                if (!nw) return;
-                                nw.addEventListener('statechange', () => {
-                                    if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-                                        nw.postMessage({ type: 'SKIP_WAITING' });
-                                    }
+                    // Se estiver rodando via file://, não registrar SW
+                    if (location.protocol === 'file:') {
+                        console.warn('Service Worker desabilitado em file://. Sirva via http://localhost.');
+                        return;
+                    }
+
+                    // Limpa SWs antigos fora do escopo atual
+                    navigator.serviceWorker.getRegistrations().then(regs => {
+                        regs.forEach(reg => {
+                            try {
+                                const scopePath = new URL(reg.scope).pathname;
+                                const currentPath = location.pathname.replace(/[^/]+$/, '');
+                                if (!currentPath.startsWith(scopePath)) {
+                                    reg.unregister();
+                                }
+                            } catch(_) {}
+                        });
+                    }).finally(() => {
+                        navigator.serviceWorker.register('./service-worker.js?v=20251224-pathscope2')
+                            .then(reg => {
+                                console.log('SW registrado (index):', reg.scope);
+                                if (reg.waiting) { reg.waiting.postMessage({ type: 'SKIP_WAITING' }); }
+                                reg.addEventListener('updatefound', () => {
+                                    const nw = reg.installing;
+                                    if (!nw) return;
+                                    nw.addEventListener('statechange', () => {
+                                        if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+                                            nw.postMessage({ type: 'SKIP_WAITING' });
+                                        }
+                                    });
                                 });
-                            });
-                            let refreshing = false;
-                            navigator.serviceWorker.addEventListener('controllerchange', () => {
-                                if (refreshing) return;
-                                refreshing = true;
-                                window.location.reload();
-                            });
-                        })
-                        .catch(err => console.error('SW registro falhou (index):', err));
+                                let refreshing = false;
+                                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                                    if (refreshing) return;
+                                    refreshing = true;
+                                    window.location.reload();
+                                });
+                            })
+                            .catch(err => console.error('SW registro falhou (index):', err));
+                    });
                 }
             } catch (e) { console.warn('SW indisponível:', e); }
         })();
