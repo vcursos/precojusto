@@ -1,0 +1,162 @@
+/* Mobile Comparison Modal Styles */
+.mobile-comparison-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.mobile-comparison-modal.active {
+    display: block;
+}
+
+.mobile-comparison-modal__container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    max-height: 85vh;
+    background-color: #fff;
+    border-radius: 15px 15px 0 0;
+    overflow-y: auto;
+    transform: translateY(100%);
+    transition: transform 0.3s ease-in-out;
+}
+
+.mobile-comparison-modal.active .mobile-comparison-modal__container {
+    transform: translateY(0);
+}
+
+.mobile-comparison-modal__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 10;
+}
+
+.mobile-comparison-modal__header h2 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.mobile-comparison-modal__close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.mobile-comparison-modal__content {
+    padding: 15px;
+}
+
+/* Best price product styles - ONLY THIS ONE HAS IMAGE */
+.best-price-product {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px 15px;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.best-price-badge {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #28a745;
+    color: white;
+    padding: 3px 15px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.best-price-product .product-details {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+/* Image container - ONLY used for the cheapest product */
+.product-image-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 0;
+    margin-bottom: 10px;
+}
+
+.product-image {
+    width: 56px !important;
+    height: 121px !important;
+    object-fit: contain;
+}
+
+/* General product information styles */
+.product-name {
+    font-weight: bold;
+    margin: 5px 0;
+    font-size: 15px;
+}
+
+.product-price {
+    color: #28a745;
+    font-size: 18px;
+    font-weight: bold;
+    margin: 5px 0;
+}
+
+.product-market {
+    font-size: 14px;
+    color: #666;
+}
+
+/* Other products styles - LIST FORMAT WITHOUT IMAGES */
+.other-products h3 {
+    margin: 15px 0 10px;
+    font-size: 16px;
+}
+
+.other-products-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.other-product-item {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 10px;
+    padding: 12px 8px;
+    border-bottom: 1px solid #eee;
+    align-items: center;
+}
+
+.product-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.price-difference {
+    font-size: 12px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background-color: #f8d7da;
+    color: #721c24;
+    font-weight: 500;
+}
+    font-weight: 500;
+}
