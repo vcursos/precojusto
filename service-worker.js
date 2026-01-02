@@ -2,7 +2,7 @@
 // Keep this file at the site root to ensure scope='/' in all browsers, including iOS Safari
 // Version bump to force updates on clients - force refresh on GitHub Pages
 // IMPORTANTE: sempre que publicar e não aparecer no domínio, aumente a versão.
-const CACHE_NAME = 'precomercado-v13-devsafe';
+const CACHE_NAME = 'precomercado-v15-devsafe';
 
 // Lista relativa para funcionar em /precojusto/ (GitHub Pages) e em /
 const APP_SHELL_REL = [

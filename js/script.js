@@ -2043,10 +2043,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // abrir scanner ao clicar na imagem/banner
+    // MOBILE FIX: não iniciar scanner automaticamente ao clicar em imagem/banner.
+    // Em alguns celulares isso causa travamento/loop ao pedir permissão de câmera.
+    // O scanner continua disponível via botão (floating) e CTA.
     const barcodeImg = document.querySelector('.barcode-img');
     if (!window.__PJ_CORE_ONLY__ && barcodeImg) {
-        barcodeImg.addEventListener('click', (e) => { e.preventDefault(); startScanner(); });
+        barcodeImg.addEventListener('click', (e) => {
+            e.preventDefault();
+            try { showToast('Use o botão de scanner para ler o código de barras.', { type: 'info' }); } catch (_) {}
+        });
     }
     // abrir scanner ao clicar no nome do CTA
     const barcodeSearchBtn2 = document.getElementById('barcode-search-btn');
