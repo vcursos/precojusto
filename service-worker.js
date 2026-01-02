@@ -1,7 +1,8 @@
 // Root-scoped Service Worker (controls entire site)
 // Keep this file at the site root to ensure scope='/' in all browsers, including iOS Safari
-// Version bump to force updates on clients - UTF-8 encoding fix + category-inject + scoped paths
-const CACHE_NAME = 'precomercado-v12-devsafe';
+// Version bump to force updates on clients - force refresh on GitHub Pages
+// IMPORTANTE: sempre que publicar e não aparecer no domínio, aumente a versão.
+const CACHE_NAME = 'precomercado-v13-devsafe';
 
 // Lista relativa para funcionar em /precojusto/ (GitHub Pages) e em /
 const APP_SHELL_REL = [
@@ -102,7 +103,8 @@ self.addEventListener('fetch', (event) => {
             headers: headers
           });
         }
-        return caches.match('/offline.html');
+  // Em GitHub Pages o app pode estar em /<repo>/, então use caminho relativo
+  return caches.match('./offline.html');
       }
     })());
     return;
@@ -128,6 +130,6 @@ self.addEventListener('fetch', (event) => {
   }
 
   event.respondWith((async () => {
-    try { return await fetch(req); } catch { return await caches.match(req) || caches.match('/offline.html'); }
+    try { return await fetch(req); } catch { return await caches.match(req) || caches.match('./offline.html'); }
   })());
 });
