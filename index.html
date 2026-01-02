@@ -7,11 +7,15 @@
     <title>Preço Certo</title>
     <meta name="theme-color" content="#2563eb">
     <script>
+        // Modo seguro: adicione ?safe=1 na URL para carregar sem SW e sem scripts pesados.
+        // Ex: http://127.0.0.1:5500/index.html?safe=1
+        window.__PJ_SAFE_MODE__ = /(?:\?|&)safe=1(?:&|$)/.test(location.search);
+
         // Desabilita SW e limpa registros quando abrindo via file:// ou localhost para evitar travas durante desenvolvimento
         (function(){
             const isFile = location.protocol === 'file:';
             const isLocalhost = /^(localhost|127\.|0\.0\.0\.0)/.test(location.hostname);
-            if ((isFile || isLocalhost) && 'serviceWorker' in navigator) {
+            if ((isFile || isLocalhost || window.__PJ_SAFE_MODE__) && 'serviceWorker' in navigator) {
                 navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
                 if (window.caches) caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
                 if (isLocalhost) {
@@ -25,10 +29,15 @@
         (function(){
             const KEY = '__pj_retry_once';
             const alreadyRetried = sessionStorage.getItem(KEY) === '1';
+            const isFile = location.protocol === 'file:';
+            const isLocalhost = /^(localhost|127\.|0\.0\.0\.0)/.test(location.hostname);
+
+            // Em ambiente local (Live Server/localhost) o watchdog pode causar reload/CPU alto.
+            if (isFile || isLocalhost) return;
+
             setTimeout(() => {
                 if (window.__precoJustoMainLoaded) return;
-                const isLocalhost = /^(localhost|127\.|0\.0\.0\.0)/.test(location.hostname);
-                if (!alreadyRetried && 'serviceWorker' in navigator && !isLocalhost) {
+                if (!alreadyRetried && 'serviceWorker' in navigator) {
                     sessionStorage.setItem(KEY, '1');
                     navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister())).finally(() => {
                         if (window.caches) caches.keys().then(keys => keys.forEach(k => caches.delete(k))).finally(() => location.reload());
@@ -305,9 +314,6 @@
                 border-radius: 8px !important;
             }
             
-            .product-detail-grid {
-                padding: 10px !important;
-            }
             
             /* Ensure close button is accessible */
             .close-btn {
@@ -325,17 +331,7 @@
                 padding-right: 0 !important;
             }
 
-            /* Product image in modal for mobile */
-            .image-container {
-                width: 100px !important;
-                height: 100px !important;
-                margin: 0 auto !important;
-            }
-            
-            #detail-image {
-                max-width: 95% !important;
-                max-height: 95% !important;
-            }
+            /* (modal de detalhe antigo removido) */
         }
 
         /* New global styles for product images in comparison */
@@ -672,26 +668,49 @@
         }
     </script>
 
-    <div id="suggestion-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn">&times;</span>
-            <h2>Sugerir Novo Preço</h2>
-            <form id="modal-suggestion-form">
+    <div id="suggestion-modal" class="modal" style="z-index: 300000;">
+        <div class="modal-content pj-suggest-modal">
+            <div class="pj-suggest-header">
+                <div class="pj-suggest-title">
+                    <div class="pj-suggest-icon" aria-hidden="true"><i class="fas fa-tag"></i></div>
+                    <div>
+                        <h2>Sugerir Novo Preço</h2>
+                        <p>Ajude a manter os preços atualizados.</p>
+                    </div>
+                </div>
+                <button class="close-btn pj-suggest-close" type="button" aria-label="Fechar">&times;</button>
+            </div>
+
+            <form id="modal-suggestion-form" class="pj-suggest-form">
                 <input type="hidden" id="modal-suggestion-product-id">
-                <div class="form-group">
-                    <label for="modal-suggestion-product-name">Produto:</label>
-                    <input type="text" id="modal-suggestion-product-name" disabled>
+
+                <div class="pj-suggest-grid">
+                    <div class="pj-suggest-field">
+                        <label for="modal-suggestion-product-name">Produto</label>
+                        <input type="text" id="modal-suggestion-product-name" disabled>
+                    </div>
+
+                    <div class="pj-suggest-field">
+                        <label for="modal-suggestion-market">Mercado</label>
+                        <input type="text" id="modal-suggestion-market" disabled>
+                    </div>
+
+                    <div class="pj-suggest-field pj-suggest-price">
+                        <label for="modal-suggestion-new-price">Novo Preço (€)</label>
+                        <div class="pj-suggest-price-wrap">
+                            <span class="pj-suggest-euro">€</span>
+                            <input type="number" inputmode="decimal" id="modal-suggestion-new-price" step="0.01" min="0" placeholder="0,00" required>
+                        </div>
+                        <small>Dica: use ponto ou vírgula (ex.: 2.50 ou 2,50).</small>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="modal-suggestion-market">Mercado:</label>
-                    <input type="text" id="modal-suggestion-market" disabled>
+
+                <div class="pj-suggest-actions">
+                    <button type="submit" class="submit-suggestion-btn pj-suggest-submit">
+                        <i class="fas fa-paper-plane"></i>
+                        Enviar Sugestão
+                    </button>
                 </div>
-                <!-- zona removida: apenas preço editável conforme solicitado -->
-                <div class="form-group">
-                    <label for="modal-suggestion-new-price">Novo Preço (€):</label>
-                    <input type="number" id="modal-suggestion-new-price" step="0.01" required>
-                </div>
-                <button type="submit" class="submit-suggestion-btn">Enviar Sugestão</button>
             </form>
         </div>
     </div>
@@ -756,7 +775,7 @@
     </div>
 
     <!-- Modal de Comparação por Produto -->
-    <div id="compare-modal" class="modal">
+    <div id="compare-modal" class="modal" style="z-index: 310000;">
         <div class="modal-content" style="max-width: 900px;">
             <span class="close-btn" id="close-compare-btn">&times;</span>
             <h2 id="compare-modal-title"><i class="fas fa-boxes"></i> Comparar produtos</h2>
@@ -764,82 +783,67 @@
             <p id="compare-empty" class="empty-message" style="display:none;">Nenhum produto similar encontrado.</p>
         </div>
     </div>
-    
-    <!-- Modal de Detalhe do Produto -->
-    <div id="product-detail-modal" class="modal" data-current-product-id="">
-        <div class="modal-content" style="max-width: 400px; width: 95%; max-height: 90vh; overflow-y: auto;">
-            <span class="close-btn" id="close-product-detail">&times;</span>
-            <div class="product-detail-grid" style="display: flex; flex-direction: column; gap: 20px;">
-                
-                <!-- Header com imagem e nome -->
-                <div style="display: flex; gap: 15px; align-items: flex-start;">
-                    <div class="image-container" style="width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 8px; border: 1px solid #ddd; flex-shrink: 0; background: #f9f9f9;">
-                        <img id="detail-image" src="" alt="Produto" class="detail-image" 
-                             style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px;">
-                    </div>
-                    
-                    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px;">
-                        <div class="detail-header-top">
-                            <div class="detail-title-block">
-                                <h2 id="detail-name" style="margin: 0; font-size: 1.5em; color: #333; word-wrap: break-word;"></h2>
-                                <div id="detail-price" class="detail-price" style="font-size: 1.8em; font-weight: bold; color: #2563eb;"></div>
-                            </div>
-                        </div>
-                        <!-- Botões de ação -->
-                        <div class="detail-actions" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px;">
-                            <button id="detail-fav" class="favorite-btn" title="Favoritar" 
-                                    style="padding: 8px 12px; border: 1px solid #e5e7eb; border-radius: 6px; background: white; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.2s;">
-                                <i class="fas fa-heart"></i><span style="font-size: 0.9em; white-space: nowrap;">Favorito</span>
-                            </button>
-                            <button id="detail-cart" class="add-to-cart-btn" title="Adicionar ao Carrinho"
-                                    style="padding: 8px 12px; border: 1px solid #e5e7eb; border-radius: 6px; background: white; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.2s;">
-                                <i class="fas fa-shopping-cart"></i><span style="font-size: 0.9em; white-space: nowrap;">Carrinho</span>
-                            </button>
-                            <button id="detail-compare" class="compare-action-btn" title="Comparar"
-                                    style="padding: 8px 16px; border: none; border-radius: 6px; background: #2563eb; color: white; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.2s;">
-                                <i class="fas fa-balance-scale"></i><span style="font-size: 0.9em; white-space: nowrap;">Comparar</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Informações detalhadas + logo do mercado ao lado -->
-                <div class="detail-meta-row">
-                    <div id="detail-meta" class="detail-meta" 
-                         style="background: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb; flex:1;">
-                    </div>
-                    <!-- Badge do mercado com logo -->
-                    <div id="detail-market-chip" class="detail-market-chip" aria-label="Mercado do produto" style="display:none;">
-                        <div class="detail-market-logo-wrap">
-                            <img id="detail-market-logo" src="images/icons/icon-192.png" alt="Logo do mercado" class="detail-market-logo">
-                        </div>
-                        <div class="detail-market-text">
-                            <span class="detail-market-label">Mercado</span>
-                            <span id="detail-market-name" class="detail-market-name">—</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Descrição -->
-                <div id="detail-description-container" style="display: none;">
-                    <h3 style="margin: 0 0 10px 0; font-size: 1.1em; color: #374151;">Descrição</h3>
-                    <p id="detail-description" class="detail-description" 
-                       style="margin: 0; line-height: 1.5; color: #6b7280; background: #f9fafb; padding: 12px; border-radius: 6px; border: 1px solid #e5e7eb;">
-                    </p>
-                </div>
-            </div>
+
+    <!-- Modal flutuante (layout moderno) para detalhes do produto -->
+    <div id="pj-product-modal" class="modal" style="display:none; z-index: 160000;">
+        <div class="modal-content" style="max-width: 900px; width: 95%; max-height: 92vh; overflow-y: auto;">
+            <span class="close-btn" id="pj-close-product-modal">&times;</span>
+            <div id="pj-product-modal-body" style="padding: 6px 2px;"></div>
         </div>
     </div>
+    
+    <!-- Modal de Detalhe do Produto REMOVIDO: agora o padrão é produto.html (layout moderno) -->
 
     <footer class="main-footer">
         <p>&copy; 2024 Preço Certo. Todos os direitos reservados.</p>
     </footer>
 
     <!-- Temporarily usar backup estável enquanto o script principal é consolidado -->
-    <script src="js/script.js"></script>
-    <script src="js/category-inject.js"></script>
-    <script src="js/barcode-scanner.js?v=turn-off-flash-on-detect"></script>
-    <script type="module" src="js/firebase-loader.js"></script>
+    <script>
+        (function(){
+            if (window.__PJ_SAFE_MODE__) {
+                console.warn('Modo seguro ativado: scripts principais não foram carregados.');
+                return;
+            }
+
+            // Debug: carregar scripts seletivamente via URL
+            // Exemplos:
+            //  - ?load=core         (só script.js)
+            //  - ?load=core,cat     (+ category-inject)
+            //  - ?load=core,cat,scan (+ barcode-scanner)
+            //  - ?load=core,cat,scan,fb (+ firebase-loader)
+            const params = new URLSearchParams(location.search);
+            const loadParam = params.get('load');
+            const requested = (loadParam || '').split(',').map(s => s.trim()).filter(Boolean);
+
+            // Em localhost/Live Server: o padrão é carregar o script principal (script.js)
+            // para garantir a listagem de produtos do Firebase. Se precisar do backup, use ?fixed=1
+            const isLocalhost = /^(localhost|127\.|0\.0\.0\.0)/.test(location.hostname);
+            const useFixed = params.get('fixed') === '1' && !window.__PJ_SAFE_MODE__;
+
+            const defaultSet = ['core', 'cat', 'scan', 'fb'];
+            const enabled = requested.length ? requested : defaultSet;
+
+            const has = (k) => enabled.includes(k);
+
+            if (has('core')) {
+                if (isLocalhost && useFixed) {
+                    document.write('<scr' + 'ipt src="js/script_fixed.js"></scr' + 'ipt>');
+                } else {
+                    document.write('<scr' + 'ipt src="js/script.js"></scr' + 'ipt>');
+                }
+            }
+            if (has('cat')) {
+                document.write('<scr' + 'ipt src="js/category-inject.js"></scr' + 'ipt>');
+            }
+            if (has('scan')) {
+                document.write('<scr' + 'ipt src="js/barcode-scanner.js?v=turn-off-flash-on-detect"></scr' + 'ipt>');
+            }
+            if (has('fb')) {
+                document.write('<scr' + 'ipt type="module" src="js/firebase-loader.js"></scr' + 'ipt>');
+            }
+        })();
+    </script>
     <script>
         // Root-scoped Service Worker registration (iOS-friendly)
         (function() {
