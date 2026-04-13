@@ -15,6 +15,7 @@
         (function(){
             const isFile = location.protocol === 'file:';
             const isLocalhost = /^(localhost|127\.|0\.0\.0\.0)/.test(location.hostname);
+
             if ((isFile || isLocalhost || window.__PJ_SAFE_MODE__) && 'serviceWorker' in navigator) {
                 navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
                 if (window.caches) caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
@@ -24,35 +25,7 @@
             }
         })();
     </script>
-    <script>
-        // Watchdog: se scripts principais não carregarem, limpa SW/caches e tenta mais uma vez
-        (function(){
-            const KEY = '__pj_retry_once';
-            const alreadyRetried = sessionStorage.getItem(KEY) === '1';
-            const isFile = location.protocol === 'file:';
-            const isLocalhost = /^(localhost|127\.|0\.0\.0\.0)/.test(location.hostname);
-
-            // Em ambiente local (Live Server/localhost) o watchdog pode causar reload/CPU alto.
-            if (isFile || isLocalhost) return;
-
-            setTimeout(() => {
-                if (window.__precoJustoMainLoaded) return;
-                if (!alreadyRetried && 'serviceWorker' in navigator) {
-                    sessionStorage.setItem(KEY, '1');
-                    navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister())).finally(() => {
-                        if (window.caches) caches.keys().then(keys => keys.forEach(k => caches.delete(k))).finally(() => location.reload());
-                        else location.reload();
-                    });
-                } else if (!alreadyRetried) {
-                    sessionStorage.setItem(KEY, '1');
-                    location.reload();
-                } else {
-                    console.warn('Aplicação não carregou após tentativa de recuperação.');
-                }
-            }, 3000);
-        })();
-    </script>
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="manifest.json">
     <!-- iOS PWA meta tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -827,11 +800,8 @@
             const has = (k) => enabled.includes(k);
 
             if (has('core')) {
-                if (isLocalhost && !useNew) {
-                    document.write('<scr' + 'ipt src="js/script_fixed.js"></scr' + 'ipt>');
-                } else {
-                    document.write('<scr' + 'ipt src="js/script.js"></scr' + 'ipt>');
-                }
+                // Sempre usar a versão fixed que não trava o carregamento!
+                document.write('<scr' + 'ipt src="js/script_fixed.js"></scr' + 'ipt>');
             }
             if (has('cat')) {
                 document.write('<scr' + 'ipt src="js/category-inject.js"></scr' + 'ipt>');
