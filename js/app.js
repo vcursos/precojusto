@@ -89,10 +89,10 @@ function render() {
     appContainer.innerHTML = `
         <div class="bg-white p-6 rounded-lg shadow-lg">
             <h1 class="text-4xl font-extrabold text-center mb-6 text-gradient">Comparador de Preços</h1>
-            
+
             <input type="text" id="search-input" oninput="handleSearch(event)" placeholder="Procurar produtos..."
                 class="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:border-indigo-500 transition">
-            
+
             <div id="product-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
                 ${productListHtml.length > 0 ? productListHtml : '<p class="text-center text-gray-500 col-span-full">Nenhum produto encontrado.</p>'}
             </div>

@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Modal de Comparação Mobile</title>
-    
+
     <!-- Use only the dedicated mobile-compare.css for this page -->
     <link rel="stylesheet" href="css/mobile-compare.css">
 </head>
 <body>
     <!-- Button to open the modal (for testing) -->
     <button id="openModalBtn">Abrir Comparação</button>
-    
+
     <!-- Mobile Comparison Modal -->
     <div id="mobileComparisonModal" class="mobile-comparison-modal">
         <div class="mobile-comparison-modal__container">
@@ -19,13 +19,13 @@
                 <h2>Comparação de Preços</h2>
                 <button class="mobile-comparison-modal__close">&times;</button>
             </div>
-            
+
             <div class="mobile-comparison-modal__content">
                 <!-- Cheapest product (will be populated by JS) -->
                 <div class="best-price-product">
                     <!-- Content will be inserted here by JS -->
                 </div>
-                
+
                 <!-- Other products list (will be populated by JS) -->
                 <div class="other-products">
                     <h3>Outros Preços</h3>
@@ -36,7 +36,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Scripts -->
     <script>
         // Sample data for testing
@@ -65,7 +65,7 @@
                 }
             ]
         };
-        
+
         // Function to open the modal and populate with data
         function openModal() {
             // Populate cheapest product
@@ -82,7 +82,7 @@
                     </div>
                 </a>
             `;
-            
+
             // Populate other products
             const otherProductsList = document.querySelector(".other-products-list");
             otherProductsList.innerHTML = "";
@@ -102,11 +102,11 @@
                 `;
                 otherProductsList.appendChild(li);
             });
-            
+
             // Show the modal
             document.getElementById("mobileComparisonModal").classList.add("active");
         }
-        
+
         // Event listeners
         document.getElementById("openModalBtn").addEventListener("click", openModal);
         document.querySelector(".mobile-comparison-modal__close").addEventListener("click", () => {
@@ -120,7 +120,7 @@
             </div>
         </div>
     </div>
-    
+
     <script src="js/mobile-comparison-modal.js"></script>
 </body>
 </html>

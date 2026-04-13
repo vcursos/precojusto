@@ -10,11 +10,11 @@
 
     <script type="module">
         import { db, addDoc, collection } from './js/firebase-init.js';
-        
+
         window.addTestProduct = async () => {
             try {
                 const appId = 'default-app-id';
-                
+
                 const testProduct = {
                     name: 'Délicieuse & Tropical Coco',
                     barcode: '7891000369098',
@@ -29,7 +29,7 @@
                     description: 'Bebida vegetal de coco tropical, rica em sabor e cremosidade.',
                     imageUrl: 'https://images.unsplash.com/photo-1605889351007-c0301fb0c2b8?w=400&h=400&fit=crop&crop=center'
                 };
-                
+
                 const docRef = await addDoc(collection(db, `/artifacts/${appId}/public/data/products`), testProduct);
                 document.getElementById('result').innerHTML = `✅ Produto teste adicionado com ID: ${docRef.id}`;
                 console.log('Produto teste adicionado:', testProduct);

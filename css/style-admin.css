@@ -633,7 +633,7 @@ body.modal-open {
     .form-group-inline {
         flex-direction: column;
     }
-    
+
     .brand-options label {
         margin-right: 0;
         margin-bottom: 10px;
@@ -1283,46 +1283,46 @@ body.modal-open {
         flex-direction: column;
         align-items: stretch;
     }
-    
+
     .barcode-input-group input {
         min-width: unset;
         margin-bottom: 12px;
         font-size: 16px; /* Evita zoom no iOS */
     }
-    
+
     .btn-scan {
         width: 100%;
         justify-content: center;
         padding: 16px 20px;
         font-size: 16px;
     }
-    
+
     .btn-scan i {
         font-size: 18px;
     }
-    
+
     .price-input-group {
         flex-direction: column;
         gap: 8px;
     }
-    
+
     .btn-search-price {
         width: 100%;
         padding: 12px;
         font-size: 14px;
     }
-    
+
     .name-input-group {
         flex-direction: column;
         gap: 8px;
     }
-    
+
     .btn-search-name {
         width: 100%;
         padding: 12px;
         font-size: 14px;
     }
-    
+
     .name-suggestions-dropdown {
         position: relative;
         margin-top: 8px;
@@ -1333,7 +1333,7 @@ body.modal-open {
     .barcode-input-group input {
         padding: 14px;
     }
-    
+
     .btn-scan {
         padding: 18px 20px;
     }
@@ -1473,7 +1473,7 @@ body.modal-open {
     .name-options-dropdown {
         max-height: 250px;
     }
-    
+
     .price-option,
     .name-option {
         padding: 10px 12px;
@@ -1481,7 +1481,7 @@ body.modal-open {
         align-items: stretch;
         gap: 8px;
     }
-    
+
     .price-badges,
     .name-confidence {
         align-items: flex-start;
@@ -1730,31 +1730,31 @@ body.modal-open {
     .scanner-header {
         padding: 12px 15px;
     }
-    
+
     .scanner-header h3 {
         font-size: 16px;
     }
-    
+
     .scanner-body {
         padding: 15px;
     }
-    
+
     #scanner-container {
         max-width: none;
         height: 250px;
     }
-    
+
     .scanner-controls {
         padding: 15px 10px;
         gap: 10px;
     }
-    
+
     .scanner-btn {
         padding: 10px 15px;
         font-size: 12px;
         min-width: 80px;
     }
-    
+
     .corner {
         width: 25px;
         height: 25px;

@@ -65,7 +65,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- Leitor de códigos robusto para Android e iOS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
-    
+
     <!-- CSS MOBILE LAYOUT FINAL - PRODUTO MAIS BARATO NO TOPO -->
     <style>
         @media (max-width: 720px) {
@@ -77,7 +77,7 @@
                 width: 100% !important;
                 padding: 10px !important;
             }
-            
+
             /* Produto mais barato - ultra compacto */
             .mobile-featured-product {
                 order: 1 !important;
@@ -86,42 +86,42 @@
                 padding: 4px !important;
                 max-height: 100px !important;
             }
-            
+
             /* Card interno mais compacto */
             .featured-product-card {
                 gap: 1px !important;
                 max-height: 90px !important;
             }
-            
+
             /* Imagem do produto principal */
             .featured-image {
                 width: 50px !important;
                 height: 50px !important;
                 margin-top: 2px !important;
             }
-            
+
             /* Info do produto compacta */
             .featured-info {
                 gap: 2px !important;
             }
-            
+
             /* Linha do preço + botões */
             .featured-price-row {
                 margin-bottom: 1px !important;
             }
-            
+
             /* Preço menor */
             .featured-price {
                 font-size: 1rem !important;
             }
-            
+
             /* Botões pequenos ao lado do preço - FORÇADO */
             .featured-actions {
                 gap: 2px !important;
                 display: flex !important;
                 flex-shrink: 0 !important;
             }
-            
+
             /* BOTÕES COMPACTOS */
             .mobile-featured-product .featured-actions .mobile-action-btn,
             .mobile-featured-product .featured-actions button.mobile-action-btn {
@@ -142,7 +142,7 @@
                 position: relative !important;
                 z-index: 9999 !important;
             }
-            
+
             /* FORÇA linha preço + botões lado a lado - preço próximo aos ícones */
             .mobile-featured-product .featured-info .featured-price-row {
                 display: flex !important;
@@ -152,13 +152,13 @@
                 margin-bottom: 1px !important;
                 gap: 8px !important;
             }
-            
+
             .mobile-featured-product .featured-price-row .featured-price {
                 font-size: 1rem !important;
                 margin: 0 !important;
                 flex-shrink: 0 !important;
             }
-            
+
             .mobile-featured-product .featured-price-row .featured-actions {
                 display: flex !important;
                 gap: 2px !important;
@@ -178,18 +178,18 @@
                 font-size: 0.7rem !important;
                 margin: 0 !important;
             }
-            
+
             .featured-name {
                 font-size: 0.8rem !important;
                 margin: 0 !important;
                 line-height: 1.1 !important;
             }
-            
+
             .featured-brand {
                 font-size: 0.7rem !important;
                 margin: 0 !important;
             }
-            
+
             /* Outras opções - ultra compacta */
             .mobile-other-products {
                 order: 2 !important;
@@ -197,14 +197,14 @@
                 width: 100% !important;
                 padding: 8px !important;
             }
-            
+
             /* Título da seção menor */
             .mobile-section-title {
                 font-size: 1rem !important;
                 margin-bottom: 8px !important;
                 padding-bottom: 6px !important;
             }
-            
+
             /* Lista de produtos super compacta */
             .mobile-list-item {
                 padding: 6px 8px !important;
@@ -212,40 +212,40 @@
                 font-size: 0.8rem !important;
                 gap: 4px !important;
             }
-            
+
             .list-item-info {
                 gap: 2px !important;
             }
-            
+
             .list-item-name {
                 font-size: 0.8rem !important;
                 line-height: 1.1 !important;
                 margin-bottom: 1px !important;
             }
-            
+
             .list-item-market {
                 font-size: 0.7rem !important;
             }
-            
+
             .list-item-price-info {
                 margin-top: 4px !important;
                 padding-top: 4px !important;
             }
-            
+
             .list-item-price {
                 font-size: 0.9rem !important;
             }
-            
+
             .list-item-diff {
                 font-size: 0.7rem !important;
                 padding: 2px 6px !important;
             }
-            
+
             /* Remove qualquer flexbox conflitante */
             .compare-columns {
                 display: block !important;
             }
-            
+
             /* FORÇA BRUTAL - CERTIFICA QUE OS BOTÕES APARECEM */
             .compare-page-content .mobile-featured-product .featured-price-row,
             .mobile-compare-layout .mobile-featured-product .featured-price-row {
@@ -253,13 +253,13 @@
                 justify-content: space-between !important;
                 align-items: center !important;
             }
-            
+
             .compare-page-content .mobile-featured-product .featured-actions,
             .mobile-compare-layout .mobile-featured-product .featured-actions {
                 display: flex !important;
                 gap: 4px !important;
             }
-            
+
             .compare-page-content .mobile-action-btn,
             .mobile-compare-layout .mobile-action-btn {
                 display: flex !important;
@@ -292,14 +292,14 @@
             .filter-item {
                 width: 100% !important;
             }
-            
+
             /* Modal fixes for mobile */
             .modal {
                 padding: 0 !important;
                 align-items: center !important;
                 justify-content: center !important;
             }
-            
+
             .modal-content {
                 width: 90% !important;
                 max-width: 90% !important;
@@ -313,8 +313,8 @@
                 transform: none !important;
                 border-radius: 8px !important;
             }
-            
-            
+
+
             /* Ensure close button is accessible */
             .close-btn {
                 position: absolute !important;
@@ -322,7 +322,7 @@
                 right: 10px !important;
                 z-index: 10 !important;
             }
-            
+
             /* Adjust modal content for better mobile display */
             .modal-content h2 {
                 font-size: 1.3rem !important;
@@ -344,7 +344,7 @@
             object-fit: contain !important;
             border-radius: 6px;
         }
-        
+
         .compare-list .product-img-container,
         .compare-list-item .product-img-container,
         #compare-list .product-img-container {
@@ -359,7 +359,7 @@
             background: #f9f9f9;
             margin: 0 auto;
         }
-        
+
         @media (max-width: 720px) {
             /* Adjust compare modal product images for mobile */
             .compare-list .product-img-container,
@@ -369,7 +369,7 @@
                 height: 80px !important;
             }
         }
-        
+
         /* More specific selectors for comparison modal */
         .compare-list,
         #compare-list {
@@ -378,7 +378,7 @@
             gap: 15px;
             justify-content: center;
         }
-        
+
         .compare-list-item,
         .compare-item {
             display: flex;
@@ -391,7 +391,7 @@
             width: 200px;
             max-width: 100%;
         }
-        
+
         @media (max-width: 720px) {
             /* Enhanced consistency for compare modal on mobile */
             #compare-modal .modal-content {
@@ -399,7 +399,7 @@
                 width: 95% !important;
                 max-width: 95% !important;
             }
-            
+
             .compare-list,
             #compare-list {
                 display: flex !important;
@@ -408,7 +408,7 @@
                 gap: 10px !important;
                 margin-top: 10px !important;
             }
-            
+
             .compare-list-item,
             .compare-item {
                 width: 100% !important;
@@ -419,7 +419,7 @@
                 padding: 8px !important;
                 gap: 10px !important;
             }
-            
+
             .compare-list-item .product-info,
             .compare-item .product-info {
                 flex: 1 !important;
@@ -428,14 +428,14 @@
                 flex-direction: column !important;
                 gap: 4px !important;
             }
-            
+
             .compare-list_item .product-name,
             .compare-item .product-name {
                 font-size: 0.9rem !important;
                 margin: 0 !important;
                 line-height: 1.2 !important;
             }
-            
+
             .compare-list-item .product-price,
             .compare-item .product-price {
                 font-size: 1rem !important;
@@ -443,7 +443,7 @@
                 margin: 0 !important;
             }
         }
-        
+
         @media (max-width: 720px) {
             /* Hide compare modal on mobile */
             #compare-modal {
@@ -452,7 +452,7 @@
                 opacity: 0 !important;
                 pointer-events: none !important;
             }
-            
+
             /* Hide compare button in navbar on mobile */
             .nav-list li a[href="#compare-modal"] {
                 pointer-events: none !important;
@@ -499,7 +499,7 @@
                 <h3>Pesquisar por Código de Barras</h3>
                 <p>Digite o código de barras ou use a câmera para escanear automaticamente.</p>
                 <small class="barcode-help">Exemplo: 7891000369098 (Chocolate Nestlé) | 8901030835715 (Produto exemplo)</small>
-                
+
                 <div class="barcode-scanner-section">
                     <button id="barcode-search-btn" class="barcode-scanner-btn-main">
                         <i class="fas fa-camera"></i>
@@ -517,7 +517,7 @@
                     <button id="search-button" class="search-btn" title="Pesquisar">Pesquisar</button>
                     <div id="history-dropdown" class="history-dropdown" aria-hidden="true"></div>
                 </div>
-                
+
                 <!-- Campo de Pesquisa por Código de Barras (CLONE EXATO DO CAMPO ACIMA) -->
                 <div class="modern-search-input">
                     <i class="fas fa-barcode search-icon" aria-hidden="true"></i>
@@ -791,7 +791,7 @@
             <div id="pj-product-modal-body" style="padding: 6px 2px;"></div>
         </div>
     </div>
-    
+
     <!-- Modal de Detalhe do Produto REMOVIDO: agora o padrão é produto.html (layout moderno) -->
 
     <footer class="main-footer">

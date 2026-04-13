@@ -68,15 +68,15 @@
             firebase.analytics();
         }
     </script>
-    
+
     <script>
         document.getElementById('loginForm').addEventListener('submit', function(event) {
             event.preventDefault();
-            
+
             const email = document.getElementById('email').value;
             const senha = document.getElementById('senha').value;
             const errorMessage = document.getElementById('errorMessage');
-            
+
             // Firebase authentication
             firebase.auth().signInWithEmailAndPassword(email, senha)
                 .then((userCredential) => {
@@ -84,14 +84,14 @@
                     const user = userCredential.user;
                     localStorage.setItem('adminLogado', 'true');
                     localStorage.setItem('adminEmail', email);
-                    
+
                     // Caminho correto para a página de admin
                     const adminPath = 'admin.html';
-                    
+
                     // Redirecionar para o dashboard
                     errorMessage.textContent = "Login bem-sucedido! Redirecionando...";
                     errorMessage.style.color = "green";
-                    
+
                     setTimeout(() => {
                         window.location.href = adminPath;
                     }, 500);
@@ -99,12 +99,12 @@
                 .catch((error) => {
                     // Log detailed error to console for debugging
                     console.error("Erro de autenticação:", error);
-                    
+
                     // Show user-friendly messages
                     const errorCode = error.code;
                     let message = '';
                     let icon = '';
-                    
+
                     switch(errorCode) {
                         case 'auth/wrong-password':
                             message = 'Senha incorreta. Por favor, verifique e tente novamente.';
@@ -126,45 +126,45 @@
                             message = 'Falha no login. Verifique suas credenciais.';
                             icon = '❌';
                     }
-                    
+
                     // Mostrar notificação flutuante com ícone
                     showNotification(icon + ' ' + message, 'error');
-                    
+
                     // Manter também a mensagem no formulário (sem detalhes técnicos)
                     errorMessage.textContent = message;
                 });
         });
-        
+
         // Funções para controlar a notificação
         function showNotification(message, type) {
             const notification = document.getElementById('notification');
             const notificationMessage = document.getElementById('notification-message');
-            
+
             notificationMessage.innerHTML = message;
             notification.className = 'notification';
             notification.classList.add('show', type);
-            
+
             // Animar ao mostrar
             notification.style.animation = 'notification-slide-in 0.4s forwards';
-            
+
             // Fechar automaticamente após 5 segundos
             setTimeout(function() {
                 closeNotification();
             }, 5000);
         }
-        
+
         function closeNotification() {
             const notification = document.getElementById('notification');
-            
+
             // Animar ao fechar
             notification.style.animation = 'notification-slide-out 0.4s forwards';
-            
+
             setTimeout(() => {
                 notification.classList.remove('show');
             }, 400);
         }
     </script>
-    
+
     <style>
         /* Estilo para notificação flutuante */
         .notification {
@@ -183,28 +183,28 @@
             z-index: 1000;
             font-weight: 500;
         }
-        
+
         .notification.show {
             opacity: 1;
             transform: translateY(0);
             visibility: visible;
         }
-        
+
         .notification.error {
             border-left: 4px solid #e74c3c;
         }
-        
+
         .notification.success {
             border-left: 4px solid #2ecc71;
         }
-        
+
         .notification-content {
             padding: 15px 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
         }
-        
+
         .notification-close {
             background: none;
             border: none;
@@ -214,11 +214,11 @@
             margin-left: 10px;
             transition: color 0.2s;
         }
-        
+
         .notification-close:hover {
             color: #333;
         }
-        
+
         /* Animações para a notificação */
         @keyframes notification-slide-in {
             from {
@@ -230,7 +230,7 @@
                 opacity: 1;
             }
         }
-        
+
         @keyframes notification-slide-out {
             from {
                 transform: translateX(0);
@@ -241,7 +241,7 @@
                 opacity: 0;
             }
         }
-        
+
         /* Melhoria na aparência da mensagem de erro no formulário */
         .error-message {
             color: #e74c3c;
