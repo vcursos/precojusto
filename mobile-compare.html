@@ -217,9 +217,9 @@
 
                     const itemElement = document.createElement('div');
                     itemElement.className = 'compare-item';
-
+                    
                     const imageHTML = `<div class="product-img-container"><img src="${item.image || ''}" alt="${item.name}" onerror="this.parentElement.innerHTML = '<div class=\\'default-img\\'><i class=\\'fas fa-shopping-basket\\'></i></div>'"></div>`;
-
+                    
                     const infoHTML = `
                         <div class="product-info">
                             <h3 class="product-name">${item.name}</h3>
@@ -266,10 +266,10 @@
                     }
 
                     const baseName = baseProduct.name.toLowerCase().trim();
-                    const similarProducts = allProducts.filter(p =>
+                    const similarProducts = allProducts.filter(p => 
                         p.name && p.name.toLowerCase().trim().includes(baseName)
                     );
-
+                    
                     // Ensure the originally clicked product is in the list, even if its name doesn't match perfectly
                     if (!similarProducts.some(p => p.id === baseProduct.id)) {
                         similarProducts.push(baseProduct);
@@ -324,7 +324,7 @@
             } catch (error) {
                 console.error("Error finding similar products:", error);
             }
-
+            
             // Remove duplicates
             return [...new Map(similarProducts.map(item => [item['id'], item])).values()];
         }
@@ -350,23 +350,23 @@
     </script>
 </body>
 </html>
-
+                
                 // Create product info container
                 const infoContainer = document.createElement('div');
                 infoContainer.className = 'product-info';
-
+                
                 // Product name
                 const nameElem = document.createElement('h3');
                 nameElem.className = 'product-name';
                 nameElem.textContent = item.name;
                 infoContainer.appendChild(nameElem);
-
+                
                 // Market
                 const marketElem = document.createElement('p');
                 marketElem.className = 'product-market';
                 marketElem.textContent = item.market || 'Mercado não especificado';
                 infoContainer.appendChild(marketElem);
-
+                
                 // Brand (if available)
                 if (item.brand) {
                     const brandElem = document.createElement('p');
@@ -377,26 +377,26 @@
                     brandElem.appendChild(brandSpan);
                     infoContainer.appendChild(brandElem);
                 }
-
+                
                 // Price and difference
                 const priceContainer = document.createElement('div');
                 priceContainer.style.display = 'flex';
                 priceContainer.style.alignItems = 'center';
-
+                
                 const priceElem = document.createElement('span');
                 priceElem.className = 'product-price';
                 priceElem.textContent = formatPrice(item.price);
                 priceContainer.appendChild(priceElem);
-
+                
                 if (!isBestPrice) {
                     const diffElem = document.createElement('span');
                     diffElem.className = 'price-diff positive';
                     diffElem.textContent = `+${formatPrice(priceDiff)} (+${percentDiff.toFixed(0)}%)`;
                     priceContainer.appendChild(diffElem);
                 }
-
+                
                 infoContainer.appendChild(priceContainer);
-
+                
                 // Best price tag
                 if (isBestPrice) {
                     const bestPriceElem = document.createElement('span');
@@ -404,39 +404,39 @@
                     bestPriceElem.textContent = 'Melhor preço';
                     infoContainer.appendChild(bestPriceElem);
                 }
-
+                
                 // Action buttons
                 const actionsElem = document.createElement('div');
                 actionsElem.className = 'product-actions';
-
+                
                 // Cart button
                 const cartBtn = document.createElement('button');
                 cartBtn.className = 'action-btn add-to-cart';
                 cartBtn.onclick = function() { addToCart(item.id); };
-
+                
                 const cartIcon = document.createElement('i');
                 cartIcon.className = 'fas fa-shopping-cart';
                 cartBtn.appendChild(cartIcon);
                 cartBtn.appendChild(document.createTextNode(' Carrinho'));
                 actionsElem.appendChild(cartBtn);
-
+                
                 // Favorite button
                 const favBtn = document.createElement('button');
                 favBtn.className = 'action-btn add-to-favorites';
                 favBtn.onclick = function() { addToFavorites(item.id); };
-
+                
                 const favIcon = document.createElement('i');
                 favIcon.className = 'fas fa-heart';
                 favBtn.appendChild(favIcon);
                 favBtn.appendChild(document.createTextNode(' Favorito'));
                 actionsElem.appendChild(favBtn);
-
+                
                 infoContainer.appendChild(actionsElem);
-
+                
                 // Add to item element
                 itemElement.appendChild(imgContainer);
                 itemElement.appendChild(infoContainer);
-
+                
                 // Add to container
                 container.appendChild(itemElement);
             });
@@ -447,17 +447,17 @@
             // First check if we have product data in sessionStorage
             const productId = sessionStorage.getItem('compareProductId');
             const productDataJson = sessionStorage.getItem('compareProductData');
-
+            
             console.log("Retrieved product ID:", productId);
             console.log("Retrieved product data:", productDataJson);
-
+            
             if (productId) {
                 try {
                     // Try to load from firebase first
                     console.log("Trying to load product from Firebase with ID:", productId);
                     const productRef = ref(database, `products/${productId}`);
                     const snapshot = await get(productRef);
-
+                    
                     // If found in Firebase, use that data
                     if (snapshot.exists()) {
                         const firebaseProduct = {
@@ -466,7 +466,7 @@
                         };
                         console.log("Found product in Firebase:", firebaseProduct);
                         return firebaseProduct;
-                    }
+                    } 
                     // If not found in Firebase but we have session data
                     else if (productDataJson) {
                         const sessionProduct = JSON.parse(productDataJson);
@@ -475,7 +475,7 @@
                     }
                 } catch (error) {
                     console.error("Error loading product from Firebase:", error);
-
+                    
                     // Fall back to session data if available
                     if (productDataJson) {
                         try {
@@ -488,7 +488,7 @@
                     }
                 }
             }
-
+            
             // If we get here, we didn't find a valid product
             console.error("No valid product found in sessionStorage");
             return null;
@@ -497,46 +497,46 @@
         // Function to find similar products
         async function findSimilarProducts(product) {
             console.log("Finding similar products for:", product);
-
+            
             // If we don't have a valid product, we can't find similar ones
             if (!product || !product.name) {
                 console.error("No valid product to compare");
                 return [product]; // Return just this product
             }
-
+            
             const similarProducts = [];
-
+            
             // Add the original product to the list
             similarProducts.push(product);
-
+            
             try {
                 // Try to find products with similar names
                 console.log("Searching for products with similar names");
                 const productsRef = ref(database, "products");
                 const allProductsSnapshot = await get(productsRef);
-
+                
                 if (allProductsSnapshot.exists()) {
                     const productName = product.name.toLowerCase();
-
+                    
                     allProductsSnapshot.forEach((childSnapshot) => {
                         const childProduct = {
                             id: childSnapshot.key,
                             ...childSnapshot.val()
                         };
-
+                        
                         // Skip the original product
                         if (childProduct.id === product.id) {
                             return;
                         }
-
+                        
                         // Match by name (contains)
-                        if (childProduct.name &&
-                            (childProduct.name.toLowerCase().includes(productName) ||
+                        if (childProduct.name && 
+                            (childProduct.name.toLowerCase().includes(productName) || 
                              productName.includes(childProduct.name.toLowerCase()))) {
                             similarProducts.push(childProduct);
                         }
                     });
-
+                    
                     console.log(`Found ${similarProducts.length} similar products`);
                 } else {
                     console.error("No products found in Firebase");
@@ -544,7 +544,7 @@
             } catch (error) {
                 console.error("Error finding similar products:", error);
             }
-
+            
             return similarProducts;
         }
 
@@ -552,16 +552,16 @@
         async function loadComparisonData() {ta() {
             try {
                 console.log("Starting comparison data loading...");arison data loading...");
-
+                
                 // First, try to load the selected producted product
                 const product = await loadProductFromSession();uctFromSession();
-
+                
                 if (product) {
                     console.log("Successfully loaded product:", product);ct:", product);
-
+                    
                     // Try to find similar products  // Try to find similar products
                     const similarProducts = await findSimilarProducts(product);   const similarProducts = await findSimilarProducts(product);
-
+                    
                     // Render the comparison
                     if (similarProducts.length > 0) {gth > 0) {
                         renderComparisonItems(similarProducts);arisonItems(similarProducts);
@@ -574,14 +574,14 @@
                     console.error("Failed to load product");           console.error("Failed to load product");
                     document.getElementById('compare-loading').style.display = 'none';                    document.getElementById('compare-loading').style.display = 'none';
                     document.getElementById('compare-empty').style.display = 'block';'block';
-                    document.getElementById('compare-empty').querySelector('p').textContent = compare-empty').querySelector('p').textContent =
+                    document.getElementById('compare-empty').querySelector('p').textContent = compare-empty').querySelector('p').textContent = 
                         "Produto não encontrado. Tente novamente.";       "Produto não encontrado. Tente novamente.";
                 }
             } catch (error) {ror) {
                 console.error("Error in loadComparisonData:", error);
                 document.getElementById('compare-loading').style.display = 'none';
                 document.getElementById('compare-empty').style.display = 'block';document.getElementById('compare-empty').style.display = 'block';
-                document.getElementById('compare-empty').querySelector('p').textContent = ementById('compare-empty').querySelector('p').textContent =
+                document.getElementById('compare-empty').querySelector('p').textContent = ementById('compare-empty').querySelector('p').textContent = 
                     "Erro ao carregar comparação: " + error.message;
             } finally {
                 // Clean up session storage
@@ -598,4 +598,4 @@
     </script>    </script>
 </body></body>
 </html></html>
-
+ 

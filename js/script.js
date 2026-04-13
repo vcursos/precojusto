@@ -6,7 +6,7 @@ function initializeAppData() {
     loadSearchHistory();
     loadFavorites();
     populateFilters();
-
+    
     // Renderizar produtos do localStorage (já carregados pelo firebase-loader)
     if (typeof window.renderProducts === 'function') {
         window.renderProducts();
@@ -125,14 +125,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const historyDropdown = document.getElementById('history-dropdown');
     const clearHistoryBtn = document.getElementById('clear-history');
     const closeFavoritesBottomBtn = document.getElementById('close-favorites-bottom');
-
+    
     // Elementos do modal de sugestão
     const modalSuggestionForm = document.getElementById('modal-suggestion-form');
     const modalSuggestionProductName = document.getElementById('modal-suggestion-product-name');
     const modalSuggestionMarket = document.getElementById('modal-suggestion-market');
     const modalSuggestionNewPrice = document.getElementById('modal-suggestion-new-price');
     const modalSuggestionProductId = document.getElementById('modal-suggestion-product-id');
-
+    
     // Elementos da nova lista de produtos horizontal
     const productsSection = document.querySelector('.products-section');
     const scrollContainer = document.getElementById('products-list');
@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // CLONE EXATO - Limpar campo de pesquisa por código de barras
     const clearBarcodeSearchBtn = document.getElementById('clear-barcode-search');
     const barcodeSearchBar = document.getElementById('barcode-search-bar');
-
+    
     if (clearBarcodeSearchBtn && barcodeSearchBar) {
         clearBarcodeSearchBtn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -220,10 +220,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = localStorage.getItem(key);
         return data ? JSON.parse(data) : [];
     };
-
+    
     // Tornar disponível globalmente
     window.getFromLocalStorage = getFromLocalStorage;
-
+    
     // Para dados da sessão do utilizador (carrinho, favoritos, histórico)
     const saveToSessionStorage = (key, data) => {
         sessionStorage.setItem(key, JSON.stringify(data));
@@ -234,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Retorna um array vazio por defeito para listas
         return data ? JSON.parse(data) : [];
     };
-
+    
     // Tornar disponível globalmente
     window.getFromSessionStorage = getFromSessionStorage;
 
@@ -248,13 +248,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!scrollContainer || !prevBtn || !nextBtn) return;
 
         const isScrollable = scrollContainer.scrollWidth > scrollContainer.clientWidth;
-
+        
         if (!isScrollable) {
             prevBtn.style.display = 'none';
             nextBtn.style.display = 'none';
             return;
         }
-
+        
         const maxScrollLeft = scrollContainer.scrollWidth - scrollContainer.clientWidth;
         prevBtn.style.display = scrollContainer.scrollLeft > 0 ? 'flex' : 'none';
         nextBtn.style.display = scrollContainer.scrollLeft < maxScrollLeft - 1 ? 'flex' : 'none';
@@ -268,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
         productCard.dataset.productId = product.id;
 
         const favButtonClass = isFavorite ? 'favorite-btn active' : 'favorite-btn';
-
+        
         productCard.innerHTML = `
             <img src="${product.imageUrl || DEFAULT_IMAGE_URL}" alt="${product.name}" class="product-image">
             <div class="product-info">
@@ -347,7 +347,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ${p.parish ? `<div><strong>Freguesia:</strong> ${p.parish}</div>` : ''}
         `;
         detailDescription.textContent = p.description || '';
-
+        
         // Mostrar/ocultar seção de descrição
         const descriptionContainer = document.getElementById('detail-description-container');
         if (p.description && p.description.trim()) {
@@ -392,9 +392,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const createModalListItem = (product, isCartItem = false) => {
         const listItem = document.createElement('div');
         listItem.classList.add('modal-list-item');
-
+        
         const removeButton = isCartItem ? `<button class="remove-from-cart-btn" data-id="${product.id}"><i class="fas fa-trash-alt"></i></button>` : `<button class="remove-from-favorites-btn" data-id="${product.id}"><i class="fas fa-trash-alt"></i></button>`;
-
+        
         const quantityControl = isCartItem ? `
             <div class="quantity-control">
                 <button class="quantity-minus-btn" data-id="${product.id}">-</button>
@@ -438,13 +438,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         // Garante que o estado dos botões é verificado após a renderização
         setTimeout(manageScrollButtons, 100);
-
+        
         // Dispara evento para atualizar seção de categorias
-        window.dispatchEvent(new CustomEvent('productsLoaded', {
-            detail: { count: productsToRender.length }
+        window.dispatchEvent(new CustomEvent('productsLoaded', { 
+            detail: { count: productsToRender.length } 
         }));
     };
-
+    
     // Tornar renderProducts disponível globalmente para firebase-loader.js
     window.renderProducts = renderProducts;
 
@@ -789,7 +789,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const highestBranded2 = limitedBranded.length ? limitedBranded.reduce((h,it)=> parseFloat(it.price) > parseFloat(h.price) ? it : h, limitedBranded[0]) : null;
 
         limitedPrivateLabel.forEach(it => leftGrid.appendChild(makeCard(it, highestPrivate2, cheapestPrivate)));
-
+        
         // Adicionar produtos de marca com separador
         limitedBranded.forEach((it, index) => {
             // Adicionar separador após os primeiros 3 produtos de marca
@@ -1122,7 +1122,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const recentProducts = products.sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded)).slice(0, 5);
 
         if (!recentProductsList) return; // Proteção caso o elemento não exista
-
+        
         recentProductsList.innerHTML = '';
         if (recentProducts.length === 0) {
             if (noRecentProductsMessage) noRecentProductsMessage.style.display = 'block';
@@ -1252,14 +1252,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Lógica de Filtros e Busca
     const filterProducts = () => {
         const products = getFromLocalStorage('products'); // Os produtos base vêm do localStorage
-
+        
         // Pegar o termo de pesquisa de ambos os campos
         const nameSearchTerm = productSearchBar.value.toLowerCase();
         const barcodeSearchTerm = barcodeSearchBar ? barcodeSearchBar.value.toLowerCase() : '';
-
+        
         // Usar qualquer um dos termos que estiver preenchido
         const searchTerm = barcodeSearchTerm || nameSearchTerm;
-
+        
         const marketValue = marketFilter.value;
         const brandValue = brandFilter.value;
         const categoryValue = categoryFilter.value;
@@ -1324,12 +1324,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const markets = [...new Set(products.map(p => p.market))].sort();
         const brands = [...new Set(products.map(p => p.brand))].sort();
         const categories = [...new Set(products.map(p => p.category))].sort();
-
+        
         marketFilter.innerHTML = `<option value="">Todos os Mercados</option>${markets.map(m => `<option value="${m}">${m}</option>`).join('')}`;
         brandFilter.innerHTML = `<option value="">Todas as Marcas</option>${brands.map(b => `<option value="${b}">${b}</option>`).join('')}`;
         categoryFilter.innerHTML = `<option value="">Todas as Categorias</option>${categories.map(c => `<option value="${c}">${c}</option>`).join('')}`;
     };
-
+    
     // Tornar disponível globalmente
     window.updateFilterOptions = updateFilterOptions;
 
@@ -1398,7 +1398,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showHistoryDropdown(q);
         }
     });
-
+    
     // CLONE EXATO - Ao pressionar Enter no campo de código de barras
     barcodeSearchBar.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
@@ -1497,7 +1497,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('click', (e) => {
         const targetBtn = e.target.closest('button');
         if (!targetBtn) return;
-
+        
         const productId = targetBtn.dataset.id;
         let products = getFromLocalStorage('products'); // Produtos base
         let product = products.find(p => p.id == productId);
@@ -1506,7 +1506,7 @@ document.addEventListener('DOMContentLoaded', () => {
              let cart = getFromSessionStorage('cart');
              product = cart.find(p => p.id == productId);
         }
-
+        
         if (!product) return;
 
         if (targetBtn.classList.contains('favorite-btn')) {
@@ -1584,7 +1584,7 @@ document.addEventListener('DOMContentLoaded', () => {
     favoritesList.addEventListener('click', (e) => {
         const targetBtn = e.target.closest('button');
         if (!targetBtn || !targetBtn.classList.contains('remove-from-favorites-btn')) return;
-
+        
         const productId = targetBtn.dataset.id;
         let favorites = getFromSessionStorage('favorites');
         favorites = favorites.filter(fav => fav.id != productId);
@@ -1596,12 +1596,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Evento de submissão do formulário de sugestão
     modalSuggestionForm.addEventListener('submit', (e) => {
         e.preventDefault();
-
+        
         const productId = modalSuggestionProductId.value;
         const productName = modalSuggestionProductName.value;
         const market = modalSuggestionMarket.value;
     const suggestedPrice = modalSuggestionNewPrice.value;
-
+        
         if (!suggestedPrice) {
             alert('Por favor, insira um preço válido.');
             return;
@@ -1647,10 +1647,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Helpers para abrir/fechar com animação
     const openModal = (modal) => {
         if (!modal) return;
-
+        
         // Bloquear scroll da página
         lockBodyScroll();
-
+        
         modal.classList.remove('closing');
         modal.classList.add('show');
         // ensure display flex for modal container
@@ -1661,15 +1661,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const closeModal = (modal) => {
         if (!modal) return;
-
+        
         modal.classList.remove('visible');
         modal.classList.add('closing');
-
+        
         // aguarda animação antes de esconder e desbloquear scroll
         setTimeout(() => {
             modal.classList.remove('show', 'closing');
             modal.style.display = 'none';
-
+            
             // Desbloquear scroll da página
             unlockBodyScroll();
         }, 240);
@@ -1680,7 +1680,7 @@ document.addEventListener('DOMContentLoaded', () => {
         openModal(cartModal);
         renderCartItems();
     });
-
+    
     favoritesBtn.addEventListener('click', (e) => {
         e.preventDefault();
         openModal(favoritesModal);
@@ -1713,7 +1713,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Lógica para os botões de scroll da lista de produtos
     if (scrollContainer && prevBtn && nextBtn) {
-        const scrollAmount = 300;
+        const scrollAmount = 300; 
 
         prevBtn.addEventListener('click', () => {
             scrollContainer.scrollBy({ left: -scrollAmount, behavior: 'smooth' });

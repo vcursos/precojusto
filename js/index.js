@@ -44,15 +44,15 @@ window.toggleFavorite = (productId) => {
 // Configura os listeners de dados do Firestore
 function setupFirestoreListeners() {
     console.log('🔥 Configurando listeners do Firebase...');
-
+    
     // Tentar múltiplos caminhos para encontrar os produtos
     const possiblePaths = [
         'products',
-        'public/data/products',
+        'public/data/products', 
         'artifacts/default-app-id/public/data/products',
         'precomercado/products'
     ];
-
+    
     // Primeiro, tentar o caminho mais simples
     console.log('📡 Tentando carregar produtos do Firebase...');
     onSnapshot(collection(db, 'products'), (snapshot) => {
@@ -64,16 +64,16 @@ function setupFirestoreListeners() {
             return;
         }
         products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
+        
         // Salvar produtos no localStorage para compatibilidade com script.js
         const productsForStorage = products.map(product => {
             const productPrices = prices.filter(p => p.productId === product.id);
             const cheapestPrice = productPrices.length > 0 ? Math.min(...productPrices.map(p => p.price)) : product.price || '0.00';
             const cheapestMarket = productPrices.length > 0 ? productPrices.find(p => p.price === cheapestPrice).supermarket : 'Desconhecido';
-
+            
             // Construir unidade completa: quantidade + unidade de medida
             const fullUnit = product.unit ? `${product.quantity || '1'} ${product.unit}` : (product.quantity || '1') + ' unidade';
-
+            
             return {
                 id: product.id,
                 name: product.name || 'Produto sem nome',
@@ -88,14 +88,14 @@ function setupFirestoreListeners() {
                 quantity: product.quantity || '1'
             };
         });
-
+        
         localStorage.setItem('products', JSON.stringify(productsForStorage));
-
+        
         // Disparar evento para script.js atualizar
         if (typeof window.renderProducts === 'function') {
             window.renderProducts();
         }
-
+        
         render();
     }, (error) => {
         console.error('❌ Erro ao carregar produtos:', error);
@@ -106,7 +106,7 @@ function setupFirestoreListeners() {
 // Função para tentar caminhos alternativos
 function tryAlternatePaths() {
     console.log('🔄 Tentando caminhos alternativos...');
-
+    
     // Tentar caminho com artifacts
     const appId = 'default-app-id';
     onSnapshot(collection(db, `/artifacts/${appId}/public/data/products`), (snapshot) => {
@@ -124,16 +124,16 @@ function tryAlternatePaths() {
 // Função para lidar com snapshot de produtos
 function handleProductsSnapshot(snapshot) {
     products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
+    
     // Salvar produtos no localStorage para compatibilidade com script.js
     const productsForStorage = products.map(product => {
         const productPrices = prices.filter(p => p.productId === product.id);
         const cheapestPrice = productPrices.length > 0 ? Math.min(...productPrices.map(p => p.price)) : product.price || '0.00';
         const cheapestMarket = productPrices.length > 0 ? productPrices.find(p => p.price === cheapestPrice).supermarket : 'Desconhecido';
-
+        
         // Construir unidade completa: quantidade + unidade de medida
         const fullUnit = product.unit ? `${product.quantity || '1'} ${product.unit}` : (product.quantity || '1') + ' unidade';
-
+        
         return {
             id: product.id,
             name: product.name || 'Produto sem nome',
@@ -148,15 +148,15 @@ function handleProductsSnapshot(snapshot) {
             quantity: product.quantity || '1'
         };
     });
-
+    
     localStorage.setItem('products', JSON.stringify(productsForStorage));
     console.log(`✅ ${productsForStorage.length} produtos salvos no localStorage`);
-
+    
     // Disparar evento para script.js atualizar
     if (typeof window.renderProducts === 'function') {
         window.renderProducts();
     }
-
+    
     render();
 }
 
@@ -189,10 +189,10 @@ function createFallbackProducts() {
             country: 'Portugal'
         }
     ];
-
+    
     localStorage.setItem('products', JSON.stringify(fallbackProducts));
     console.log('✅ Produtos de fallback criados');
-
+    
     if (typeof window.renderProducts === 'function') {
         window.renderProducts();
     }
@@ -216,23 +216,23 @@ function renderProducts() {
         if (!searchQuery || searchQuery.trim() === '') {
             return true;
         }
-
+        
         const nameMatch = product.name.toLowerCase().includes(searchQuery);
         const barcodeMatch = product.barcode && product.barcode.toString().includes(searchQuery);
         const matches = nameMatch || barcodeMatch;
-
+        
         // Log apenas para debug quando necessário
         // if (matches) console.log('✅ Produto encontrado:', product.name, 'barcode:', product.barcode);
-
+        
         return matches;
     });
 
     if (filteredProducts.length === 0) {
         // Verificar se a busca parece ser um código de barras (só números, 8+ dígitos)
         const looksLikeBarcode = searchQuery && /^\d{8,}$/.test(searchQuery.trim());
-
+        
         let message = '<div class="col-span-full text-center p-8">';
-
+        
         if (looksLikeBarcode) {
             message += `
                 <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
@@ -262,7 +262,7 @@ function renderProducts() {
                 </div>
             `;
         }
-
+        
         message += '</div>';
         productListContainer.innerHTML = message;
         return;
@@ -271,7 +271,7 @@ function renderProducts() {
     productListContainer.innerHTML = filteredProducts.map(product => {
         const priceText = product.cheapestPrice !== null ? `€${product.cheapestPrice.toFixed(2).replace('.', ',')}` : 'Indisponível';
         const isFavorite = favoriteIds.includes(product.id);
-
+        
         return `
             <div class="bg-white p-4 rounded-lg container-shadow flex flex-col justify-between relative">
                 <div onclick="navigateTo('produto.html?id=${product.id}')" class="cursor-pointer">
@@ -355,28 +355,28 @@ function render() {
 // Scanner duplicado removido (BarcodeScanner). A lógica única de scanner permanece em `barcode-scanner.js` / `script.js`.
 // Inicialização de eventos de pesquisa.
 document.addEventListener('DOMContentLoaded', () => {
-
+    
     // Configurar botão de pesquisa principal
     const searchButton = document.getElementById('search-button');
     const searchInput = document.getElementById('product-search-bar');
-
+    
     if (searchButton && searchInput) {
         searchButton.addEventListener('click', (e) => {
             e.preventDefault();
             console.log('🔍 Botão de pesquisa clicado, valor:', searchInput.value);
-
+            
             // Mostrar animação de carregamento
             const originalText = searchButton.innerHTML;
             searchButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Pesquisando...';
             searchButton.disabled = true;
-
+            
             // Simular delay para mostrar a animação
             setTimeout(() => {
                 // Chamar diretamente a função handleSearch
                 if (window.handleSearch) {
                     window.handleSearch({ target: searchInput });
                 }
-
+                
                 // Restaurar botão após pesquisa
                 setTimeout(() => {
                     searchButton.innerHTML = originalText;
@@ -384,25 +384,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 }, 300);
             }, 500);
         });
-
+        
         // Também permitir pesquisa com Enter (com animação)
         searchInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 console.log('🔍 Enter pressionado na busca principal, valor:', searchInput.value);
-
+                
                 // Mostrar animação de carregamento no botão
                 const originalText = searchButton.innerHTML;
                 searchButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Pesquisando...';
                 searchButton.disabled = true;
-
+                
                 // Simular delay para mostrar a animação
                 setTimeout(() => {
                     // Chamar diretamente a função handleSearch
                     if (window.handleSearch) {
                         window.handleSearch({ target: searchInput });
                     }
-
+                    
                     // Restaurar botão após pesquisa
                     setTimeout(() => {
                         searchButton.innerHTML = originalText;
@@ -411,10 +411,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 }, 500);
             }
         });
-
+        
         console.log('✅ Eventos de pesquisa principal configurados');
     }
-
+    
     console.log('✅ Campo de pesquisa por código de barras configurado (event listeners no script.js)');
 });
 

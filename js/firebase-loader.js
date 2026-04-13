@@ -5,7 +5,7 @@ import { collection, onSnapshot, getDocs } from "https://www.gstatic.com/firebas
 // Função para carregar produtos do Firebase
 async function loadProductsFromFirebase() {
     console.log('🔥 Iniciando carregamento do Firebase...');
-
+    
     try {
         // Tentar diferentes caminhos para encontrar os produtos
         const possibleCollections = [
@@ -13,15 +13,15 @@ async function loadProductsFromFirebase() {
             'public/data/products',
             'artifacts/default-app-id/public/data/products'
         ];
-
+        
         for (const collectionPath of possibleCollections) {
             try {
                 console.log(`📡 Tentando coleção: ${collectionPath}`);
                 const snapshot = await getDocs(collection(db, collectionPath));
-
+                
                 if (!snapshot.empty) {
                     console.log(`✅ Encontrados ${snapshot.docs.length} produtos em: ${collectionPath}`);
-
+                    
                     const products = snapshot.docs.map(doc => {
                         const data = doc.data();
                         const rawQuantity = data.quantity ?? data.qty ?? data.amount ?? data.size ?? '';
@@ -31,7 +31,7 @@ async function loadProductsFromFirebase() {
                         const country = (data.country || data.zone || data.countryOfOrigin || data.origin || '').toString().trim();
                         const barcode = (data.barcode || data.ean || data.gtin || '').toString().trim();
                         const unitDisplay = quantity && unit ? `${quantity} ${unit}`.trim() : (unit || quantity);
-
+                        
                         return {
                             id: doc.id,
                             name: data.name || 'Produto sem nome',
@@ -47,14 +47,14 @@ async function loadProductsFromFirebase() {
                             country
                         };
                     });
-
+                    
                     // Salvar no localStorage
                     localStorage.setItem('products', JSON.stringify(products));
                     console.log(`💾 ${products.length} produtos salvos no localStorage`);
-
+                    
                     // Atualizar interface - múltiplas tentativas
                     console.log('🔄 Tentando atualizar interface...');
-
+                    
                     const updateInterface = () => {
                         if (typeof window.renderProducts === 'function') {
                             window.renderProducts();
@@ -63,31 +63,31 @@ async function loadProductsFromFirebase() {
                             console.log('⚠️ window.renderProducts não disponível ainda');
                         }
                     };
-
+                    
                     // Tentar imediatamente
                     updateInterface();
-
+                    
                     // Tentar após delays progressivos
                     setTimeout(updateInterface, 100);
                     setTimeout(updateInterface, 500);
                     setTimeout(updateInterface, 1000);
-
+                    
                     // Disparar evento customizado
-                    window.dispatchEvent(new CustomEvent('productsLoaded', {
-                        detail: { products, source: 'firebase' }
+                    window.dispatchEvent(new CustomEvent('productsLoaded', { 
+                        detail: { products, source: 'firebase' } 
                     }));
-
+                    
                     return; // Sucesso, parar aqui
                 }
             } catch (error) {
                 console.log(`❌ Erro na coleção ${collectionPath}:`, error.message);
             }
         }
-
+        
         // Se chegou aqui, nenhuma coleção funcionou
         console.log('⚠️ Nenhuma coleção de produtos encontrada, criando produtos de exemplo...');
         createFallbackProducts();
-
+        
     } catch (error) {
         console.error('❌ Erro geral no Firebase:', error);
         createFallbackProducts();
@@ -140,10 +140,10 @@ function createFallbackProducts() {
             country: ''
         }
     ];
-
+    
     localStorage.setItem('products', JSON.stringify(fallbackProducts));
     console.log('✅ Produtos de exemplo criados');
-
+    
     // Atualizar interface com múltiplas tentativas
     const updateInterface = () => {
         if (typeof window.renderProducts === 'function') {
@@ -153,7 +153,7 @@ function createFallbackProducts() {
             console.log('⚠️ window.renderProducts não disponível para fallback');
         }
     };
-
+    
     // Tentar múltiplas vezes
     updateInterface();
     setTimeout(updateInterface, 100);
@@ -168,7 +168,7 @@ function shouldLoadProducts() {
         console.log('📦 Nenhum produto no localStorage, carregando...');
         return true;
     }
-
+    
     try {
         const products = JSON.parse(existingProducts);
         if (!products || products.length === 0) {
@@ -186,7 +186,7 @@ function shouldLoadProducts() {
 // Múltiplas tentativas de inicialização
 function initializeFirebaseLoader() {
     console.log('🚀 Firebase Loader iniciando...');
-
+    
     // Carregar sempre, independente de existir no localStorage
     loadProductsFromFirebase();
 }

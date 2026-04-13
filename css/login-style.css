@@ -111,23 +111,23 @@ input:focus {
         margin: 0 10px;
         max-width: 100%;
     }
-
+    
     h1 {
         font-size: 20px;
         margin-top: 15px;
     }
-
+    
     .back-button {
         top: 10px;
         left: 10px;
         font-size: 12px;
     }
-
+    
     input {
         padding: 10px;
         font-size: 14px;
     }
-
+    
     .btn-entrar {
         padding: 10px;
         font-size: 14px;
@@ -139,12 +139,12 @@ input:focus {
     .login-card {
         padding: 15px 10px;
     }
-
+    
     h1 {
         font-size: 18px;
         margin-top: 20px;
     }
-
+    
     label {
         font-size: 14px;
     }
@@ -156,7 +156,7 @@ input:focus {
         height: auto;
         min-height: 100vh;
     }
-
+    
     .container {
         padding: 20px 0;
     }
@@ -167,11 +167,11 @@ input:focus {
     body {
         height: auto;
     }
-
+    
     .container {
         padding: 20px 0;
     }
-
+    
     .login-card {
         margin: 10px;
     }

@@ -145,7 +145,7 @@
     // Inicializa e escuta eventos
     document.addEventListener('DOMContentLoaded', refreshCategories);
     window.addEventListener('productsLoaded', refreshCategories);
-
+    
     // Fallback: tentar atualizar após 1 segundo se ainda não foi carregado
     setTimeout(() => {
         if (!activeCategory) {

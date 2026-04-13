@@ -79,7 +79,7 @@ class BarcodeProductSearch {
 
         if (barcodeInput) {
             console.log('Campo de código de barras encontrado');
-
+            
             // Busca ao pressionar Enter
             barcodeInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
@@ -96,7 +96,7 @@ class BarcodeProductSearch {
             barcodeInput.addEventListener('input', (e) => {
                 const barcode = e.target.value.trim();
                 this.clearMessages();
-
+                
                 if (barcode.length >= 8) {
                     clearTimeout(this.searchTimeout);
                     this.searchTimeout = setTimeout(() => {
@@ -156,9 +156,9 @@ class BarcodeProductSearch {
                 const productName = document.getElementById('product-name').value;
                 const brand = document.getElementById('product-brand').value || 'Marca';
                 const barcode = document.getElementById('product-barcode').value;
-
+                
                 console.log('📝 Dados para busca:', { productName, brand, barcode });
-
+                
                 if (productName && productName.trim()) {
                     console.log('📝 Chamando searchMultipleNameReferences...');
                     this.searchMultipleNameReferences(productName, brand, barcode);
@@ -178,13 +178,13 @@ class BarcodeProductSearch {
                     const modal = document.getElementById('google-image-modal');
                     const productName = document.getElementById('product-name').value.trim();
                     const brand = document.getElementById('product-brand').value.trim();
-
+                    
                     // Limpar resultados e URL anteriores ANTES de abrir
                     const urlInputField = document.getElementById('google-image-url-input');
                     const resultsContainer = document.getElementById('serpapi-image-results');
                     if (urlInputField) urlInputField.value = '';
                     if (resultsContainer) resultsContainer.innerHTML = '';
-
+                    
                     let query = '';
                     if (productName && brand) {
                         query = `${brand} ${productName}`;
@@ -198,10 +198,10 @@ class BarcodeProductSearch {
 
                     modal.style.display = 'flex';
                     modal.dataset.query = query;
-
+                    
                     // Bloqueia scroll da página de fundo APENAS para este modal
                     document.body.classList.add('admin-google-image-modal-open');
-
+                    
                     // Preenche campo de termo da busca no modal
                     const searchTermInputEl = document.getElementById('serpapi-search-term');
                     if (searchTermInputEl) {
@@ -311,7 +311,7 @@ class BarcodeProductSearch {
                         document.body.classList.remove('admin-google-image-modal-open');
                     };
                 }
-
+                
                 // Fecha modal ao clicar fora (no backdrop)
                 if (modal) {
                     modal.onclick = (e) => {
@@ -358,7 +358,7 @@ class BarcodeProductSearch {
                         // Abre teste em nova aba (evita bloqueios CORS/SW)
                         const testUrl = `https://serpapi.com/account.json?api_key=${encodeURIComponent(key)}`;
                         window.open(testUrl, '_blank', 'noopener,noreferrer');
-
+                        
                         // Salva a chave e mostra mensagem
                         try { localStorage.setItem('serpapi_key', key); } catch(_) {}
                         try { localStorage.setItem('serpapi_key_deleted', 'false'); } catch(_) {}
@@ -407,16 +407,16 @@ class BarcodeProductSearch {
                             resultsDiv.innerHTML = '<div style="color:#dc3545; font-size:14px;">Preencha o termo de busca.</div>';
                             return;
                         }
-
+                        
                         openGoogleBtn.disabled = true;
                         openGoogleBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Buscando...';
                         resultsDiv.innerHTML = '<div style="color:#2563eb; font-size:14px;">Carregando imagens...</div>';
-
+                        
                         try {
                             // Tenta buscar imagens com fallback de múltiplos proxies
                             const tryFetchImages = async (engineName) => {
                                 const apiUrl = `https://serpapi.com/search.json?engine=${engineName}&hl=pt-BR&gl=pt&google_domain=google.pt&safe=active&q=${encodeURIComponent(query)}&ijn=0&api_key=${encodeURIComponent(apiKey)}`;
-
+                                
                                 // Lista de proxies CORS para tentar (em ordem de preferência)
                                 const proxies = [
                                     null, // Tenta direto primeiro (funciona no GitHub Pages)
@@ -424,25 +424,25 @@ class BarcodeProductSearch {
                                     `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(apiUrl)}`,
                                     `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`
                                 ];
-
+                                
                                 for (const proxy of proxies) {
                                     try {
                                         const url = proxy || apiUrl;
                                         console.log(`Tentando ${proxy ? 'via proxy' : 'direto'}:`, url);
-
-                                        const resp = await fetch(url, {
+                                        
+                                        const resp = await fetch(url, { 
                                             method: 'GET',
                                             cache: 'no-store',
                                             headers: proxy ? {} : {
                                                 'Accept': 'application/json'
                                             }
                                         });
-
+                                        
                                         if (!resp.ok) {
                                             console.warn(`Falhou (${resp.status}):`, url);
                                             continue;
                                         }
-
+                                        
                                         const data = await resp.json();
                                         console.log('✅ Sucesso:', proxy ? 'via proxy' : 'direto');
                                         return data;
@@ -451,13 +451,13 @@ class BarcodeProductSearch {
                                         continue;
                                     }
                                 }
-
+                                
                                 throw new Error('Todos os métodos falharam');
                             };
-
+                            
                             let data = null;
                             let usedEngine = 'google_images';
-
+                            
                             // Tenta google_images_light primeiro (mais confiável)
                             try {
                                 data = await tryFetchImages('google_images_light');
@@ -491,7 +491,7 @@ class BarcodeProductSearch {
                                     imgEl.alt = img.title || `Imagem ${idx + 1}`;
                                     imgEl.title = `Clique para usar: ${img.title || img.link || ''} • ${usedEngine}`;
                                     imgEl.style = 'width:90px; height:90px; object-fit:cover; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.08); cursor:pointer; border:2px solid #eee; margin:4px; transition:all 0.2s ease;';
-
+                                    
                                     // Efeito hover
                                     imgEl.onmouseenter = () => {
                                         if (imgEl.style.border !== '3px solid rgb(37, 99, 235)') {
@@ -505,53 +505,53 @@ class BarcodeProductSearch {
                                             imgEl.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
                                         }
                                     };
-
+                                    
                                     imgEl.onerror = () => {
                                         console.warn('Erro ao carregar miniatura:', imgSrc);
                                         imgEl.style.opacity = '0.3';
                                     };
                                     imgEl.onclick = () => {
                                         const finalUrl = img.original || img.link || img.thumbnail;
-
+                                        
                                         // Remove seleção anterior
                                         Array.from(resultsDiv.children).forEach(child => {
                                             child.style.border = '2px solid #eee';
                                             child.style.transform = 'scale(1)';
                                             child.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
                                         });
-
+                                        
                                         // Destaca imagem selecionada
                                         imgEl.style.border = '3px solid #2563eb';
                                         imgEl.style.transform = 'scale(1.05)';
                                         imgEl.style.boxShadow = '0 4px 16px rgba(37, 99, 235, 0.3)';
-
+                                        
                                         // Preenche campo de URL no modal
                                         urlInput.value = finalUrl;
-
+                                        
                                         // Aplica IMEDIATAMENTE no produto (sem precisar clicar em "Usar Imagem")
                                         const imageInput = document.getElementById('product-image');
                                         if (imageInput) {
                                             imageInput.value = finalUrl;
                                             imageInput.style.background = 'linear-gradient(90deg, #d4edda 0%, #ffffff 100%)';
                                             imageInput.title = 'Imagem selecionada do Google';
-
+                                            
                                             // Garantir opção de URL personalizada ativada
                                             const customImageRadio = document.getElementById('use-custom-image');
                                             if (customImageRadio) customImageRadio.checked = true;
-
+                                            
                                             // Mostrar preview se função existir
                                             if (typeof this.showImagePreview === 'function') {
                                                 this.showImagePreview(finalUrl);
                                             }
-
+                                            
                                             // Efeito visual de confirmação
-                                            setTimeout(() => {
-                                                imageInput.style.background = '';
+                                            setTimeout(() => { 
+                                                imageInput.style.background = ''; 
                                             }, 2500);
                                         }
-
+                                        
                                         console.log('✅ Imagem aplicada ao produto:', finalUrl);
-
+                                        
                                         // FECHA O MODAL AUTOMATICAMENTE após aplicar
                                         setTimeout(() => {
                                             modal.style.display = 'none';
@@ -571,7 +571,7 @@ class BarcodeProductSearch {
                             console.error('❌ Erro geral:', err);
                             resultsDiv.innerHTML = `<div style="color:#dc3545; font-size:14px;">Erro ao buscar imagens: ${err.message}<br><small>Verifique console (F12) para detalhes.</small></div>`;
                         }
-
+                        
                         openGoogleBtn.disabled = false;
                         openGoogleBtn.innerHTML = '<i class="fas fa-search"></i> Buscar';
                     };
@@ -583,7 +583,7 @@ class BarcodeProductSearch {
                             alert('Selecione uma imagem clicando nela ou cole o link manualmente.');
                             return;
                         }
-
+                        
                         // Troca imagem do produto
                         const imageInput = document.getElementById('product-image');
                         if (imageInput) {
@@ -591,20 +591,20 @@ class BarcodeProductSearch {
                             imageInput.style.background = 'linear-gradient(90deg, #d4edda 0%, #ffffff 100%)';
                             imageInput.title = 'Imagem selecionada do Google';
                             setTimeout(() => { imageInput.style.background = ''; }, 3000);
-
+                            
                             // Garantir opção de URL personalizada ativada
                             const customImageRadio = document.getElementById('use-custom-image');
                             if (customImageRadio) customImageRadio.checked = true;
-
+                            
                             // Mostra preview se função existir
                             if (typeof this.showImagePreview === 'function') {
                                 this.showImagePreview(imageUrl);
                             }
                         }
-
+                        
                         // Feedback visual
                         console.log('✅ Imagem aplicada:', imageUrl);
-
+                        
                         // Fecha modal automaticamente
                         modal.style.display = 'none';
                         urlInput.value = '';
@@ -630,21 +630,21 @@ class BarcodeProductSearch {
 
         console.log('Iniciando busca online para código:', barcode);
         this.showLoading(true);
-
+        
         try {
             // PRIORIDADE: Busca online primeiro para ter base mundial
             let productInfo = await this.fetchProductFromAPI(barcode);
-
+            
             if (productInfo) {
                 console.log('✅ Produto encontrado na API mundial:', productInfo);
-
+                
                 try {
                     // Se tiver preço local, adiciona da base local
                     const localProduct = this.productDatabase[barcode];
                     if (localProduct && localProduct.price) {
                         productInfo.price = localProduct.price;
                         console.log('💰 Preço local adicionado:', localProduct.price);
-
+                        
                         // Preenche preço local imediatamente
                         const priceInput = document.getElementById('product-price');
                         if (priceInput) {
@@ -654,10 +654,10 @@ class BarcodeProductSearch {
                             setTimeout(() => { priceInput.style.background = ''; }, 3000);
                         }
                     }
-
+                    
                     console.log('🔄 Preenchendo formulário com dados do produto...');
                     this.fillProductForm(productInfo, barcode);
-
+                    
                     const sourceEmoji = {
                         'OpenFoodFacts': '🍎',
                         'OpenBeautyFacts': '🧴',
@@ -666,13 +666,13 @@ class BarcodeProductSearch {
                     };
                     const emoji = sourceEmoji[productInfo.source] || '🌍';
                     this.showMessage(`${emoji} Produto encontrado via ${productInfo.source}! Dados preenchidos.`, 'success');
-
+                    
                     console.log('✅ Processo concluído com sucesso');
                 } catch (fillError) {
                     console.error('❌ Erro ao preencher formulário:', fillError);
                     this.showMessage('⚠️ Produto encontrado mas erro ao preencher formulário.', 'warning');
                 }
-
+                
                 // Foca no próximo campo importante (mercado)
                 setTimeout(() => {
                     const marketSelect = document.getElementById('product-market');
@@ -682,7 +682,7 @@ class BarcodeProductSearch {
                 console.log('Produto não encontrado na API, verificando base local...');
                 // Fallback: verifica base local
                 const localProduct = this.productDatabase[barcode];
-
+                
                 if (localProduct) {
                     console.log('Produto encontrado na base local:', localProduct);
                     this.fillProductForm(localProduct, barcode);
@@ -694,7 +694,7 @@ class BarcodeProductSearch {
             }
         } catch (error) {
             console.error('❌ Erro geral na busca de produto:', error);
-
+            
             // Em caso de erro de rede, tenta base local como fallback
             const localProduct = this.productDatabase[barcode];
             if (localProduct) {
@@ -712,7 +712,7 @@ class BarcodeProductSearch {
 
     async fetchProductFromAPI(barcode) {
         console.log('🌍 Consultando múltiplas bases mundiais para código:', barcode);
-
+        
         // Tenta múltiplas APIs para maior cobertura
         const apis = [
             {
@@ -740,15 +740,15 @@ class BarcodeProductSearch {
                 category: 'outros'
             }
         ];
-
+        
         for (const api of apis) {
             try {
                 console.log(`🔍 Tentando API: ${api.name} - ${api.url}`);
-
+                
                 // Configuração mais robusta para CORS e timeouts
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos timeout
-
+                
                 const response = await fetch(api.url, {
                     method: 'GET',
                     headers: {
@@ -758,35 +758,35 @@ class BarcodeProductSearch {
                     mode: 'cors',
                     signal: controller.signal
                 });
-
+                
                 clearTimeout(timeoutId);
-
+                
                 console.log(`📊 Resposta ${api.name}:`, response.status, response.statusText);
-
+                
                 if (!response.ok) {
                     console.warn(`⚠️ API ${api.name} retornou status ${response.status}: ${response.statusText}`);
-
+                    
                     // Se for erro 404, produto não existe nesta API
                     if (response.status === 404) {
                         console.log(`➡️ Produto não encontrado em ${api.name}, tentando próxima API...`);
                         continue;
                     }
-
+                    
                     // Para outros erros, tenta próxima API
                     continue;
                 }
-
+                
                 const contentType = response.headers.get('content-type');
                 if (!contentType || !contentType.includes('application/json')) {
                     console.warn(`⚠️ API ${api.name} não retornou JSON válido`);
                     continue;
                 }
-
+                
                 const data = await response.json();
                 console.log(`📦 Dados recebidos de ${api.name}:`, data);
-
+                
                 const productInfo = api.parser(data, barcode);
-
+                
                 if (productInfo) {
                     console.log(`✅ Produto processado com sucesso via ${api.name}:`, productInfo);
                     return productInfo;
@@ -804,7 +804,7 @@ class BarcodeProductSearch {
                 continue;
             }
         }
-
+        
         console.log('❌ Nenhuma API retornou dados para este código');
         return null;
     }
@@ -812,22 +812,22 @@ class BarcodeProductSearch {
     parseOpenFoodFacts(data, barcode) {
         try {
             console.log('🔍 Processando dados OpenFoodFacts:', data);
-
+            
             if ((data.status === 1 || data.status_verbose === 'product found') && data.product) {
                 const product = data.product;
                 console.log('📦 Dados do produto:', product);
-
+                
                 // Extrai nome do produto (múltiplas tentativas)
-                const productName = product.product_name ||
-                                  product.product_name_pt ||
-                                  product.product_name_en ||
+                const productName = product.product_name || 
+                                  product.product_name_pt || 
+                                  product.product_name_en || 
                                   product.product_name_es ||
                                   product.generic_name ||
                                   product.abbreviated_product_name ||
                                   'Produto Alimentar';
-
+                
                 console.log('📝 Nome extraído:', productName);
-
+                
                 // Extrai marca de forma mais robusta
                 let brand = '';
                 if (product.brands) {
@@ -837,24 +837,24 @@ class BarcodeProductSearch {
                 } else if (product.manufacturing_places) {
                     brand = product.manufacturing_places.split(',')[0].trim();
                 }
-
+                
                 console.log('🏷️ Marca extraída:', brand);
-
+                
                 // Detecta categoria de forma mais robusta
                 const categories = product.categories || product.categories_tags?.join(',') || '';
                 const category = this.mapCategory(categories.toString());
                 console.log('📂 Categoria mapeada:', category);
-
+                
                 // Detecta unidade e quantidade
                 const unit = this.detectUnit(product);
                 const quantity = this.detectQuantity(product);
                 console.log('📏 Unidade/Quantidade:', unit, quantity);
-
+                
                 // Busca a melhor qualidade de imagem disponível
                 let imageUrl = null;
                 try {
-                    imageUrl = product.image_front_url ||
-                               product.image_url ||
+                    imageUrl = product.image_front_url || 
+                               product.image_url || 
                                product.image_front_small_url ||
                                product.selected_images?.front?.display?.pt ||
                                product.selected_images?.front?.display?.en ||
@@ -876,7 +876,7 @@ class BarcodeProductSearch {
                     image_url: imageUrl,
                     source: 'OpenFoodFacts'
                 };
-
+                
                 console.log('✅ Produto processado com sucesso:', result);
                 return result;
             } else {
@@ -895,18 +895,18 @@ class BarcodeProductSearch {
             if ((data.status === 1 || data.status_verbose === 'product found') && data.product) {
                 const product = data.product;
                 console.log('🧴 Produto de beleza/higiene encontrado:', product);
-
+                
                 // Nome do produto
-                const productName = product.product_name ||
-                                  product.product_name_pt ||
-                                  product.product_name_en ||
+                const productName = product.product_name || 
+                                  product.product_name_pt || 
+                                  product.product_name_en || 
                                   product.generic_name ||
                                   'Produto de Higiene/Beleza';
-
+                
                 // Marca
                 const brands = product.brands || product.brand_owner || '';
                 const brand = brands ? brands.split(',')[0].trim() : '';
-
+                
                 // Categoria específica para produtos de beleza
                 let category = 'higiene';
                 const categories = (product.categories || '').toLowerCase();
@@ -914,14 +914,14 @@ class BarcodeProductSearch {
                 else if (categories.includes('cream') || categories.includes('lotion')) category = 'higiene';
                 else if (categories.includes('makeup') || categories.includes('cosmetic')) category = 'higiene';
                 else if (categories.includes('soap') || categories.includes('gel')) category = 'limpeza';
-
+                
                 // Detecta unidade e quantidade
                 const unit = this.detectUnit(product);
                 const quantity = this.detectQuantity(product);
-
+                
                 // Busca a melhor qualidade de imagem disponível
-                const imageUrl = product.image_front_url ||
-                               product.image_url ||
+                const imageUrl = product.image_front_url || 
+                               product.image_url || 
                                product.image_front_small_url ||
                                product.selected_images?.front?.display?.pt ||
                                product.selected_images?.front?.display?.en ||
@@ -951,29 +951,29 @@ class BarcodeProductSearch {
             if ((data.status === 1 || data.status_verbose === 'product found') && data.product) {
                 const product = data.product;
                 console.log('📦 Produto geral encontrado:', product);
-
+                
                 // Nome do produto
-                const productName = product.product_name ||
-                                  product.product_name_pt ||
-                                  product.product_name_en ||
+                const productName = product.product_name || 
+                                  product.product_name_pt || 
+                                  product.product_name_en || 
                                   product.generic_name ||
                                   'Produto Geral';
-
+                
                 // Marca
                 const brands = product.brands || product.brand_owner || '';
                 const brand = brands ? brands.split(',')[0].trim() : '';
-
+                
                 // Categoria genérica
                 const categories = product.categories || product.categories_tags || '';
                 const category = this.mapCategory(categories.toString()) || 'outros';
-
+                
                 // Detecta unidade e quantidade
                 const unit = this.detectUnit(product);
                 const quantity = this.detectQuantity(product);
-
+                
                 // Busca a melhor qualidade de imagem disponível
-                const imageUrl = product.image_front_url ||
-                               product.image_url ||
+                const imageUrl = product.image_front_url || 
+                               product.image_url || 
                                product.image_front_small_url ||
                                product.selected_images?.front?.display?.pt ||
                                product.selected_images?.front?.display?.en ||
@@ -1000,7 +1000,7 @@ class BarcodeProductSearch {
 
     fillProductForm(productInfo, barcode = null) {
         console.log('Preenchendo formulário com:', productInfo);
-
+        
         // Código de Barras (NOVO!)
         if (barcode) {
             const barcodeInput = document.getElementById('product-barcode');
@@ -1009,28 +1009,28 @@ class BarcodeProductSearch {
                 console.log('📊 Código de barras preenchido:', barcode);
             }
         }
-
+        
         // Nome do produto
         if (productInfo.name) {
             document.getElementById('product-name').value = productInfo.name;
         }
-
+        
         // Preço (se disponível)
         if (productInfo.price) {
             document.getElementById('product-price').value = productInfo.price;
         }
-
+        
         // Quantidade
         if (productInfo.quantity) {
             document.getElementById('product-quantity').value = productInfo.quantity;
         }
-
+        
         // Configuração da marca
         const brandTypeGeneric = document.getElementById('brand-is-generic');
         const brandTypeSpecific = document.getElementById('brand-is-specific');
         const brandInputGroup = document.querySelector('.brand-input-group');
         const productBrandInput = document.getElementById('product-brand');
-
+        
         if (productInfo.brand) {
             if (brandTypeSpecific) brandTypeSpecific.checked = true;
             if (brandInputGroup) brandInputGroup.style.display = 'block';
@@ -1039,7 +1039,7 @@ class BarcodeProductSearch {
             if (brandTypeGeneric) brandTypeGeneric.checked = true;
             if (brandInputGroup) brandInputGroup.style.display = 'none';
         }
-
+        
         // Categoria
         if (productInfo.category) {
             const categorySelect = document.getElementById('product-category');
@@ -1047,7 +1047,7 @@ class BarcodeProductSearch {
                 categorySelect.value = productInfo.category;
             }
         }
-
+        
         // Unidade de medida
         if (productInfo.unit) {
             const unitSelect = document.getElementById('product-unit');
@@ -1059,28 +1059,28 @@ class BarcodeProductSearch {
         // URL da Imagem (NOVO!)
         if (productInfo.image_url) {
             console.log('🖼️ Preenchendo URL da imagem:', productInfo.image_url);
-
+            
             // Seleciona URL personalizada
             const customImageRadio = document.getElementById('use-custom-image');
             if (customImageRadio) {
                 customImageRadio.checked = true;
             }
-
+            
             // Preenche a URL da imagem
             const imageUrlInput = document.getElementById('product-image');
             if (imageUrlInput) {
                 imageUrlInput.value = productInfo.image_url;
-
+                
                 // Adiciona indicador visual de que a imagem foi preenchida automaticamente
                 imageUrlInput.style.background = 'linear-gradient(90deg, #e8f5e8 0%, #ffffff 100%)';
                 imageUrlInput.title = `Imagem obtida automaticamente via ${productInfo.source}`;
-
+                
                 // Remove a cor após alguns segundos
                 setTimeout(() => {
                     imageUrlInput.style.background = '';
                 }, 3000);
             }
-
+            
             // Mostra preview da imagem se possível
             this.showImagePreview(productInfo.image_url);
         }
@@ -1118,12 +1118,12 @@ class BarcodeProductSearch {
                 setTimeout(() => {
                     field.style.transition = 'background-color 0.5s ease';
                     field.style.backgroundColor = '#e8f5e8';
-
+                    
                     // Para o campo de imagem, adiciona um indicador especial
                     if (fieldId === 'product-image') {
                         field.style.background = 'linear-gradient(90deg, #e8f5e8 0%, #d4edda 100%)';
                     }
-
+                    
                     setTimeout(() => {
                         field.style.backgroundColor = '';
                         field.style.background = '';
@@ -1135,38 +1135,38 @@ class BarcodeProductSearch {
 
     mapCategory(categories) {
         if (!categories) return 'alimentos';
-
+        
         const categoryMap = {
             // Produtos lácteos / Frios
             'dairy': 'frios', 'milk': 'frios', 'leite': 'frios', 'yogurt': 'frios', 'iogurte': 'frios',
             'cheese': 'frios', 'queijo': 'frios', 'butter': 'frios', 'manteiga': 'frios',
             'cream': 'frios', 'nata': 'frios', 'fresh': 'frios',
-
+            
             // Bebidas
             'beverages': 'bebidas', 'drinks': 'bebidas', 'bebidas': 'bebidas', 'soft-drinks': 'bebidas',
             'water': 'bebidas', 'agua': 'bebidas', 'juices': 'bebidas', 'sumos': 'bebidas',
             'cola': 'bebidas', 'soda': 'bebidas', 'refrigerante': 'bebidas', 'mineral': 'bebidas',
-
+            
             // Carnes / Talho
             'meat': 'talho', 'carne': 'talho', 'beef': 'talho', 'pork': 'talho', 'chicken': 'talho',
             'poultry': 'talho', 'sausages': 'talho', 'ham': 'talho', 'fiambre': 'talho',
-
+            
             // Congelados
             'frozen': 'congelados', 'congelados': 'congelados', 'ice-cream': 'congelados',
             'gelado': 'congelados', 'surgelados': 'congelados',
-
+            
             // Padaria
             'bakery': 'padaria', 'bread': 'padaria', 'pao': 'padaria', 'biscuits': 'padaria',
             'cookies': 'padaria', 'pastry': 'padaria', 'bolacha': 'padaria',
-
+            
             // Limpeza
             'cleaning': 'limpeza', 'detergent': 'limpeza', 'soap': 'limpeza', 'sabao': 'limpeza',
             'household': 'limpeza', 'casa': 'limpeza',
-
+            
             // Higiene
             'personal-care': 'higiene', 'hygiene': 'higiene', 'shampoo': 'higiene',
             'toothpaste': 'higiene', 'cosmetics': 'higiene', 'higiene': 'higiene',
-
+            
             // Alimentos gerais
             'chocolate': 'alimentos', 'sweets': 'alimentos', 'doces': 'alimentos',
             'cereals': 'alimentos', 'cereais': 'alimentos', 'pasta': 'alimentos',
@@ -1175,17 +1175,17 @@ class BarcodeProductSearch {
             'spices': 'alimentos', 'especiarias': 'alimentos', 'rice': 'alimentos',
             'arroz': 'alimentos', 'beans': 'alimentos', 'feijao': 'alimentos'
         };
-
+        
         const lowerCategories = categories.toLowerCase();
         console.log('Categorias recebidas:', lowerCategories);
-
+        
         for (const [key, value] of Object.entries(categoryMap)) {
             if (lowerCategories.includes(key)) {
                 console.log(`Categoria mapeada: ${key} -> ${value}`);
                 return value;
             }
         }
-
+        
         console.log('Categoria não mapeada, usando padrão: alimentos');
         return 'alimentos';
     }
@@ -1198,10 +1198,10 @@ class BarcodeProductSearch {
             product.generic_name || '',
             product.serving_size || ''
         ];
-
+        
         const combined = sources.join(' ').toLowerCase();
         console.log('Detectando unidade em:', combined);
-
+        
         // Prioridade: unidades mais específicas primeiro
         if (combined.match(/\b\d+([.,]\d+)?\s*kg\b/)) return 'kg';
         if (combined.match(/\b\d+([.,]\d+)?\s*l\b/) || combined.includes('litro') || combined.includes('liter')) return 'L';
@@ -1209,10 +1209,10 @@ class BarcodeProductSearch {
         if (combined.match(/\b\d+([.,]\d+)?\s*g\b/) && !combined.includes('kg')) return 'g';
         if (combined.includes('oz') || combined.includes('fl oz')) return 'ml'; // Converte oz para ml
         if (combined.includes('lb') || combined.includes('pound')) return 'kg'; // Converte lb para kg
-
+        
         // Produtos específicos
         if (combined.includes('pack') || combined.includes('unidade') || combined.includes('unit')) return 'unidade';
-
+        
         console.log('Unidade detectada: unidade (padrão)');
         return 'unidade';
     }
@@ -1226,10 +1226,10 @@ class BarcodeProductSearch {
             product.serving_size || '',
             product.net_weight || ''
         ];
-
+        
         const combined = sources.join(' ');
         console.log('Detectando quantidade em:', combined);
-
+        
         // Padrões de quantidade mais específicos
         const patterns = [
             /(\d+(?:[.,]\d+)?)\s*(kg|kilogram)/i,
@@ -1241,13 +1241,13 @@ class BarcodeProductSearch {
             /(\d+(?:[.,]\d+)?)\s*(lb|pound)/i,
             /(\d+([.,]\d+)?)/i // Qualquer número
         ];
-
+        
         for (const pattern of patterns) {
             const match = combined.match(pattern);
             if (match) {
                 let quantity = parseFloat(match[1].replace(',', '.'));
                 const unit = match[2] ? match[2].toLowerCase() : '';
-
+                
                 // Conversões necessárias
                 if (unit.includes('oz') && !unit.includes('fl')) {
                     quantity = quantity * 28.35; // oz para gramas
@@ -1256,12 +1256,12 @@ class BarcodeProductSearch {
                 } else if (unit.includes('lb') || unit.includes('pound')) {
                     quantity = quantity * 0.453592; // lb para kg
                 }
-
+                
                 console.log(`Quantidade detectada: ${quantity} (original: ${match[1]} ${unit})`);
                 return quantity;
             }
         }
-
+        
         console.log('Quantidade não detectada, usando padrão: 1');
         return 1;
     }
@@ -1269,24 +1269,24 @@ class BarcodeProductSearch {
     isValidBarcodeFormat(barcode) {
         // Remove espaços e caracteres não numéricos
         const cleanBarcode = barcode.replace(/\D/g, '');
-
+        
         // Verifica comprimentos válidos para códigos de barras
         const validLengths = [8, 12, 13, 14, 18]; // EAN-8, UPC-A, EAN-13, ITF-14, SSCC
-
+        
         if (!validLengths.includes(cleanBarcode.length)) {
             return false;
         }
-
+        
         // Validação EAN-13 (mais comum)
         if (cleanBarcode.length === 13) {
             return this.validateEAN13(cleanBarcode);
         }
-
+        
         // Validação EAN-8
         if (cleanBarcode.length === 8) {
             return this.validateEAN8(cleanBarcode);
         }
-
+        
         // Para outros formatos, considera válido se tem apenas números
         return /^\d+$/.test(cleanBarcode);
     }
@@ -1295,12 +1295,12 @@ class BarcodeProductSearch {
         try {
             const digits = barcode.split('').map(Number);
             const checkDigit = digits.pop();
-
+            
             let sum = 0;
             for (let i = 0; i < digits.length; i++) {
                 sum += digits[i] * (i % 2 === 0 ? 1 : 3);
             }
-
+            
             const calculatedCheckDigit = (10 - (sum % 10)) % 10;
             return calculatedCheckDigit === checkDigit;
         } catch (error) {
@@ -1312,12 +1312,12 @@ class BarcodeProductSearch {
         try {
             const digits = barcode.split('').map(Number);
             const checkDigit = digits.pop();
-
+            
             let sum = 0;
             for (let i = 0; i < digits.length; i++) {
                 sum += digits[i] * (i % 2 === 0 ? 3 : 1);
             }
-
+            
             const calculatedCheckDigit = (10 - (sum % 10)) % 10;
             return calculatedCheckDigit === checkDigit;
         } catch (error) {
@@ -1327,7 +1327,7 @@ class BarcodeProductSearch {
 
     startBarcodeScanner() {
         console.log('📱 Iniciando scanner de código de barras');
-
+        
         const barcode = document.getElementById('product-barcode').value.trim();
         if (barcode) {
             // Se já tem código, faz a busca
@@ -1341,7 +1341,7 @@ class BarcodeProductSearch {
             } else {
                 console.error('Scanner não disponível');
                 alert('Scanner de câmera não disponível. Use a entrada manual.');
-
+                
                 // Foca no campo de entrada como fallback
                 const barcodeInput = document.getElementById('product-barcode');
                 if (barcodeInput) {
@@ -1365,12 +1365,12 @@ class BarcodeProductSearch {
         const messageEl = document.createElement('div');
         messageEl.className = `barcode-message ${type}`;
         messageEl.innerHTML = message;
-
+        
         const barcodeInput = document.getElementById('product-barcode');
         if (barcodeInput && barcodeInput.closest('.form-group')) {
             barcodeInput.closest('.form-group').appendChild(messageEl);
         }
-
+        
         // Remove a mensagem após 6 segundos
         setTimeout(() => {
             if (messageEl.parentNode) {
@@ -1382,7 +1382,7 @@ class BarcodeProductSearch {
     clearMessages() {
         const existingMessages = document.querySelectorAll('.barcode-message, .price-message, .price-search-indicator, .name-message');
         existingMessages.forEach(msg => msg.remove());
-
+        
         // Esconde sugestões e opções
         this.hideNameSuggestions();
         this.hidePriceOptions();
@@ -1417,7 +1417,7 @@ class BarcodeProductSearch {
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             cursor: pointer;
         `;
-
+        
         // Texto informativo
         const infoText = document.createElement('p');
         infoText.style.cssText = `
@@ -1463,7 +1463,7 @@ class BarcodeProductSearch {
         if (existingPreview) {
             existingPreview.remove();
         }
-
+        
         // Limpa também o campo de URL da imagem
         const imageUrlInput = document.getElementById('product-image');
         if (imageUrlInput) {
@@ -1475,13 +1475,13 @@ class BarcodeProductSearch {
     async searchPriceOnline(productName, brand, barcode) {
         try {
             console.log(`🔍 Buscando preços para: ${brand} ${productName}`);
-
+            
             // Mostra indicador de busca de preço
             this.showPriceSearchIndicator(true);
-
+            
             // Múltiplas estratégias de busca de preço
             const priceData = await this.fetchPriceFromMultipleSources(productName, brand, barcode);
-
+            
             if (priceData && priceData.price) {
                 console.log('💰 Preço encontrado:', priceData);
                 this.fillPriceData(priceData);
@@ -1519,7 +1519,7 @@ class BarcodeProductSearch {
             try {
                 console.log(`Tentando buscar preço via ${source.name}...`);
                 const result = await source.searchFunction(productName, brand, barcode);
-
+                
                 if (result && result.price) {
                     return {
                         ...result,
@@ -1531,7 +1531,7 @@ class BarcodeProductSearch {
                 continue;
             }
         }
-
+        
         return null;
     }
 
@@ -1540,17 +1540,17 @@ class BarcodeProductSearch {
             // API do KuantoKusta (se disponível)
             const searchQuery = `${brand} ${productName}`.trim();
             const encodedQuery = encodeURIComponent(searchQuery);
-
+            
             // Simula busca no KuantoKusta (implementação real precisaria de API key)
             console.log(`Simulando busca no KuantoKusta para: ${searchQuery}`);
-
+            
             // Por enquanto, retorna dados simulados baseados no produto
             if (searchQuery.toLowerCase().includes('coca-cola')) {
                 return { price: 1.65, store: 'Continente', confidence: 0.8 };
             } else if (searchQuery.toLowerCase().includes('leite')) {
                 return { price: 0.69, store: 'Pingo Doce', confidence: 0.7 };
             }
-
+            
             return null;
         } catch (error) {
             console.error('Erro KuantoKusta:', error);
@@ -1563,12 +1563,12 @@ class BarcodeProductSearch {
             // Busca via Google Shopping API (alternativa)
             const searchQuery = `${brand} ${productName} preço portugal`.trim();
             console.log(`Buscando no Google Shopping: ${searchQuery}`);
-
+            
             // Implementação com SerpAPI ou similar (requer API key)
             // Por enquanto, simula resultados baseados em padrões
-
+            
             const productKey = `${brand} ${productName}`.toLowerCase();
-
+            
             // Base de preços simulada baseada em produtos portugueses reais
             const priceDatabase = {
                 // Bebidas
@@ -1580,7 +1580,7 @@ class BarcodeProductSearch {
                 'vitalis': { price: 0.32, store: 'Continente' },
                 'compal': { price: 1.25, store: 'Pingo Doce' },
                 'sumol': { price: 1.15, store: 'Continente' },
-
+                
                 // Laticínios
                 'mimosa leite': { price: 0.69, store: 'Pingo Doce' },
                 'mimosa': { price: 0.69, store: 'Pingo Doce' },
@@ -1591,7 +1591,7 @@ class BarcodeProductSearch {
                 'danone': { price: 0.45, store: 'Continente' },
                 'oikos': { price: 2.49, store: 'Auchan' },
                 'activia': { price: 2.15, store: 'Pingo Doce' },
-
+                
                 // Cereais e Alimentos
                 'chocapic': { price: 3.15, store: 'Auchan' },
                 'nestum': { price: 2.85, store: 'Continente' },
@@ -1600,25 +1600,25 @@ class BarcodeProductSearch {
                 'continente': { price: 1.89, store: 'Continente' },
                 'pingo doce': { price: 1.75, store: 'Pingo Doce' },
                 'auchan': { price: 1.82, store: 'Auchan' },
-
+                
                 // Higiene
                 'shampoo': { price: 2.99, store: 'Continente' },
                 'sabonete': { price: 1.25, store: 'Pingo Doce' },
                 'pasta dentes': { price: 1.89, store: 'Lidl' },
                 'detergente': { price: 3.45, store: 'Auchan' }
             };
-
+            
             for (const [key, data] of Object.entries(priceDatabase)) {
                 if (productKey.includes(key.split(' ')[0]) && productKey.includes(key.split(' ')[1])) {
-                    return {
-                        price: data.price,
-                        store: data.store,
+                    return { 
+                        price: data.price, 
+                        store: data.store, 
                         confidence: 0.75,
                         lastUpdated: new Date().toISOString().split('T')[0]
                     };
                 }
             }
-
+            
             return null;
         } catch (error) {
             console.error('Erro Google Shopping:', error);
@@ -1630,27 +1630,27 @@ class BarcodeProductSearch {
         try {
             // Busca via scrapers de lojas portuguesas
             console.log(`Buscando via price scraper: ${brand} ${productName}`);
-
+            
             // Simula busca em múltiplas lojas portuguesas
             const stores = ['continente', 'pingodoce', 'lidl', 'auchan'];
-
+            
             // Por enquanto, retorna preço simulado baseado no hash do código de barras
             if (barcode) {
                 const hash = barcode.split('').reduce((a, b) => {
                     a = ((a << 5) - a) + b.charCodeAt(0);
                     return a & a;
                 }, 0);
-
+                
                 const basePrice = Math.abs(hash % 500) / 100 + 0.5; // Preço entre 0.5 e 5.5€
                 const store = stores[Math.abs(hash) % stores.length];
-
+                
                 return {
                     price: Math.round(basePrice * 100) / 100,
                     store: store.charAt(0).toUpperCase() + store.slice(1),
                     confidence: 0.6
                 };
             }
-
+            
             return null;
         } catch (error) {
             console.error('Erro Price Scraper:', error);
@@ -1662,11 +1662,11 @@ class BarcodeProductSearch {
         const priceInput = document.getElementById('product-price');
         if (priceInput && priceData.price) {
             priceInput.value = priceData.price;
-
+            
             // Efeito visual de preenchimento automático
             priceInput.style.background = 'linear-gradient(90deg, #fff3cd 0%, #ffffff 100%)';
             priceInput.title = `Preço encontrado via ${priceData.source} - Loja: ${priceData.store || 'N/A'}`;
-
+            
             // Remove efeito após alguns segundos
             setTimeout(() => {
                 priceInput.style.background = '';
@@ -1676,7 +1676,7 @@ class BarcodeProductSearch {
 
     showPriceSearchIndicator(show) {
         let indicator = document.querySelector('.price-search-indicator');
-
+        
         if (show && !indicator) {
             indicator = document.createElement('div');
             indicator.className = 'price-search-indicator';
@@ -1690,7 +1690,7 @@ class BarcodeProductSearch {
                 gap: 8px;
             `;
             indicator.innerHTML = '<i class="fas fa-search fa-spin"></i> Buscando preços online...';
-
+            
             const priceGroup = document.getElementById('product-price').closest('.form-group');
             if (priceGroup) {
                 priceGroup.appendChild(indicator);
@@ -1710,11 +1710,11 @@ class BarcodeProductSearch {
         const messageEl = document.createElement('div');
         messageEl.className = `price-message barcode-message ${type}`;
         messageEl.innerHTML = message;
-
+        
         const priceGroup = document.getElementById('product-price').closest('.form-group');
         if (priceGroup) {
             priceGroup.appendChild(messageEl);
-
+            
             // Remove mensagem após 8 segundos
             setTimeout(() => {
                 if (messageEl.parentNode) {
@@ -1726,35 +1726,35 @@ class BarcodeProductSearch {
 
     async manualPriceSearch() {
         console.log('🔍 Busca manual de preços iniciada');
-
+        
         // Pega dados do formulário
         const productName = document.getElementById('product-name').value.trim();
         const brandRadio = document.querySelector('input[name="brand-type"]:checked');
         let brand = '';
-
+        
         if (brandRadio && brandRadio.value === 'specific') {
             brand = document.getElementById('product-brand').value.trim();
         }
-
+        
         const barcode = document.getElementById('product-barcode').value.trim();
-
+        
         if (!productName) {
             this.showPriceMessage('⚠️ Preencha o nome do produto para buscar preços.', 'warning');
             return;
         }
-
+        
         // Desabilita botão durante busca
         const searchButton = document.getElementById('search-price-btn');
         if (searchButton) {
             searchButton.disabled = true;
             searchButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         }
-
+        
         try {
             this.showPriceMessage('🔍 Buscando preços atualizados online...', 'info');
-
+            
             const priceData = await this.fetchPriceFromMultipleSources(productName, brand, barcode);
-
+            
             if (priceData && priceData.price) {
                 this.fillPriceData(priceData);
                 this.showPriceMessage(`💰 Preço atualizado: €${priceData.price} via ${priceData.source}`, 'success');
@@ -1777,7 +1777,7 @@ class BarcodeProductSearch {
         const productName = document.getElementById('product-name').value;
         const brand = document.getElementById('product-brand').value || 'Marca';
         const barcode = document.getElementById('product-barcode').value;
-
+        
         if (productName) {
             await this.searchMultipleNameReferences(productName, brand, barcode);
         } else {
@@ -1787,7 +1787,7 @@ class BarcodeProductSearch {
 
     async fetchProductNamesFromGoogle(currentName, brand, barcode) {
         console.log('🌐 Consultando Google para nomes de produtos...');
-
+        
         // Constrói query de busca
         let searchQuery = '';
         if (barcode) {
@@ -1797,13 +1797,13 @@ class BarcodeProductSearch {
         } else {
             searchQuery = `${currentName} produto nome correto`;
         }
-
+        
         console.log('Query de busca:', searchQuery);
-
+        
         // Simula busca no Google com resultados realistas
         // Em produção, usaria Google Custom Search API ou similar
         const suggestions = this.generateNameSuggestions(currentName, brand, barcode);
-
+        
         return suggestions;
     }
 
@@ -1811,7 +1811,7 @@ class BarcodeProductSearch {
         // Base de sugestões realistas baseadas em produtos comuns
         const nameSuggestions = [];
         const lowerName = currentName.toLowerCase();
-
+        
         // Sugestões baseadas em padrões de nomes de produtos
         if (lowerName.includes('leite') || lowerName.includes('milk')) {
             nameSuggestions.push(
@@ -1832,7 +1832,7 @@ class BarcodeProductSearch {
                 }
             );
         }
-
+        
         if (lowerName.includes('coca') || lowerName.includes('cola')) {
             nameSuggestions.push(
                 {
@@ -1852,7 +1852,7 @@ class BarcodeProductSearch {
                 }
             );
         }
-
+        
         if (lowerName.includes('agua') || lowerName.includes('water')) {
             nameSuggestions.push(
                 {
@@ -1867,7 +1867,7 @@ class BarcodeProductSearch {
                 }
             );
         }
-
+        
         if (lowerName.includes('iogurte') || lowerName.includes('yogurt')) {
             nameSuggestions.push(
                 {
@@ -1882,20 +1882,20 @@ class BarcodeProductSearch {
                 }
             );
         }
-
+        
         // Se não encontrou sugestões específicas, gera sugestões genéricas
         if (nameSuggestions.length === 0 && currentName) {
             // Melhora o nome atual
             let improvedName = currentName;
-
+            
             // Capitaliza primeira letra de cada palavra
             improvedName = improvedName.toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
-
+            
             // Adiciona marca se disponível
             if (brand && !improvedName.includes(brand)) {
                 improvedName = `${brand} ${improvedName}`;
             }
-
+            
             nameSuggestions.push(
                 {
                     name: improvedName,
@@ -1914,43 +1914,43 @@ class BarcodeProductSearch {
                 }
             );
         }
-
+        
         return nameSuggestions.slice(0, 5); // Máximo 5 sugestões
     }
 
     showNameSuggestions(suggestions) {
         // Remove dropdown anterior
         this.hideNameSuggestions();
-
+        
         // Cria dropdown de sugestões
         const dropdown = document.createElement('div');
         dropdown.className = 'name-suggestions-dropdown';
         dropdown.style.display = 'block';
-
+        
         suggestions.forEach(suggestion => {
             const item = document.createElement('div');
             item.className = 'name-suggestion-item';
-
+            
             item.innerHTML = `
                 <div class="suggestion-name">${suggestion.name}</div>
                 <div class="suggestion-details">${suggestion.details} (${Math.round(suggestion.confidence * 100)}% confiança)</div>
             `;
-
+            
             // Adiciona click handler
             item.addEventListener('click', () => {
                 document.getElementById('product-name').value = suggestion.name;
                 this.hideNameSuggestions();
                 this.showNameMessage(`✅ Nome selecionado: ${suggestion.name}`, 'success');
-
+                
                 // Anima o campo preenchido
                 const nameInput = document.getElementById('product-name');
                 nameInput.style.background = 'linear-gradient(90deg, #d4edda 0%, #ffffff 100%)';
                 setTimeout(() => { nameInput.style.background = ''; }, 3000);
             });
-
+            
             dropdown.appendChild(item);
         });
-
+        
         // Adiciona o dropdown após o input group
         const nameGroup = document.querySelector('.name-input-group');
         if (nameGroup) {
@@ -1977,11 +1977,11 @@ class BarcodeProductSearch {
         const messageEl = document.createElement('div');
         messageEl.className = `name-message barcode-message ${type}`;
         messageEl.innerHTML = message;
-
+        
         const nameGroup = document.getElementById('product-name').closest('.form-group');
         if (nameGroup) {
             nameGroup.appendChild(messageEl);
-
+            
             // Remove mensagem após 6 segundos
             setTimeout(() => {
                 if (messageEl.parentNode) {
@@ -1995,9 +1995,9 @@ class BarcodeProductSearch {
         try {
             console.log('💰 Buscando múltiplas referências de preços...');
             this.showPriceMessage('🔍 Buscando preços em múltiplas lojas...', 'info');
-
+            
             const priceReferences = await this.fetchMultiplePriceReferences(productName, brand, barcode);
-
+            
             if (priceReferences && priceReferences.length > 0) {
                 this.showPriceOptions(priceReferences);
                 this.showPriceMessage(`💰 Encontradas ${priceReferences.length} referências de preços!`, 'success');
@@ -2022,7 +2022,7 @@ class BarcodeProductSearch {
 
     async fetchMultiplePriceReferences(productName, brand, barcode) {
         const priceReferences = [];
-
+        
         // Simula busca em múltiplas lojas portuguesas
         const stores = [
             { name: 'Continente', basePrice: 1.0, variation: 0.15 },
@@ -2032,11 +2032,11 @@ class BarcodeProductSearch {
             { name: 'El Corte Inglés', basePrice: 1.20, variation: 0.25 },
             { name: 'Jumbo', basePrice: 0.98, variation: 0.14 }
         ];
-
+        
         // Determina preço base baseado no tipo de produto
         let basePrice = 2.50; // padrão
         const productLower = `${brand} ${productName}`.toLowerCase();
-
+        
         if (productLower.includes('chocolate')) {
             basePrice = Math.random() * (3.50 - 1.80) + 1.80; // Entre 1.80€ e 3.50€
         } else if (productLower.includes('leite')) {
@@ -2046,14 +2046,14 @@ class BarcodeProductSearch {
         } else if (productLower.includes('agua')) {
             basePrice = Math.random() * (0.50 - 0.25) + 0.25; // Entre 0.25€ e 0.50€
         }
-
+        
         // Gera 3-4 referências de preços realistas
         const selectedStores = stores.sort(() => 0.5 - Math.random()).slice(0, 4);
-
+        
         selectedStores.forEach(store => {
             const variation = (Math.random() - 0.5) * store.variation * 2;
             const price = Math.round((basePrice * store.basePrice + variation) * 100) / 100;
-
+            
             priceReferences.push({
                 store: store.name,
                 price: Math.max(0.10, price), // Preço mínimo 0.10€
@@ -2062,7 +2062,7 @@ class BarcodeProductSearch {
                 lastUpdated: new Date().toLocaleDateString('pt-PT')
             });
         });
-
+        
         // Ordena por preço
         return priceReferences.sort((a, b) => a.price - b.price);
     }
@@ -2070,7 +2070,7 @@ class BarcodeProductSearch {
     showPriceOptions(priceReferences) {
         // Remove dropdown anterior
         this.hidePriceOptions();
-
+        
         // Cria dropdown de opções de preços
         const dropdown = document.createElement('div');
         dropdown.className = 'price-options-dropdown';
@@ -2085,7 +2085,7 @@ class BarcodeProductSearch {
             overflow-y: auto;
             z-index: 1000;
         `;
-
+        
         // Título do dropdown
         const title = document.createElement('div');
         title.style.cssText = `
@@ -2098,7 +2098,7 @@ class BarcodeProductSearch {
         `;
         title.textContent = '💰 Selecione o preço mais adequado:';
         dropdown.appendChild(title);
-
+        
         priceReferences.forEach((ref, index) => {
             const item = document.createElement('div');
             item.className = 'price-option-item';
@@ -2111,14 +2111,14 @@ class BarcodeProductSearch {
                 justify-content: space-between;
                 align-items: center;
             `;
-
+            
             const isLowest = index === 0;
             const isHighest = index === priceReferences.length - 1;
-
+            
             let badge = '';
             if (isLowest) badge = '<span style="background: #28a745; color: white; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;">MENOR PREÇO</span>';
             else if (isHighest) badge = '<span style="background: #dc3545; color: white; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600;">MAIOR PREÇO</span>';
-
+            
             item.innerHTML = `
                 <div>
                     <div style="font-weight: 600; color: #212529; font-size: 16px;">€${ref.price.toFixed(2)}</div>
@@ -2127,32 +2127,32 @@ class BarcodeProductSearch {
                 </div>
                 <div>${badge}</div>
             `;
-
+            
             // Hover effect
             item.addEventListener('mouseenter', () => {
                 item.style.backgroundColor = '#f8f9fa';
             });
-
+            
             item.addEventListener('mouseleave', () => {
                 item.style.backgroundColor = '';
             });
-
+            
             // Click handler
             item.addEventListener('click', () => {
                 document.getElementById('product-price').value = ref.price.toFixed(2);
                 this.hidePriceOptions();
                 this.showPriceMessage(`✅ Preço selecionado: €${ref.price.toFixed(2)} (${ref.store})`, 'success');
-
+                
                 // Anima o campo preenchido
                 const priceInput = document.getElementById('product-price');
                 priceInput.style.background = 'linear-gradient(90deg, #fff3cd 0%, #ffffff 100%)';
                 priceInput.title = `Preço de ${ref.store} - ${Math.round(ref.confidence * 100)}% confiança`;
                 setTimeout(() => { priceInput.style.background = ''; }, 3000);
             });
-
+            
             dropdown.appendChild(item);
         });
-
+        
         // Adiciona o dropdown após o campo de preço
         const priceGroup = document.getElementById('product-price').closest('.form-group');
         if (priceGroup) {
@@ -2171,17 +2171,17 @@ class BarcodeProductSearch {
     async searchMultipleNameReferences(productName, brand, barcode) {
         const searchButton = document.getElementById('search-name-btn');
         const originalText = searchButton.innerHTML;
-
+        
         try {
             searchButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Buscando...';
             searchButton.disabled = true;
-
+            
             console.log('📝 Procurando múltiplas referências de nomes para:', productName);
             console.log('📝 Dados recebidos:', { productName, brand, barcode });
-
+            
             const nameReferences = await this.fetchMultipleNameReferences(productName, brand, barcode);
             console.log('📝 Referências encontradas:', nameReferences);
-
+            
             if (nameReferences && nameReferences.length > 0) {
                 console.log('📝 Chamando showNameOptions com:', nameReferences.length, 'referências');
                 this.showNameOptions(nameReferences);
@@ -2189,7 +2189,7 @@ class BarcodeProductSearch {
                 console.error('📝 Nenhuma referência de nome encontrada');
                 this.showError('Nenhuma referência de nome encontrada');
             }
-
+            
         } catch (error) {
             console.error('Erro ao procurar referências de nomes:', error);
             this.showError('Erro ao procurar nomes alternativos');
@@ -2202,17 +2202,17 @@ class BarcodeProductSearch {
     // Buscar múltiplas referências de nomes
     async fetchMultipleNameReferences(productName, brand, barcode) {
         console.log('📝 fetchMultipleNameReferences chamada com:', { productName, brand, barcode });
-
+        
         const nameReferences = [];
         const baseName = productName.toLowerCase();
-
+        
         // Nome original sempre primeiro
         nameReferences.push({
             name: productName,
             source: 'API Original',
             confidence: 100
         });
-
+        
         if (baseName.includes('chocolate')) {
             nameReferences.push(
                 { name: `${brand} Chocolate ao Leite 90g`, source: 'Google Shopping', confidence: 95 },
@@ -2234,7 +2234,7 @@ class BarcodeProductSearch {
                 });
             });
         }
-
+        
         console.log('📝 fetchMultipleNameReferences retornando:', nameReferences);
         return nameReferences.slice(0, 3); // Máximo 3 opções
     }
@@ -2247,7 +2247,7 @@ class BarcodeProductSearch {
         // Remover informações de tamanho/peso
         let cleanName = name.replace(/\d+\s*(g|ml|kg|l|gr|litros?|gramas?)\b/gi, '').trim();
         cleanName = cleanName.replace(/\bpacote\b|\bembalagem\b|\bunidade\b/gi, '').trim();
-
+        
         if (cleanName !== name && cleanName.length > 3) {
             variations.push(this.capitalizeWords(cleanName));
         }
@@ -2275,17 +2275,17 @@ class BarcodeProductSearch {
     // Mostrar opções de nomes
     showNameOptions(nameReferences) {
         console.log('📝 showNameOptions chamada com:', nameReferences);
-
+        
         const nameInputGroup = document.querySelector('.name-input-group');
         console.log('📝 nameInputGroup encontrado:', !!nameInputGroup);
-
+        
         if (!nameInputGroup) {
             console.error('📝 .name-input-group não encontrado!');
             return;
         }
-
+        
         let dropdown = nameInputGroup.querySelector('.name-options-dropdown');
-
+        
         if (!dropdown) {
             console.log('📝 Criando novo dropdown');
             dropdown = document.createElement('div');
@@ -2340,7 +2340,7 @@ class BarcodeScanner {
         this.currentCamera = 'environment'; // 'user' para câmera frontal, 'environment' para traseira
         this.hasFlash = false;
         this.flashEnabled = false;
-
+        
         this.initializeScanner();
     }
 
@@ -2371,7 +2371,7 @@ class BarcodeScanner {
     async openScanner() {
         try {
             console.log('📱 Abrindo scanner de código de barras...');
-
+            
             // Verificar se o dispositivo suporta câmera
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                 throw new Error('Seu dispositivo não suporta acesso à câmera');
@@ -2407,11 +2407,11 @@ class BarcodeScanner {
             };
 
             this.stream = await navigator.mediaDevices.getUserMedia(constraints);
-
+            
             // Verificar se tem flash
             const track = this.stream.getVideoTracks()[0];
             this.hasFlash = track.getCapabilities().torch || false;
-
+            
             if (!this.hasFlash) {
                 this.flashBtn.style.display = 'none';
             }
@@ -2429,7 +2429,7 @@ class BarcodeScanner {
 
         try {
             this.isScanning = true;
-
+            
             await Quagga.init({
                 inputStream: {
                     name: "Live",
@@ -2442,7 +2442,7 @@ class BarcodeScanner {
                 decoder: {
                     readers: [
                         "ean_reader",
-                        "ean_8_reader",
+                        "ean_8_reader", 
                         "code_128_reader",
                         "code_39_reader",
                         "codabar_reader"
@@ -2470,24 +2470,24 @@ class BarcodeScanner {
             });
 
             Quagga.start();
-
+            
             // Listener para detecção de código
             Quagga.onDetected((result) => {
                 if (!this.isScanning) return; // Evitar múltiplas detecções
-
+                
                 const code = result.codeResult.code;
                 const confidence = result.codeResult.decodedCodes.reduce((acc, code) => acc + code.confidence, 0) / result.codeResult.decodedCodes.length;
-
+                
                 console.log('📱 Código detectado:', code, 'Confiança:', confidence);
-
+                
                 // Só aceitar códigos com boa confiança (>75%)
                 if (confidence > 75) {
                     // Pausar scanning temporariamente
                     this.isScanning = false;
-
+                    
                     // Mostrar resultado
                     this.showResult(code);
-
+                    
                     // Preencher automaticamente e fechar scanner
                     setTimeout(() => {
                         this.fillBarcodeAndClose(code);
@@ -2508,7 +2508,7 @@ class BarcodeScanner {
     showResult(code) {
         this.scannerResult.textContent = `Código detectado: ${code}`;
         this.scannerResult.style.display = 'block';
-
+        
         // Vibração (se suportado)
         if (navigator.vibrate) {
             navigator.vibrate([100, 50, 100]);
@@ -2520,7 +2520,7 @@ class BarcodeScanner {
         const barcodeInput = document.getElementById('product-barcode');
         if (barcodeInput) {
             barcodeInput.value = code;
-
+            
             // Trigger do evento de busca automática
             if (window.barcodeSearch) {
                 window.barcodeSearch.searchProductByBarcode(code);
@@ -2536,14 +2536,14 @@ class BarcodeScanner {
         try {
             const track = this.stream.getVideoTracks()[0];
             this.flashEnabled = !this.flashEnabled;
-
+            
             await track.applyConstraints({
                 advanced: [{
                     torch: this.flashEnabled
                 }]
             });
 
-            this.flashBtn.style.background = this.flashEnabled ?
+            this.flashBtn.style.background = this.flashEnabled ? 
                 'rgba(255, 193, 7, 0.3)' : 'rgba(52, 152, 219, 0.2)';
             this.flashBtn.style.borderColor = this.flashEnabled ? '#ffc107' : '#3498db';
             this.flashBtn.style.color = this.flashEnabled ? '#ffc107' : '#3498db';
@@ -2556,7 +2556,7 @@ class BarcodeScanner {
     async switchCamera() {
         try {
             this.currentCamera = this.currentCamera === 'environment' ? 'user' : 'environment';
-
+            
             // Parar scanner atual
             if (this.isScanning) {
                 Quagga.stop();
@@ -2580,7 +2580,7 @@ class BarcodeScanner {
 
     closeScanner() {
         console.log('📱 Fechando scanner...');
-
+        
         // Parar Quagga
         if (this.isScanning) {
             Quagga.stop();
@@ -2629,19 +2629,19 @@ let barcodeScanner;
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log("admin.js loaded");
-
+    
     // Inicializar sistema de código de barras
     console.log('Inicializando sistema de código de barras...');
     barcodeSearch = new BarcodeProductSearch();
-
+    
     // Inicializar scanner
     console.log('Inicializando scanner de código de barras...');
     barcodeScanner = new BarcodeScanner();
-
+    
     // Tornar disponível globalmente
     window.barcodeSearch = barcodeSearch;
     window.barcodeScanner = barcodeScanner;
-
+    
     const loginContainer = document.getElementById('login-container');
     const adminPanel = document.getElementById('admin-panel');
     const loginForm = document.getElementById('admin-login-form');
@@ -2764,7 +2764,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // O resto do código continua dentro do eventListener
     const DEFAULT_IMAGE_URL = "https://png.pngtree.com/png-vector/20241025/ourmid/pngtree-grocery-cart-filled-with-fresh-vegetables-png-image_14162473.png";
-
+    
     // API KEY do SerpAPI (gravada no código)
     const SERPAPI_KEY = "3715e169cdfd012e63b63b8e9328991cee1096c3a1c4f32b5e5cc41572c7bad1";
     const ensureSerpApiKey = () => {
@@ -2810,7 +2810,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const brandTypeSpecific = document.getElementById('brand-is-specific');
     const brandInputGroup = document.querySelector('.brand-input-group');
     const productBrandInput = document.getElementById('product-brand');
-
+    
     const productImageUrlInput = document.getElementById('product-image');
     const useDefaultImageRadio = document.getElementById('use-default-image');
     const useCustomImageRadio = document.getElementById('use-custom-image');
@@ -3007,11 +3007,11 @@ document.addEventListener('DOMContentLoaded', () => {
         otherMarketGroup.style.display = 'none';
         imageUrlGroup.style.display = 'none';
         document.getElementById('product-quantity').value = 1;
-
+        
         // Ocultar botão de deletar
         const deleteBtn = document.getElementById('delete-product-btn');
         if (deleteBtn) deleteBtn.style.display = 'none';
-
+        
         // Limpar campo de imagem e seus estilos
         const imageInput = document.getElementById('product-image');
         if (imageInput) {
@@ -3019,30 +3019,30 @@ document.addEventListener('DOMContentLoaded', () => {
             imageInput.style.background = '';
             imageInput.title = '';
         }
-
+        
         // Remover qualquer preview de imagem existente
         const existingPreview = document.querySelector('.image-preview');
         if (existingPreview) existingPreview.remove();
-
+        
         console.log('🧹 Formulário limpo - modo Adicionar Produto');
     };
 
     const goBack = () => {
         // Verificar se está editando um produto
         const isEditingProduct = document.getElementById('product-id').value !== '';
-
+        
         if (isEditingProduct) {
             // Se estiver editando, limpa o formulário e fica na aba de adicionar
             resetFormToAddMode();
             console.log('⬅️ Cancelando edição - voltando para modo Adicionar');
             return;
         }
-
+        
         // Remove a aba atual do histórico
         if (navigationHistory.length > 0) {
             navigationHistory.pop();
         }
-
+        
         // Volta para a aba anterior
         if (navigationHistory.length > 0) {
             const previousTab = navigationHistory[navigationHistory.length - 1];
@@ -3082,7 +3082,7 @@ document.addEventListener('DOMContentLoaded', () => {
             applyCompactView(next);
         });
     }
-
+    
     // Funções de Utilitários
     const saveToLocalStorage = (key, data) => {
         localStorage.setItem(key, JSON.stringify(data));
@@ -3356,14 +3356,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const productsRef = collection(db, `/artifacts/${appId}/public/data/products`);
             const querySnapshot = await getDocs(productsRef);
             const firebaseProducts = [];
-
+            
             querySnapshot.forEach((doc) => {
                 firebaseProducts.push({
                     id: doc.id,
                     ...doc.data()
                 });
             });
-
+            
             const filtered = filterOutDeleted(firebaseProducts);
             // Salvar produtos do Firebase no localStorage e renderizar
             saveToLocalStorage('products', filtered);
@@ -3624,7 +3624,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.target === barcodeModal) stopBarcodeScan();
         });
     }
-
+    
     // Funções de Renderização
     // Estado de listagem
     const productsViewState = {
@@ -3771,7 +3771,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ensureProductIds();
             syncMarketsFromProducts();
             refreshMarketsUI();
-
+            
             // Atualizar interface
             updateCounts();
             updateFilterOptions();
@@ -3948,7 +3948,7 @@ document.addEventListener('DOMContentLoaded', () => {
     productMarket.addEventListener('change', () => {
         otherMarketGroup.style.display = productMarket.value === 'Outro' ? 'block' : 'none';
     });
-
+    
     brandTypeSpecific.addEventListener('change', () => {
         brandInputGroup.style.display = 'block';
     });
@@ -3994,7 +3994,7 @@ document.addEventListener('DOMContentLoaded', () => {
         productNameInput.addEventListener('blur', () => {
             productNameInput.value = toTitleCasePt(productNameInput.value);
         });
-
+        
         // Também aplica ao carregar/editar produto
         productNameInput.addEventListener('change', () => {
             productNameInput.value = toTitleCasePt(productNameInput.value);
@@ -4120,7 +4120,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const targetBtn = e.target.closest('button');
         if (!targetBtn) return;
         const productId = targetBtn.dataset.id;
-
+        
         if (targetBtn.classList.contains('btn-delete')) {
             if (confirm('Tem certeza que deseja deletar este produto?')) {
                 (async () => {
@@ -4167,7 +4167,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('📝 EDITANDO produto:', product);
                 console.log('📝 ID do produto:', product.id);
                 console.log('📝 Imagem do produto:', product.imageUrl);
-
+                
                 // PRIMEIRO: Limpar TODOS os campos de imagem e qualquer preview anterior
                 const imageInput = document.getElementById('product-image');
                 const productImageUrlInput = document.getElementById('product-image');
@@ -4178,13 +4178,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 const existingPreview = document.querySelector('.image-preview');
                 if (existingPreview) existingPreview.remove();
-
+                
                 document.getElementById('product-id').value = product.id;
                 console.log('📝 Campo product-id preenchido com:', document.getElementById('product-id').value);
-
+                
                 document.getElementById('product-name').value = product.name;
                 document.getElementById('product-price').value = product.price;
-
+                
                 // Trata o mercado (garante que exista na lista)
                 if (product.market) {
                     upsertMarket(product.market, '');
@@ -4208,7 +4208,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('product-quantity').value = product.quantity;
                 document.getElementById('product-category').value = product.category;
                 document.getElementById('product-barcode').value = product.barcode || '';
-
+                
                 // Trata a marca
                 if (product.brand === 'Marca Branca') {
                     brandTypeGeneric.checked = true;
@@ -4218,7 +4218,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     brandInputGroup.style.display = 'block';
                     productBrandInput.value = product.brand;
                 }
-
+                
                 document.getElementById('market-zone').value = product.zone;
 
                 // ÚLTIMO: Trata a URL da imagem DEPOIS de limpar
@@ -4242,11 +4242,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Trocar para a aba de adicionar produto e focar no campo
                 tabAddProductBtn.click();
                 document.getElementById('form-submit-btn').textContent = 'Salvar Alterações';
-
+                
                 // Mostrar botão de deletar quando está editando
                 const deleteBtn = document.getElementById('delete-product-btn');
                 if (deleteBtn) deleteBtn.style.display = 'block';
-
+                
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         }
@@ -4265,7 +4265,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (targetBtn.classList.contains('btn-accept')) {
             const products = getFromLocalStorage('products');
             const existingProduct = products.find(p => p.name === suggestion.productName && p.market === suggestion.market);
-
+            
             if (existingProduct) {
                 existingProduct.price = parseFloat(suggestion.suggestedPrice.replace('€ ', ''));
                 saveToLocalStorage('products', products);
@@ -4293,47 +4293,47 @@ document.addEventListener('DOMContentLoaded', () => {
     if (deleteProductBtn) {
         deleteProductBtn.addEventListener('click', async () => {
             const productId = document.getElementById('product-id').value;
-
+            
             if (!productId) {
                 alert('Nenhum produto selecionado para deletar.');
                 return;
             }
-
+            
             const products = getFromLocalStorage('products');
             const product = products.find(p => p.id == productId);
-
+            
             if (!product) {
                 alert('Produto não encontrado.');
                 return;
             }
-
+            
             const confirmDelete = confirm(`Tem certeza que deseja deletar "${product.name}" de ${product.market}?\n\nEsta ação não pode ser desfeita.`);
-
+            
             if (!confirmDelete) return;
-
+            
             try {
                 // Deletar do Firestore se tiver ID do Firebase
                 if (product.firebaseId) {
                     await deleteDoc(doc(db, 'products', product.firebaseId));
                     console.log('🗑️ Produto deletado do Firestore:', product.firebaseId);
                 }
-
+                
                 // Deletar do localStorage
                 const updatedProducts = products.filter(p => p.id != productId);
                 saveToLocalStorage('products', updatedProducts);
-
+                
                 // Resetar formulário e voltar para modo adicionar
                 resetFormToAddMode();
-
+                
                 // Atualizar a lista de produtos
                 renderProducts(updatedProducts);
                 updateFilterOptions();
                 updateCounts();
-
+                
                 alert(`✅ Produto "${product.name}" deletado com sucesso!`);
-
+                
                 console.log('🗑️ Produto deletado:', product.name);
-
+                
             } catch (error) {
                 console.error('Erro ao deletar produto:', error);
                 alert('❌ Erro ao deletar produto. Tente novamente.');
