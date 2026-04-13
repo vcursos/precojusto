@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="192" height="192" rx="36" ry="36" fill="url(#blueGrad)"/>
+  
+  <!-- Shopping cart icon -->
+  <g transform="translate(96, 96)">
+    <!-- Cart body -->
+    <path d="M-40,-30 L-30,-30 L-20,25 L35,25 L42,-10 L-18,-10" 
+          fill="none" 
+          stroke="white" 
+          stroke-width="8" 
+          stroke-linecap="round" 
+          stroke-linejoin="round"/>
+    
+    <!-- Left wheel -->
+    <circle cx="-12" cy="35" r="7" fill="white"/>
+    
+    <!-- Right wheel -->
+    <circle cx="25" cy="35" r="7" fill="white"/>
+  </g>
+</svg>
