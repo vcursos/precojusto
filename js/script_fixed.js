@@ -1398,22 +1398,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     const renderRecentProducts = () => {
+        if (!recentProductsList) return;
         const products = getFromLocalStorage('products');
-        const recentProducts = products.sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded)).slice(0, 5);
-
-        if (!recentProductsList) return; // Proteção caso o elemento não exista
-        
+        const sorted = [...products].sort((a, b) => { const da = a.dateAdded ? new Date(a.dateAdded) : new Date(0); const db = b.dateAdded ? new Date(b.dateAdded) : new Date(0); return db - da; });
         recentProductsList.innerHTML = '';
-        if (recentProducts.length === 0) {
+        if (sorted.length === 0) {
             if (noRecentProductsMessage) noRecentProductsMessage.style.display = 'block';
         } else {
             if (noRecentProductsMessage) noRecentProductsMessage.style.display = 'none';
-            recentProducts.forEach(product => {
+            sorted.forEach(product => {
                 const productCard = createProductCard(product);
                 recentProductsList.appendChild(productCard);
             });
         }
     };
+
+    // Lógica para Favoritos
 
     // Lógica para Favoritos
     const renderFavorites = () => {
