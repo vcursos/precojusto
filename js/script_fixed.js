@@ -3031,7 +3031,6 @@ window.addEventListener('productsLoaded', (event) => {
         compareList.appendChild(desktopLayout);
         openModal(compareModal);
         return;
-        }
 
         // ===== Mantém fluxo ANTIGO para mobile abaixo =====
         privateLabel.sort((a,b) => parseFloat(a.price) - parseFloat(b.price));
