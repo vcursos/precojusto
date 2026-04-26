@@ -1208,7 +1208,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // header + content + notice bar
         comparePage.innerHTML = `
             <div class="compare-page-header">
-                <button id="compare-page-back" class="compare-page-back">← Voltar</button>
+                <button id="compare-page-back" class="compare-page-back"><svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='15 18 9 12 15 6'/></svg> Voltar</button>
                 <div class="compare-page-title">Comparar: ${productName}</div>
             </div>
             <div id="compare-action-notice" class="compare-action-notice" style="display:none"></div>
@@ -1328,7 +1328,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
     const backBtn = document.getElementById('compare-page-back');
-        if (backBtn) backBtn.onclick = () => { history.back(); };
+        if (backBtn) backBtn.onclick = () => { closeComparePage(); };
 
         // If nothing is visible and we are not using the new mobile layout, rebuild a simple list from data
         if (!isNewMobileLayout) {
@@ -3287,7 +3287,7 @@ window.addEventListener('productsLoaded', (event) => {
         // header + content + notice bar
         comparePage.innerHTML = `
             <div class="compare-page-header">
-                <button id="compare-page-back" class="compare-page-back">← Voltar</button>
+                <button id="compare-page-back" class="compare-page-back"><svg width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='15 18 9 12 15 6'/></svg> Voltar</button>
                 <div class="compare-page-title">Comparar: ${productName}</div>
             </div>
             <div id="compare-action-notice" class="compare-action-notice" style="display:none"></div>
@@ -3407,7 +3407,7 @@ window.addEventListener('productsLoaded', (event) => {
         }
 
     const backBtn = document.getElementById('compare-page-back');
-        if (backBtn) backBtn.onclick = () => { history.back(); };
+        if (backBtn) backBtn.onclick = () => { closeComparePage(); };
 
         // If nothing is visible and we are not using the new mobile layout, rebuild a simple list from data
         if (!isNewMobileLayout) {
