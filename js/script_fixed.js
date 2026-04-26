@@ -2426,7 +2426,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 }); // <-- Fecha o primeiro e único listener de DOMContentLoaded corretamente
 
-// Função global para abrir detalhes (mantida fora do listener para acesso geral)
+}); // <-- Fecha o primeiro e único listener de DOMContentLoaded corretamente
+
+// Funcao global para abrir detalhes (mantida fora do listener para acesso geral)
 function showProductDetail(product) {
     window.currentDetailProduct = product;
     const modal = document.getElementById('product-detail-modal');
@@ -2440,20 +2442,18 @@ function showProductDetail(product) {
     if (nameEl) nameEl.textContent = product.name;
 }
 
-// Fallback: após window load, garantir render se produtos já estiverem no localStorage
+// Fallback: apos window load, garantir render se produtos ja estiverem no localStorage
 window.addEventListener('load', () => {
     try {
         const stored = JSON.parse(localStorage.getItem('products') || '[]');
-        console.log(`🧪 Fallback load listener: ${stored.length} produtos no localStorage`);
+        console.log(`Fallback load listener: ${stored.length} produtos no localStorage`);
         if (stored.length > 0 && typeof window.renderProducts === 'function') {
             window.renderProducts(stored);
             if (typeof updateFilterOptions === 'function') updateFilterOptions();
         }
     } catch (e) {
-        console.warn('Falha no fallback de renderização:', e);
+        console.warn('Falha no fallback de renderizacao:', e);
     }
-
-    // Registrar Service Worker para PWA
     try {
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/js/service-worker.js')
@@ -2461,20 +2461,20 @@ window.addEventListener('load', () => {
                 .catch(err => console.error('Falha ao registrar ServiceWorker:', err));
         }
     } catch (err) {
-        console.warn('ServiceWorker não suportado ou erro:', err);
+        console.warn('ServiceWorker nao suportado ou erro:', err);
     }
+});
 
-
-// Listener fora do DOMContentLoaded para não perder evento precoce
+// Listener fora do DOMContentLoaded para nao perder evento precoce
 window.addEventListener('productsLoaded', (event) => {
     try {
-        console.log('📦 Listener externo productsLoaded:', event.detail);
         if (typeof window.renderProducts === 'function') {
             window.renderProducts(event.detail.products);
             if (typeof updateFilterOptions === 'function') updateFilterOptions();
+            if (typeof renderRecentProducts === 'function') renderRecentProducts();
         }
     } catch (e) {
         console.warn('Falha ao processar productsLoaded externo:', e);
     }
 });
-
+}); 
