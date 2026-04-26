@@ -2904,6 +2904,32 @@ body.admin-google-image-modal-open {
     .product-card { width:170px; }
 }
 
+/* Recent products: mobile horizontal scroll (no rows) */
+@media (max-width:720px) {
+    #recent-products-list.products-grid {
+        display: flex !important;
+        grid-template-columns: none !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        gap: 12px !important;
+        padding: 8px 6px 12px !important;
+        scroll-snap-type: x proximity;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #recent-products-list.products-grid .product-card {
+        flex: 0 0 auto;
+        scroll-snap-align: start;
+    }
+}
+
+@media (max-width:480px) {
+    #recent-products-list.products-grid .product-card {
+        width: 150px;
+    }
+}
+
 /* Large mobile/tablet landscape improvements */
 @media (max-width:900px) {
     .products-scroll-container { align-items:flex-start; }
@@ -3014,7 +3040,60 @@ body.admin-google-image-modal-open {
     .compare-linear-header { display:none; }
 }
 @media (max-width: 720px) {
-    .compare-desktop-redesign { display:none; }
+    /* manter o mesmo layout de comparação do desktop também no mobile */
+    .compare-desktop-redesign { display:flex; }
+
+    /* conforto visual no modal de comparação em telas pequenas */
+    #compare-modal .modal-content {
+        width: 96vw !important;
+        max-width: 96vw !important;
+        max-height: 88vh !important;
+        overflow: auto !important;
+        padding: 12px !important;
+        border-radius: 14px !important;
+    }
+
+    #compare-list.compare-list {
+        max-height: none !important;
+        overflow: visible !important;
+        padding: 8px !important;
+        gap: 10px !important;
+    }
+
+    .compare-highlight-card {
+        gap: .7rem;
+        padding: .8rem;
+    }
+
+    .compare-highlight-card .highlight-image {
+        width: 72px;
+        height: 72px;
+    }
+
+    .compare-highlight-card .highlight-actions {
+        margin-top: .35rem;
+        gap: .35rem;
+    }
+
+    .compare-linear-item {
+        grid-template-columns: 52px 1fr auto !important;
+        align-items: center;
+        padding: .52rem !important;
+        gap: .5rem;
+    }
+
+    .compare-linear-item .cli-image-col { width: 52px; }
+    .compare-linear-item img.cli-image { width: 48px; height: 48px; }
+    .compare-linear-item .cli-name-col { font-size: .8rem; }
+    .compare-linear-item .cli-market-col,
+    .compare-linear-item .cli-diff-col { display: none; }
+    .compare-linear-item .cli-price-col { font-size: .9rem; font-weight: 800; }
+    .compare-linear-item .cli-actions-col { gap: .3rem; }
+    .compare-linear-item .cli-actions-col button {
+        padding: .34rem .46rem;
+        font-size: .68rem;
+        border-radius: 6px;
+    }
 }
 
 /* Mobile compare redesign container */

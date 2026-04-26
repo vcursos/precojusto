@@ -728,8 +728,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (compareBtn) {
                 compareBtn.onclick = () => {
                     try {
+                        const fn = (typeof openCompareModal === 'function') ? openCompareModal : window.openCompareModal;
                         pjCloseModal();
-                        const fn = window.openCompareModal;
                         if (typeof fn === 'function') fn(p.name);
                     } catch (_) {}
                 };
@@ -951,6 +951,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Card destaque
         const highlightCard = document.createElement('div');
         highlightCard.className = 'compare-highlight-card';
+    highlightCard.dataset.productId = cheapestGlobal.id;
         highlightCard.innerHTML = `
             <div class="highlight-left">
                 <img src="${cheapestGlobal.imageUrl || DEFAULT_IMAGE_URL}" alt="${cheapestGlobal.name}" class="highlight-image" loading="lazy">
@@ -1011,8 +1012,18 @@ document.addEventListener('DOMContentLoaded', () => {
         listWrapper.appendChild(ul);
         desktopLayout.appendChild(listWrapper);
 
-        // Se viewport > 720, usa layout desktop. Para mobile, usaremos uma versão linear simplificada.
-        // Usar o mesmo layout em desktop e mobile
+        // clicar no card abre a seção de informação do produto no próprio modal
+        compareList.onclick = function (e) {
+            // cliques nos botões de ação seguem o handler dedicado
+            if (e.target.closest('.fav-btn') || e.target.closest('.cart-btn')) return;
+            const itemNode = e.target.closest('.compare-linear-item, .compare-highlight-card, .compare-card, .compare-item');
+            if (!itemNode) return;
+            const id = itemNode.dataset.productId;
+            if (!id) return;
+            showCompareItemDetail(id);
+        };
+
+        // Desktop e mobile: usar o mesmo modal/layout
         compareList.appendChild(desktopLayout);
         openModal(compareModal);
         return;
@@ -1122,6 +1133,9 @@ document.addEventListener('DOMContentLoaded', () => {
             showCompareItemDetail(id);
         };
     };
+    window.openCompareModal = openCompareModal;
+
+    // expose compare action globally (used by scanner and modal action buttons)
     window.openCompareModal = openCompareModal;
 
     // Render compare as a full-page view (mobile UX) with back navigation
@@ -1401,14 +1415,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const renderRecentProducts = () => {
         if (!recentProductsList) return;
+        const MAX_RECENT_PRODUCTS = 6;
         const products = getFromLocalStorage('products');
         const sorted = [...products].sort((a, b) => { const da = a.dateAdded ? new Date(a.dateAdded) : new Date(0); const db = b.dateAdded ? new Date(b.dateAdded) : new Date(0); return db - da; });
+        const recentToShow = sorted.slice(0, MAX_RECENT_PRODUCTS);
         recentProductsList.innerHTML = '';
-        if (sorted.length === 0) {
+        if (recentToShow.length === 0) {
             if (noRecentProductsMessage) noRecentProductsMessage.style.display = 'block';
         } else {
             if (noRecentProductsMessage) noRecentProductsMessage.style.display = 'none';
-            sorted.forEach(product => {
+            recentToShow.forEach(product => {
                 const productCard = createProductCard(product);
                 recentProductsList.appendChild(productCard);
             });

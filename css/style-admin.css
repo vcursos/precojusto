@@ -543,6 +543,21 @@ body.modal-open {
     border-radius: 4px;
 }
 
+.search-results-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 120px;
+    padding: 8px 10px;
+    border-radius: 999px;
+    border: 1px solid #dbe7ff;
+    background: #eef4ff;
+    color: #1d4ed8;
+    font-size: 0.85rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
 /* Estilo para os radio buttons de marca e imagem */
 .brand-options,
 .image-options {
@@ -767,6 +782,11 @@ body.modal-open {
 
     .product-search-bar {
         flex-direction: column;
+    }
+
+    .search-results-count {
+        width: 100%;
+        min-width: 0;
     }
 
     #products-table thead {

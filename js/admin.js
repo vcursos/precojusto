@@ -2806,6 +2806,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const productMarketFilter = document.getElementById('product-market-filter');
     const productBrandFilter = document.getElementById('product-brand-filter');
     const productCategoryFilter = document.getElementById('product-category-filter');
+    const searchResultsCount = document.getElementById('search-results-count');
+    const adminHomeBtn = document.getElementById('admin-home-btn');
     const brandTypeGeneric = document.getElementById('brand-is-generic');
     const brandTypeSpecific = document.getElementById('brand-is-specific');
     const brandInputGroup = document.querySelector('.brand-input-group');
@@ -3032,9 +3034,31 @@ document.addEventListener('DOMContentLoaded', () => {
         const isEditingProduct = document.getElementById('product-id').value !== '';
         
         if (isEditingProduct) {
-            // Se estiver editando, limpa o formulário e fica na aba de adicionar
+            // Se estiver editando, volta para a lista com o mesmo contexto de pesquisa/filtros
+            if (editNavigationState.active) {
+                pendingProductsViewRestore = {
+                    search: editNavigationState.search,
+                    market: editNavigationState.market,
+                    brand: editNavigationState.brand,
+                    category: editNavigationState.category,
+                    page: editNavigationState.page,
+                    sortField: editNavigationState.sortField,
+                    sortDir: editNavigationState.sortDir
+                };
+            }
+
             resetFormToAddMode();
-            console.log('⬅️ Cancelando edição - voltando para modo Adicionar');
+            editNavigationState.active = false;
+            editNavigationState.editedProductId = '';
+
+            const viewProductsBtn = document.querySelector('.tab-button[data-tab="tab-view-products"]');
+            if (viewProductsBtn) {
+                viewProductsBtn.click();
+                console.log('⬅️ Voltando para lista filtrada de produtos');
+                return;
+            }
+
+            console.log('⬅️ Cancelando edição - modo Adicionar');
             return;
         }
         
@@ -3635,6 +3659,20 @@ document.addEventListener('DOMContentLoaded', () => {
         lastList: []
     };
 
+    // contexto da listagem antes de abrir edição
+    const editNavigationState = {
+        active: false,
+        search: '',
+        market: 'all',
+        brand: 'all',
+        category: 'all',
+        page: 1,
+        sortField: 'name',
+        sortDir: 'asc',
+        editedProductId: ''
+    };
+    let pendingProductsViewRestore = null;
+
     const ensureProductIds = () => {
         const products = getFromLocalStorage('products');
         let mutated = false;
@@ -3717,6 +3755,10 @@ document.addEventListener('DOMContentLoaded', () => {
         productsViewState.lastList = baseList;
         const sorted = sortProducts(baseList);
         const total = sorted.length;
+        if (searchResultsCount) {
+            const label = total === 1 ? 'resultado' : 'resultados';
+            searchResultsCount.textContent = `${total} ${label}`;
+        }
         const totalPages = Math.max(1, Math.ceil(total / productsViewState.pageSize));
         if (productsViewState.page > totalPages) productsViewState.page = totalPages;
         const start = (productsViewState.page - 1) * productsViewState.pageSize;
@@ -4004,29 +4046,58 @@ document.addEventListener('DOMContentLoaded', () => {
     // (Funcionalidade de busca de produto removida a pedido: manter apenas capitalização do nome)
 
     // Lógica da tabela e filtros
-    const filterProducts = () => {
-    const products = getActiveProducts();
-        const searchTerm = productSearchInput.value.toLowerCase();
-        const marketFilter = productMarketFilter.value;
-        const brandFilter = productBrandFilter.value;
-        const categoryFilter = productCategoryFilter.value;
+    const applyProductsFilters = ({ resetPage = false } = {}) => {
+        const products = getActiveProducts();
+        const searchTerm = (productSearchInput?.value || '').toLowerCase();
+        const marketFilter = productMarketFilter?.value || 'all';
+        const brandFilter = productBrandFilter?.value || 'all';
+        const categoryFilter = productCategoryFilter?.value || 'all';
 
         const filteredProducts = products.filter(p => {
-            const nameMatch = p.name.toLowerCase().includes(searchTerm);
+            const name = (p.name || '').toString().toLowerCase();
+            const nameMatch = name.includes(searchTerm);
             const marketMatch = marketFilter === 'all' || p.market === marketFilter;
             const brandMatch = brandFilter === 'all' || p.brand === brandFilter;
             const categoryMatch = categoryFilter === 'all' || p.category === categoryFilter;
             return nameMatch && marketMatch && brandMatch && categoryMatch;
         });
 
-        productsViewState.page = 1;
+        if (resetPage) productsViewState.page = 1;
         renderProducts(filteredProducts);
+    };
+
+    const filterProducts = () => applyProductsFilters({ resetPage: true });
+
+    const openProductsHomeView = () => {
+        pendingProductsViewRestore = {
+            search: '',
+            market: 'all',
+            brand: 'all',
+            category: 'all',
+            page: 1,
+            sortField: productsViewState.sortField || 'name',
+            sortDir: productsViewState.sortDir || 'asc'
+        };
+
+        // sair do contexto de edição ao voltar para a listagem completa
+        editNavigationState.active = false;
+        editNavigationState.editedProductId = '';
+        resetFormToAddMode();
+
+        const viewProductsBtn = document.querySelector('.tab-button[data-tab="tab-view-products"]');
+        if (viewProductsBtn) viewProductsBtn.click();
     };
 
     productSearchInput.addEventListener('input', filterProducts);
     productMarketFilter.addEventListener('change', filterProducts);
     productBrandFilter.addEventListener('change', filterProducts);
     productCategoryFilter.addEventListener('change', filterProducts);
+    if (adminHomeBtn) {
+        adminHomeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            openProductsHomeView();
+        });
+    }
 
     // Ordenação pelo cabeçalho
     document.querySelectorAll('#products-table th[data-sort]').forEach(th => {
@@ -4064,12 +4135,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const updateFilterOptions = () => {
-    const products = getActiveProducts();
-        const uniqueMarkets = [...new Set(products.map(p => p.market))].sort();
-        const uniqueBrands = [...new Set(products.map(p => p.brand))].sort();
+        const products = getActiveProducts();
+        const selectedMarket = productMarketFilter?.value || 'all';
+        const selectedBrand = productBrandFilter?.value || 'all';
+        const selectedCategory = productCategoryFilter?.value || 'all';
+
+        const uniqueMarkets = [...new Set(products.map(p => p.market).filter(Boolean))].sort();
+        const uniqueBrands = [...new Set(products.map(p => p.brand).filter(Boolean))].sort();
+        const uniqueCategories = [...new Set(products.map(p => p.category).filter(Boolean))].sort();
 
         productMarketFilter.innerHTML = '<option value="all">Todos os Mercados</option>' + uniqueMarkets.map(m => `<option value="${m}">${m}</option>`).join('');
         productBrandFilter.innerHTML = '<option value="all">Todas as Marcas</option>' + uniqueBrands.map(b => `<option value="${b}">${b}</option>`).join('');
+        productCategoryFilter.innerHTML = '<option value="all">Todas as Categorias</option>' + uniqueCategories.map(c => `<option value="${c}">${c}</option>`).join('');
+
+        if ([...productMarketFilter.options].some(opt => opt.value === selectedMarket)) productMarketFilter.value = selectedMarket;
+        if ([...productBrandFilter.options].some(opt => opt.value === selectedBrand)) productBrandFilter.value = selectedBrand;
+        if ([...productCategoryFilter.options].some(opt => opt.value === selectedCategory)) productCategoryFilter.value = selectedCategory;
     };
 
     // Lógica de TABS
@@ -4101,10 +4182,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     ensureProductIds();
                     syncMarketsFromProducts();
                     refreshMarketsUI();
-                    productsViewState.page = 1;
-                    renderProducts();
                     updateCounts();
                     updateFilterOptions();
+
+                    if (pendingProductsViewRestore) {
+                        const st = pendingProductsViewRestore;
+                        pendingProductsViewRestore = null;
+                        if (productSearchInput) productSearchInput.value = st.search || '';
+                        if (productMarketFilter && [...productMarketFilter.options].some(opt => opt.value === (st.market || 'all'))) productMarketFilter.value = st.market || 'all';
+                        if (productBrandFilter && [...productBrandFilter.options].some(opt => opt.value === (st.brand || 'all'))) productBrandFilter.value = st.brand || 'all';
+                        if (productCategoryFilter && [...productCategoryFilter.options].some(opt => opt.value === (st.category || 'all'))) productCategoryFilter.value = st.category || 'all';
+                        productsViewState.sortField = st.sortField || productsViewState.sortField;
+                        productsViewState.sortDir = st.sortDir || productsViewState.sortDir;
+                        productsViewState.page = st.page || 1;
+                    } else {
+                        // mantém termo e filtros atuais ao alternar abas
+                        productsViewState.page = Math.max(1, productsViewState.page || 1);
+                    }
+
+                    applyProductsFilters({ resetPage: false });
                 });
             } else if (button.dataset.tab === 'tab-markets') {
                 syncMarketsFromProducts();
@@ -4164,6 +4260,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (targetBtn.classList.contains('btn-edit')) {
             const product = getFromLocalStorage('products').find(p => p.id == productId);
             if (product) {
+                // guarda o estado atual da listagem para restaurar ao voltar da edição
+                editNavigationState.active = true;
+                editNavigationState.search = productSearchInput ? productSearchInput.value : '';
+                editNavigationState.market = productMarketFilter ? productMarketFilter.value : 'all';
+                editNavigationState.brand = productBrandFilter ? productBrandFilter.value : 'all';
+                editNavigationState.category = productCategoryFilter ? productCategoryFilter.value : 'all';
+                editNavigationState.page = productsViewState.page;
+                editNavigationState.sortField = productsViewState.sortField;
+                editNavigationState.sortDir = productsViewState.sortDir;
+                editNavigationState.editedProductId = String(product.id || '');
+
                 console.log('📝 EDITANDO produto:', product);
                 console.log('📝 ID do produto:', product.id);
                 console.log('📝 Imagem do produto:', product.imageUrl);

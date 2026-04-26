@@ -118,7 +118,7 @@
             <header class="admin-header">
                 <h1><i class="fas fa-user-shield"></i> Painel de Administração</h1>
                 <div>
-                    <a href="index.html" class="btn-back"><i class="fas fa-home"></i> Início</a>
+                    <a href="#" id="admin-home-btn" class="btn-back"><i class="fas fa-home"></i> Início</a>
                     <button id="btn-return-to-add-product" class="btn-back"><i class="fas fa-arrow-left"></i> Voltar</button>
                     <button id="admin-logout-btn" class="btn-back" title="Sair da conta"><i class="fas fa-right-from-bracket"></i> Sair</button>
                 </div>
@@ -310,6 +310,7 @@
                             <option value="congelados">Congelados</option>
                             <option value="padaria">Padaria e Pastelaria</option>
                         </select>
+                        <span id="search-results-count" class="search-results-count" aria-live="polite">0 resultados</span>
                     </div>
                     <div class="products-table-container">
                         <table id="products-table">
