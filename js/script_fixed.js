@@ -349,8 +349,8 @@ document.addEventListener('DOMContentLoaded', () => {
         pjProductModal.classList.remove('closing');
         pjProductModal.classList.add('show');
         pjProductModal.style.display = 'flex';
-        // trava scroll do body (mais leve do que listeners)
-        document.body.style.overflow = 'hidden';
+        // mantém a posição atual da página (não volta para o topo ao fechar)
+        lockBodyScroll();
         setTimeout(() => pjProductModal.classList.add('visible'), 10);
     };
 
@@ -361,7 +361,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             pjProductModal.classList.remove('show', 'closing');
             pjProductModal.style.display = 'none';
-            document.body.style.overflow = '';
+            unlockBodyScroll();
         }, 200);
     };
 
@@ -817,6 +817,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const compareTitle = document.getElementById('compare-modal-title');
     const closeCompareBtn = document.getElementById('close-compare-btn');
 
+    const isCompareModalVisible = () => {
+        if (!compareModal) return false;
+        return compareModal.classList.contains('show') || compareModal.style.display === 'flex';
+    };
+
+    const ensureCompareModalOpen = () => {
+        if (!compareModal) return;
+        if (isCompareModalVisible()) return;
+        openModal(compareModal);
+    };
+
     const normalizeName = (name) => name ? name.toString().toLowerCase().replace(/\s+/g, ' ').trim() : '';
 
     // Attempt to extract a 'core' product name by removing brand tokens and common qualifiers
@@ -908,7 +919,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!matches || matches.length === 0) {
             compareEmpty.style.display = 'block';
             compareTitle.textContent = `Comparar: ${productName}`;
-            openModal(compareModal);
+            ensureCompareModalOpen();
             return;
         }
         compareEmpty.style.display = 'none';
@@ -1025,7 +1036,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Desktop e mobile: usar o mesmo modal/layout
         compareList.appendChild(desktopLayout);
-        openModal(compareModal);
+    ensureCompareModalOpen();
         return;
 
         // ===== Mantém fluxo ANTIGO para mobile abaixo =====
@@ -1118,7 +1129,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         compareList.appendChild(columnsWrap);
-        openModal(compareModal);
+    ensureCompareModalOpen();
 
         // Titles now display full product name (multi-line) per reference image.
 
@@ -1726,14 +1737,8 @@ document.addEventListener('DOMContentLoaded', () => {
     brandFilter.addEventListener('change', filterProducts);
     categoryFilter.addEventListener('change', filterProducts);
 
-    // Ao clicar em um card de produto (fora dos botões), abrir modal de detalhe
-    productsList.addEventListener('click', (e) => {
-        const card = e.target.closest('.product-card');
-        if (!card) return;
-        if (e.target.closest('button')) return; // ignore clicks on action buttons
-        const id = card.dataset.productId;
-        if (id) openProductDetail(id);
-    });
+    // OBS: o card já possui listener próprio em createProductCard.
+    // Não duplicar aqui para evitar abrir o modal 2x e perder a posição do scroll.
 
     // Botão de pesquisar (se for adicionado futuramente): caso exista, faz mesma ação do Enter
     const searchButton = document.getElementById('search-button');
@@ -1915,21 +1920,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // Funções para bloquear/desbloquear scroll da página
+    // Suporta modais aninhados (ex.: produto -> comparar) sem perder posição.
+    let modalScrollLockDepth = 0;
+    let modalScrollY = 0;
+
     const lockBodyScroll = () => {
-        const scrollY = window.scrollY;
-        document.body.style.position = 'fixed';
-        document.body.style.top = `-${scrollY}px`;
-        document.body.style.width = '100%';
-        document.body.classList.add('modal-open');
+        if (modalScrollLockDepth === 0) {
+            modalScrollY = window.scrollY || window.pageYOffset || 0;
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${modalScrollY}px`;
+            document.body.style.width = '100%';
+            document.body.classList.add('modal-open');
+        }
+        modalScrollLockDepth += 1;
     };
 
     const unlockBodyScroll = () => {
-        const scrollY = document.body.style.top;
+        if (modalScrollLockDepth <= 0) {
+            modalScrollLockDepth = 0;
+            return;
+        }
+
+        modalScrollLockDepth -= 1;
+        if (modalScrollLockDepth > 0) {
+            return;
+        }
+
         document.body.style.position = '';
         document.body.style.top = '';
         document.body.style.width = '';
         document.body.classList.remove('modal-open');
-        window.scrollTo(0, parseInt(scrollY || '0') * -1);
+        window.scrollTo(0, Math.max(0, parseInt(modalScrollY || 0, 10)));
     };
 
     // Abrir modais
@@ -1979,6 +2000,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fechar modais com animação
     closeModalBtns.forEach(btn => {
         btn.addEventListener('click', () => {
+            if (btn.id === 'pj-close-product-modal') {
+                pjCloseModal();
+                return;
+            }
             const modal = btn.closest('.modal');
             closeModal(modal);
         });
@@ -1992,6 +2017,10 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('click', (e) => {
         try {
             if (e.target && e.target.classList && e.target.classList.contains('modal')) {
+                if (e.target.id === 'pj-product-modal') {
+                    pjCloseModal();
+                    return;
+                }
                 closeModal(e.target);
             }
         } catch (err) {
