@@ -512,12 +512,36 @@ document.addEventListener('DOMContentLoaded', () => {
         writeArray('suggestions', suggestions);
     };
 
+    const __pjNormalizeMarketName = (value) => (value || '')
+        .toString()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim();
+
     const __pjFindMarketLogo = (marketName) => {
         try {
             const markets = JSON.parse(localStorage.getItem('markets') || '[]');
-            if (!Array.isArray(markets)) return '';
-            const m = markets.find(x => (x?.name || '').toString().toLowerCase().trim() === (marketName || '').toString().toLowerCase().trim());
-            return (m && m.logo) ? m.logo : '';
+            if (!Array.isArray(markets) || !markets.length) return '';
+
+            const targetRaw = (marketName || '').toString().trim();
+            const target = __pjNormalizeMarketName(targetRaw);
+            if (!target) return '';
+
+            // 1) match exato normalizado
+            let match = markets.find(x => __pjNormalizeMarketName(x?.name || '') === target && x?.logo);
+
+            // 2) match aproximado (quando vem "Pingo Doce Super" vs "Pingo Doce")
+            if (!match) {
+                match = markets.find(x => {
+                    const name = __pjNormalizeMarketName(x?.name || '');
+                    if (!name || !x?.logo) return false;
+                    return name.includes(target) || target.includes(name);
+                });
+            }
+
+            return (match && match.logo) ? String(match.logo) : '';
         } catch (_) {
             return '';
         }
@@ -1293,8 +1317,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const classes = ['compare-market-logo'];
         if (extraClass) classes.push(extraClass);
         const className = classes.join(' ');
-        if (logo) return `<img src="${pjEsc(logo)}" alt="Logo ${pjEsc(marketName || '')}" class="${className}" loading="lazy" decoding="async">`;
-        return `<img src="images/icons/icon-192.png" alt="Logo" class="${className}" loading="lazy" decoding="async">`;
+        const fallback = 'images/icons/icon-192.png';
+        if (logo) {
+            return `<img src="${pjEsc(logo)}" alt="Logo ${pjEsc(marketName || '')}" class="${className}" loading="lazy" decoding="async" onerror="if(this.dataset.fallback)return;this.dataset.fallback='1';this.src='${fallback}';">`;
+        }
+        return `<img src="${fallback}" alt="Logo" class="${className}" loading="lazy" decoding="async">`;
     };
     const getCountryHtml = (item, showName = true) => {
         const primary = __pjGetPrimaryCountryMeta(item);

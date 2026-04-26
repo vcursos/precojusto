@@ -2682,23 +2682,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Considera logado apenas se NÃO for anônimo
                 showAdmin();
             } else {
-                // fallback: aceitar login prévio salvo por login.html, mas migrar para este fluxo
-                const legacyLogged = (
-                    localStorage.getItem('adminLogado') === 'true' ||
-                    localStorage.getItem('isAuthenticated') === 'true' ||
-                    sessionStorage.getItem('isAuthenticated') === 'true'
-                );
-                if (legacyLogged) showAdmin(); else showLogin();
+                // Não liberar admin sem sessão Firebase válida (evita permission-denied ao salvar)
+                showLogin();
             }
         });
     } catch (e) {
-        console.warn('onAuthStateChanged failed, using localStorage fallback', e);
-        const legacyLogged = (
-            localStorage.getItem('adminLogado') === 'true' ||
-            localStorage.getItem('isAuthenticated') === 'true' ||
-            sessionStorage.getItem('isAuthenticated') === 'true'
-        );
-        if (legacyLogged) showAdmin(); else showLogin();
+        console.warn('onAuthStateChanged failed, forcing login screen', e);
+        showLogin();
     }
 
     if (loginForm) {
@@ -2828,7 +2818,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const countryForm = document.getElementById('country-form');
     const countryIdInput = document.getElementById('country-id');
     const countryNameInput = document.getElementById('country-name');
-    const countryCodeInput = document.getElementById('country-code');
+    const countryFlagIconInput = document.getElementById('country-flag-icon');
+    const countryFlagPreview = document.getElementById('country-flag-preview');
+    const countryFlagPicker = document.getElementById('country-flag-picker');
     const cancelEditCountryBtn = document.getElementById('cancel-edit-country-btn');
 
     // Elementos do leitor de código de barras (adicionados no HTML)
@@ -3166,32 +3158,118 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // -------- Países --------
     const COUNTRIES_KEY = 'countries';
+    const COUNTRY_CODE_BY_NAME = {
+        portugal: 'PT',
+        espanha: 'ES',
+        spain: 'ES',
+        brasil: 'BR',
+        brazil: 'BR',
+        franca: 'FR',
+        frança: 'FR',
+        france: 'FR',
+        italia: 'IT',
+        itália: 'IT',
+        italy: 'IT',
+        alemanha: 'DE',
+        germany: 'DE',
+        uk: 'GB',
+        'reino unido': 'GB',
+        usa: 'US',
+        'estados unidos': 'US',
+        'united states': 'US'
+    };
+    const COUNTRY_NAME_BY_CODE = {
+        PT: 'Portugal',
+        ES: 'Espanha',
+        BR: 'Brasil',
+        FR: 'França',
+        IT: 'Itália',
+        DE: 'Alemanha',
+        GB: 'Reino Unido',
+        US: 'Estados Unidos'
+    };
     const defaultCountries = [
-        { name: 'Portugal', code: 'PT' },
-        { name: 'Espanha', code: 'ES' }
+        { name: 'Portugal', code: 'PT', icon: '🇵🇹' },
+        { name: 'Espanha', code: 'ES', icon: '🇪🇸' }
     ];
 
     const normalizeCountryName = (name) => (name || '').toString().trim().replace(/\s+/g, ' ');
     const normalizeCountryCode = (code) => (code || '').toString().trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2);
     const normalizeCountryKey = (name) => normalizeCountryName(name).toLowerCase();
+    const countryCodeToFlagEmoji = (code) => {
+        const normalized = normalizeCountryCode(code);
+        if (normalized.length !== 2) return '';
+        return String.fromCodePoint(...normalized.split('').map(ch => 127397 + ch.charCodeAt(0)));
+    };
+    const getCountryCodeFromName = (name) => COUNTRY_CODE_BY_NAME[normalizeCountryKey(name)] || '';
+    const getCountryNameFromCode = (code) => COUNTRY_NAME_BY_CODE[normalizeCountryCode(code)] || '';
+    const getCountryFlagImageUrl = (code, size = 20) => {
+        const normalized = normalizeCountryCode(code);
+        if (normalized.length !== 2) return '';
+        return `https://flagcdn.com/w${size}/${normalized.toLowerCase()}.png`;
+    };
+    const buildCountryFlagHtml = (code, icon, altName = 'Bandeira', size = 20) => {
+        const imageUrl = getCountryFlagImageUrl(code, size);
+        if (imageUrl) {
+            return `<img class="country-flag-img" src="${imageUrl}" alt="Bandeira ${altName}" loading="lazy" decoding="async">`;
+        }
+        const emoji = normalizeCountryIcon(icon, code) || countryCodeToFlagEmoji(code) || '🏳️';
+        return `<span class="country-flag-fallback">${emoji}</span>`;
+    };
+    const syncCountryFlagPreview = (code, icon = '') => {
+        if (!countryFlagPreview) return;
+        countryFlagPreview.innerHTML = buildCountryFlagHtml(code, icon, 'selecionada', 40);
+        if (countryFlagIconInput) {
+            countryFlagIconInput.value = normalizeCountryIcon(icon, code) || countryCodeToFlagEmoji(code) || '';
+        }
+    };
+    const normalizeCountryIcon = (icon, fallbackCode = '') => {
+        const raw = (icon || '').toString().trim();
+        if (!raw) return '';
+
+        // Se vier ISO (ex: "PT"), converte para emoji de bandeira
+        const maybeCode = normalizeCountryCode(raw);
+        if (maybeCode.length === 2) {
+            return countryCodeToFlagEmoji(maybeCode) || countryCodeToFlagEmoji(fallbackCode) || '';
+        }
+
+        // Mantém apenas o primeiro emoji válido para evitar textos acidentais
+        const emojiMatch = raw.match(/[\u{1F1E6}-\u{1F1FF}]{2}|[\u{1F300}-\u{1FAFF}]|[\u2600-\u27BF]/u);
+        if (emojiMatch?.[0]) return emojiMatch[0];
+
+        return countryCodeToFlagEmoji(fallbackCode) || '';
+    };
+    const resolveCountryDisplay = ({ name, code, icon }) => {
+        const normalizedName = normalizeCountryName(name);
+        const normalizedCode = normalizeCountryCode(code) || getCountryCodeFromName(normalizedName);
+        const displayName = normalizedName.length === 2
+            ? (getCountryNameFromCode(normalizedName) || getCountryNameFromCode(normalizedCode) || normalizedName)
+            : normalizedName;
+        const displayIcon = normalizeCountryIcon(icon, normalizedCode) || countryCodeToFlagEmoji(normalizedCode) || '🏳️';
+        return { name: displayName, code: normalizedCode, icon: displayIcon };
+    };
 
     const dedupeCountriesByName = (countries) => {
         const map = new Map();
         (Array.isArray(countries) ? countries : []).forEach((raw) => {
-            const name = normalizeCountryName(raw?.name || raw?.country || raw);
-            if (!name) return;
-            const code = normalizeCountryCode(raw?.code || raw?.countryCode || '');
-            const key = normalizeCountryKey(name);
+            const rawName = normalizeCountryName(raw?.name || raw?.country || raw);
+            if (!rawName) return;
+            const rawCode = normalizeCountryCode(raw?.code || raw?.countryCode || '');
+            const rawIcon = normalizeCountryIcon(raw?.icon || raw?.flagIcon || '', rawCode);
+            const resolved = resolveCountryDisplay({ name: rawName, code: rawCode, icon: rawIcon });
+            const key = normalizeCountryKey(resolved.name);
             if (!map.has(key)) {
                 map.set(key, {
                     id: raw?.id || `ctr-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-                    name,
-                    code
+                    name: resolved.name,
+                    code: resolved.code,
+                    icon: resolved.icon
                 });
                 return;
             }
             const existing = map.get(key);
-            if (!existing.code && code) existing.code = code;
+            if (!existing.code && resolved.code) existing.code = resolved.code;
+            if (!existing.icon && resolved.icon) existing.icon = resolved.icon;
             if (!existing.id && raw?.id) existing.id = raw.id;
         });
         return [...map.values()];
@@ -3200,14 +3278,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const ensureCountryIds = (countries) => {
         let mutated = false;
         countries.forEach(c => {
-            const normalizedName = normalizeCountryName(c?.name);
-            const normalizedCode = normalizeCountryCode(c?.code);
-            if ((c?.name || '') !== normalizedName) {
-                c.name = normalizedName;
+            const resolved = resolveCountryDisplay({ name: c?.name, code: c?.code, icon: c?.icon });
+            if ((c?.name || '') !== resolved.name) {
+                c.name = resolved.name;
                 mutated = true;
             }
-            if ((c?.code || '') !== normalizedCode) {
-                c.code = normalizedCode;
+            if ((c?.code || '') !== resolved.code) {
+                c.code = resolved.code;
+                mutated = true;
+            }
+            if ((c?.icon || '') !== resolved.icon) {
+                c.icon = resolved.icon;
                 mutated = true;
             }
             if (!c.id) {
@@ -3240,24 +3321,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const getCountries = () => ensureDefaultCountries();
 
-    const upsertCountry = (name, code, id = null) => {
-        const normalizedName = normalizeCountryName(name);
-        const normalizedCode = normalizeCountryCode(code);
-        if (!normalizedName) return getCountries();
+    const upsertCountry = (name, code, icon, id = null) => {
+        const resolved = resolveCountryDisplay({ name, code, icon });
+        if (!resolved.name) return getCountries();
 
         const countries = getCountries();
         let target = null;
         if (id) target = countries.find(c => c.id === id);
-        if (!target) target = countries.find(c => normalizeCountryKey(c.name) === normalizeCountryKey(normalizedName));
+        if (!target) target = countries.find(c => normalizeCountryKey(c.name) === normalizeCountryKey(resolved.name));
 
         if (target) {
-            target.name = normalizedName;
-            target.code = normalizedCode || target.code || '';
+            target.name = resolved.name;
+            target.code = resolved.code || target.code || '';
+            target.icon = resolved.icon || target.icon || '';
         } else {
             countries.push({
                 id: `ctr-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-                name: normalizedName,
-                code: normalizedCode
+                name: resolved.name,
+                code: resolved.code,
+                icon: resolved.icon
             });
         }
 
@@ -3279,29 +3361,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (item && typeof item === 'object') {
                     const name = normalizeCountryName(item.name || item.country || '');
                     const code = normalizeCountryCode(item.code || item.countryCode || '');
-                    if (name) fromArray.push({ name, code });
+                    const icon = normalizeCountryIcon(item.icon || item.flagIcon || '', code);
+                    if (name) fromArray.push({ name, code, icon });
                     return;
                 }
                 const name = normalizeCountryName(item);
                 const code = normalizeCountryCode(Array.isArray(product.countryCodes) ? product.countryCodes[index] : '');
-                if (name) fromArray.push({ name, code });
+                if (name) fromArray.push({ name, code, icon: '' });
             });
         }
 
         if (!fromArray.length) {
             const legacyName = normalizeCountryName(product.country || product.zone || '');
             const legacyCode = normalizeCountryCode(product.countryCode || '');
-            if (legacyName) fromArray.push({ name: legacyName, code: legacyCode });
+            if (legacyName) fromArray.push({ name: legacyName, code: legacyCode, icon: '' });
         }
 
         const registered = getCountries();
         const registeredMap = new Map(registered.map(c => [normalizeCountryKey(c.name), c]));
         return dedupeCountriesByName(fromArray.map(item => {
             const found = registeredMap.get(normalizeCountryKey(item.name));
-            return {
+            return resolveCountryDisplay({
                 name: item.name,
-                code: item.code || found?.code || ''
-            };
+                code: item.code || found?.code || '',
+                icon: item.icon || found?.icon || ''
+            });
         }));
     };
 
@@ -3310,7 +3394,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const selected = Array.from(productCountriesChecklist.querySelectorAll('input[type="checkbox"]:checked'));
         return selected.map(input => ({
             name: normalizeCountryName(input.dataset.countryName || ''),
-            code: normalizeCountryCode(input.dataset.countryCode || '')
+            code: normalizeCountryCode(input.dataset.countryCode || ''),
+            icon: normalizeCountryIcon(input.dataset.countryIcon || '', input.dataset.countryCode || '')
         })).filter(c => c.name);
     };
 
@@ -3324,8 +3409,51 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const getProductCountriesLabel = (product) => {
-        const names = getProductCountriesMeta(product).map(c => c.name).filter(Boolean);
-        return names.length ? names.join(', ') : '';
+        const label = getProductCountriesMeta(product)
+            .map(c => {
+                const resolved = resolveCountryDisplay(c);
+                return `${resolved.name}`;
+            })
+            .filter(Boolean)
+            .join(', ');
+
+        return label;
+    };
+
+    const syncAdminSuggestionsFromPriceSuggestions = () => {
+        let suggestions = getFromLocalStorage('suggestions');
+        let priceSuggestions = [];
+        try {
+            priceSuggestions = JSON.parse(localStorage.getItem('priceSuggestions') || '[]');
+            if (!Array.isArray(priceSuggestions)) priceSuggestions = [];
+        } catch (_) {
+            priceSuggestions = [];
+        }
+
+        if (!priceSuggestions.length) return suggestions;
+
+        const existsKey = (item) => `${String(item?.productId || '')}::${String(item?.market || '').toLowerCase()}::${Number(item?.suggestedPrice || item?.price || 0).toFixed(2)}`;
+        const existingKeys = new Set((Array.isArray(suggestions) ? suggestions : []).map(existsKey));
+        let changed = false;
+
+        priceSuggestions.forEach((s, idx) => {
+            const normalized = {
+                id: s?.id || `ps-${Date.now()}-${idx}`,
+                productId: s?.productId || '',
+                productName: s?.productName || '',
+                market: s?.market || '',
+                suggestedPrice: Number(s?.suggestedPrice ?? s?.price ?? 0).toFixed(2),
+                date: s?.date || (s?.suggestedAt ? new Date(s.suggestedAt).toISOString() : new Date().toISOString())
+            };
+            const key = existsKey(normalized);
+            if (existingKeys.has(key)) return;
+            suggestions.push(normalized);
+            existingKeys.add(key);
+            changed = true;
+        });
+
+        if (changed) saveToLocalStorage('suggestions', suggestions);
+        return suggestions;
     };
 
     const renderProductCountriesChecklist = () => {
@@ -3341,12 +3469,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         countries.forEach(country => {
+            const resolved = resolveCountryDisplay(country);
             const label = document.createElement('label');
             label.className = 'country-option';
-            const checked = selectedSet.has(normalizeCountryKey(country.name)) ? 'checked' : '';
+            const checked = selectedSet.has(normalizeCountryKey(resolved.name)) ? 'checked' : '';
+            const flagHtml = buildCountryFlagHtml(resolved.code, resolved.icon, resolved.name, 20);
             label.innerHTML = `
-                <input type="checkbox" value="${country.id}" data-country-name="${country.name}" data-country-code="${country.code || ''}" ${checked}>
-                <span>${country.name}${country.code ? ` (${country.code})` : ''}</span>
+                <input type="checkbox" value="${country.id}" data-country-name="${resolved.name}" data-country-code="${resolved.code || ''}" data-country-icon="${resolved.icon || ''}" ${checked}>
+                <span>${flagHtml}${resolved.name}</span>
             `;
             productCountriesChecklist.appendChild(label);
         });
@@ -3369,12 +3499,13 @@ document.addEventListener('DOMContentLoaded', () => {
         countries
             .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
             .forEach(c => {
+                const resolved = resolveCountryDisplay(c);
                 const card = document.createElement('div');
                 card.className = 'country-card';
+                const flagHtml = buildCountryFlagHtml(resolved.code, resolved.icon, resolved.name, 20);
                 card.innerHTML = `
                     <div class="country-card-header">
-                        <div style="font-weight:600;">${c.name}</div>
-                        <span class="country-code-badge">${c.code || '—'}</span>
+                        <div style="font-weight:600; display:flex; align-items:center; gap:6px;">${flagHtml}<span>${resolved.name}</span></div>
                     </div>
                     <div class="market-card-actions">
                         <button class="btn-small" data-action="edit-country" data-id="${c.id}"><i class="fas fa-edit"></i> Editar</button>
@@ -3668,28 +3799,34 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    if (countryFlagPicker) {
+        countryFlagPicker.addEventListener('change', () => {
+            const pickerCode = normalizeCountryCode(countryFlagPicker.value || '');
+            syncCountryFlagPreview(pickerCode, '');
+        });
+    }
+
     if (countryForm) {
         countryForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const name = normalizeCountryName(countryNameInput?.value);
-            const code = normalizeCountryCode(countryCodeInput?.value);
+            const pickerCode = normalizeCountryCode(countryFlagPicker?.value || '');
+            const nameCode = normalizeCountryCode(name.length === 2 ? name : getCountryCodeFromName(name));
+            const code = pickerCode || nameCode;
+            const flagIcon = countryCodeToFlagEmoji(code) || normalizeCountryIcon(countryFlagIconInput?.value || '', code) || '🏳️';
             const editId = countryIdInput?.value || null;
 
             if (!name) {
                 alert('Informe o nome do país.');
                 return;
             }
-            if (!code || code.length !== 2) {
-                alert('Informe o código ISO com 2 letras (ex.: PT, ES).');
-                countryCodeInput?.focus();
-                return;
-            }
 
-            upsertCountry(name, code, editId);
+            upsertCountry(name, code, flagIcon, editId);
             refreshMarketsUI();
 
             if (countryNameInput) countryNameInput.value = '';
-            if (countryCodeInput) countryCodeInput.value = '';
+            if (countryFlagPicker) countryFlagPicker.value = '';
+            syncCountryFlagPreview('', '');
             if (countryIdInput) countryIdInput.value = '';
             if (cancelEditCountryBtn) cancelEditCountryBtn.style.display = 'none';
 
@@ -3703,7 +3840,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (cancelEditCountryBtn) {
         cancelEditCountryBtn.addEventListener('click', () => {
             if (countryNameInput) countryNameInput.value = '';
-            if (countryCodeInput) countryCodeInput.value = '';
+            if (countryFlagPicker) countryFlagPicker.value = '';
+            syncCountryFlagPreview('', '');
             if (countryIdInput) countryIdInput.value = '';
             cancelEditCountryBtn.style.display = 'none';
             const saveBtn = document.getElementById('save-country-btn');
@@ -3717,8 +3855,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const id = editBtn.dataset.id;
             const target = getCountries().find(c => c.id === id);
             if (!target) return;
+            const resolved = resolveCountryDisplay(target);
             if (countryNameInput) countryNameInput.value = target.name;
-            if (countryCodeInput) countryCodeInput.value = target.code || '';
+            if (countryFlagPicker) {
+                const optionExists = Array.from(countryFlagPicker.options).some(opt => opt.value === resolved.code);
+                countryFlagPicker.value = optionExists ? resolved.code : '';
+            }
+            syncCountryFlagPreview(resolved.code, resolved.icon || '');
             if (countryIdInput) countryIdInput.value = target.id;
             if (cancelEditCountryBtn) cancelEditCountryBtn.style.display = 'inline-block';
             const saveBtn = document.getElementById('save-country-btn');
@@ -3764,9 +3907,11 @@ document.addEventListener('DOMContentLoaded', () => {
         updateFilterOptions();
     };
 
+    syncCountryFlagPreview('', '');
+
     const updateCounts = () => {
         const products = getActiveProducts();
-        const suggestions = getFromLocalStorage('suggestions');
+        const suggestions = syncAdminSuggestionsFromPriceSuggestions();
         productsCountBadge.textContent = products.length;
         suggestionsCountBadge.textContent = suggestions.length;
     };
@@ -4317,7 +4462,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const renderSuggestions = () => {
-        const suggestions = getFromLocalStorage('suggestions');
+        const suggestions = syncAdminSuggestionsFromPriceSuggestions();
         suggestionsList.innerHTML = '';
         if (suggestions.length === 0) {
             document.getElementById('no-suggestions').style.display = 'block';
@@ -4344,6 +4489,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Lógica do formulário de produto
     productForm.addEventListener('submit', (e) => {
         e.preventDefault();
+
+        const activeUser = auth?.currentUser;
+        if (!activeUser || activeUser.isAnonymous === true) {
+            alert('Sua sessão expirou ou não está autenticada no servidor. Faça login novamente no admin para salvar/editar produtos.');
+            showLogin();
+            return;
+        }
 
         const id = document.getElementById('product-id').value.trim();
         const name = document.getElementById('product-name').value;

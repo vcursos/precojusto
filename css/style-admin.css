@@ -461,6 +461,55 @@ body.modal-open {
     color: #1f2937;
 }
 
+#country-flag-icon {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.country-flag-preview {
+    width: 80px;
+    min-width: 80px;
+    height: 38px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    overflow: hidden;
+}
+
+.country-flag-img {
+    width: 20px;
+    height: 14px;
+    object-fit: cover;
+    border-radius: 2px;
+    border: 1px solid #e5e7eb;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+.country-flag-preview .country-flag-img {
+    width: 40px;
+    height: 28px;
+}
+
+.country-flag-fallback {
+    font-size: 1rem;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    margin-right: 6px;
+}
+
+#country-flag-picker {
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 6px 8px;
+    background: #fff;
+    color: #1f2937;
+}
+
 .countries-empty {
     margin: 0;
     padding: 10px;
