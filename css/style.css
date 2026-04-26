@@ -678,6 +678,12 @@ body.all-products-page-open {
         border-radius: 8px;
         padding: 4px;
     }
+    .compare-market-logo.compare-market-logo--sm {
+        width: 26px;
+        height: 26px;
+        border-radius: 6px;
+        padding: 2px;
+    }
     .highlight-market-logo-wrap { display: inline-flex; align-items: center; justify-content: center; }
 .filter-label {
     font-size: 0.75rem;
@@ -3528,6 +3534,22 @@ body.admin-google-image-modal-open {
 .compare-linear-item .cli-name-col { font-size:.8rem; font-weight:700; line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; color:#0f172a; }
 .compare-linear-item .cli-market-col { font-size:.65rem; font-weight:600; color:#444; letter-spacing:.5px; text-transform:uppercase; justify-content:center; }
 .compare-linear-item .cli-country-col { font-size:.72rem; color:#475569; font-weight:600; }
+.compare-linear-item .cli-country-market-stack {
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+}
+.compare-linear-item .cli-country-market-stack .country-chip {
+    margin:0;
+}
+.compare-linear-item .cli-country-flag,
+.compare-linear-item .cli-market-under-flag {
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+}
 .compare-linear-item .cli-price-col { font-size:.9rem; font-weight:800; color:#0f172a; }
 .compare-linear-item .cli-diff-col {
     font-size:.7rem;

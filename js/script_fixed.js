@@ -1398,10 +1398,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     <img src="${p.imageUrl || DEFAULT_IMAGE_URL}" alt="${p.name}" class="cli-image" loading="lazy">
                 </div>
                 <div class="cli-name-col" title="${p.name}">${p.name}</div>
-                <div class="cli-market-col" style="display:flex;align-items:center;gap:8px;">
-                    ${getMarketLogoHtml(p.market || '')}
+                <div class="cli-market-col"></div>
+                <div class="cli-country-col">
+                    <div class="cli-country-market-stack">
+                        <span class="cli-country-flag">${getCountryHtml(p, false)}</span>
+                        <span class="cli-market-under-flag">${getMarketLogoHtml(p.market || '', 'compare-market-logo--sm')}</span>
+                    </div>
                 </div>
-                <div class="cli-country-col" style="display:flex;align-items:center;white-space:nowrap;">${getCountryHtml(p, true)}</div>
                 <div class="cli-price-col">${formatPrice(p.price)}</div>
                 <div class="cli-diff-col">${diffPercent(p.price)}</div>
                 <div class="cli-actions-col">
