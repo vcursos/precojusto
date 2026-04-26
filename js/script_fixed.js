@@ -1,4 +1,4 @@
-﻿// ============ DECLARE initializeAppData FIRST ============
+// ============ DECLARE initializeAppData FIRST ============
 function initializeAppData() {
     console.log("Initializing app data...");
     // loadProducts removido - já é carregado pelo firebase-loader.js
@@ -2426,8 +2426,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 }); // <-- Fecha o primeiro e único listener de DOMContentLoaded corretamente
 
-}); // <-- Fecha o primeiro e único listener de DOMContentLoaded corretamente
-
 // Funcao global para abrir detalhes (mantida fora do listener para acesso geral)
 function showProductDetail(product) {
     window.currentDetailProduct = product;
@@ -2477,4 +2475,3 @@ window.addEventListener('productsLoaded', (event) => {
         console.warn('Falha ao processar productsLoaded externo:', e);
     }
 });
-}); 
