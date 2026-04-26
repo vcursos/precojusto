@@ -519,7 +519,12 @@
         </section>
 
         <section class="products-section">
-            <h2 class="section-title"><i class="fas fa-list-ul"></i> Produtos Disponíveis</h2>
+            <div class="products-section-header">
+                <h2 class="section-title"><i class="fas fa-list-ul"></i> Produtos Disponíveis</h2>
+                <button id="open-all-products-page" class="view-all-products-btn" type="button">
+                    <i class="fas fa-expand"></i> Ver todos
+                </button>
+            </div>
             <div class="products-scroll-container">
                 <button class="scroll-btn prev-btn" title="Anterior"><i class="fas fa-chevron-left"></i></button>
                 <div id="products-list" class="products-grid">
@@ -527,6 +532,22 @@
                 <button class="scroll-btn next-btn" title="Próximo"><i class="fas fa-chevron-right"></i></button>
             </div>
             <p id="no-products-message" class="no-products-message" style="display:none;">Nenhum produto encontrado. Tente ajustar os filtros ou pesquisar por outro termo.</p>
+          </section>
+
+          <section id="all-products-page" class="all-products-page" style="display:none;" aria-hidden="true">
+              <button id="all-products-back-floating" class="all-products-back-floating" type="button" aria-label="Voltar para a página principal">
+                  <i class="fas fa-arrow-left"></i>
+                  <span>Voltar</span>
+              </button>
+              <div class="all-products-page-header">
+                  <button id="all-products-back-btn" class="all-products-back-btn" type="button">
+                      <i class="fas fa-arrow-left"></i> Voltar para a página principal
+                  </button>
+                  <h2><i class="fas fa-layer-group"></i> Todos os produtos</h2>
+                  <span id="all-products-count" class="all-products-count">0 produtos</span>
+              </div>
+              <div id="all-products-list" class="all-products-list"></div>
+              <p id="all-products-empty" class="no-products-message" style="display:none;">Nenhum produto cadastrado no momento.</p>
           </section>
 
           <!-- Seção Produtos Adicionados Recentemente -->
@@ -564,9 +585,16 @@
         <div class="modal-content">
             <span class="close-btn" id="close-cart-btn">&times;</span>
             <h2><i class="fas fa-shopping-cart"></i> Meu Carrinho</h2>
+            <div class="cart-market-filter-wrap">
+                <label for="cart-market-filter">Filtrar por mercado:</label>
+                <select id="cart-market-filter" class="cart-market-filter">
+                    <option value="all">Todos os mercados</option>
+                </select>
+            </div>
             <div id="cart-items-list" class="cart-items-list"></div>
             <p id="empty-cart-message" class="empty-message">O seu carrinho está vazio.</p>
             <div class="cart-summary">
+                <div id="cart-market-breakdown" class="cart-market-breakdown"></div>
                 <div class="cart-total">
                     <span>Total:</span>
                     <span id="cart-total" class="total-price">€0,00</span>

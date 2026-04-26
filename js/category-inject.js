@@ -14,7 +14,28 @@
 
     if (!categoryTabs || !categoryProductsGrid) return; // seção não existe
 
-    const normalizeCategory = (value) => (value || 'Outros').toString().trim();
+    const CATEGORY_LABELS = {
+        alimentos: 'Alimentos',
+        talho: 'Talho',
+        eletros: 'Eletros',
+        limpeza: 'Limpeza',
+        higiene: 'Higiene Pessoal',
+        bebidas: 'Bebidas',
+        frios: 'Laticínios e Frios',
+        congelados: 'Congelados',
+        padaria: 'Padaria e Pastelaria',
+        suplementos: 'Suplementos',
+        pets: 'Pets',
+        casa: 'Casa e Decoração',
+        cozinha: 'Cozinha e Mesa'
+    };
+
+    const normalizeCategoryKey = (value) => (value || 'Outros').toString().trim().toLowerCase();
+    const normalizeCategoryLabel = (value) => {
+        const raw = (value || 'Outros').toString().trim();
+        const key = normalizeCategoryKey(raw);
+        return CATEGORY_LABELS[key] || raw || 'Outros';
+    };
 
     const getProducts = () => {
         try {
@@ -27,20 +48,33 @@
 
     const getPrimaryCategories = () => {
         const products = getProducts();
-        const counts = products.reduce((acc, p) => {
-            const cat = normalizeCategory(p.category);
-            acc[cat] = (acc[cat] || 0) + 1;
+        const meta = products.reduce((acc, p) => {
+            const key = normalizeCategoryKey(p.category);
+            if (!acc[key]) {
+                acc[key] = {
+                    label: normalizeCategoryLabel(p.category),
+                    count: 0
+                };
+            }
+            acc[key].count += 1;
             return acc;
         }, {});
 
-        const prioritized = MAIN_CATEGORY_ORDER.filter(cat => counts[cat]);
-        const extras = Object.entries(counts)
-            .filter(([cat]) => !MAIN_CATEGORY_ORDER.includes(cat))
-            .sort((a, b) => b[1] - a[1])
-            .map(([cat]) => cat);
+        const prioritized = MAIN_CATEGORY_ORDER
+            .map(cat => normalizeCategoryKey(cat))
+            .filter(key => !!meta[key]);
+
+        const extras = Object.entries(meta)
+            .filter(([key]) => !prioritized.includes(key))
+            .sort((a, b) => {
+                // mantém mais populares primeiro, desempate por nome exibido
+                if (b[1].count !== a[1].count) return b[1].count - a[1].count;
+                return (a[1].label || '').localeCompare((b[1].label || ''), 'pt-BR');
+            })
+            .map(([key]) => key);
 
         const merged = [...prioritized, ...extras];
-        return merged.slice(0, 6);
+        return merged.map(key => ({ key, label: meta[key].label }));
     };
 
     const updateNavVisibility = () => {
@@ -53,8 +87,8 @@
         categoryNextBtn.style.display = show ? 'flex' : 'none';
     };
 
-    const renderCategoryProducts = (category) => {
-        const products = getProducts().filter(p => normalizeCategory(p.category) === category);
+    const renderCategoryProducts = (categoryKey) => {
+        const products = getProducts().filter(p => normalizeCategoryKey(p.category) === categoryKey);
         categoryProductsGrid.innerHTML = '';
 
         if (!products.length) {
@@ -114,13 +148,13 @@
         categories.forEach(cat => {
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = 'category-tab' + (cat === activeCategory ? ' active' : '');
-            btn.textContent = cat;
+            btn.className = 'category-tab' + (cat.key === activeCategory ? ' active' : '');
+            btn.textContent = cat.label;
             btn.addEventListener('click', () => {
-                if (cat === activeCategory) return;
-                activeCategory = cat;
+                if (cat.key === activeCategory) return;
+                activeCategory = cat.key;
                 buildCategoryTabs(categories);
-                renderCategoryProducts(cat);
+                renderCategoryProducts(cat.key);
             });
             categoryTabs.appendChild(btn);
         });
@@ -135,8 +169,9 @@
             return;
         }
         categoryEmptyMessage.style.display = 'none';
-        if (!activeCategory || !categories.includes(activeCategory)) {
-            activeCategory = categories[0];
+        const keys = categories.map(c => c.key);
+        if (!activeCategory || !keys.includes(activeCategory)) {
+            activeCategory = categories[0].key;
         }
         buildCategoryTabs(categories);
         renderCategoryProducts(activeCategory);

@@ -108,6 +108,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const favoritesList = document.getElementById('favorites-products-list');
     const cartItemsList = document.getElementById('cart-items-list');
     const cartTotalElement = document.getElementById('cart-total');
+    const cartMarketFilter = document.getElementById('cart-market-filter');
+    const cartMarketBreakdown = document.getElementById('cart-market-breakdown');
     const cartModal = document.getElementById('cart-modal');
     const favoritesModal = document.getElementById('favorites-modal');
     const suggestionModal = document.getElementById('suggestion-modal');
@@ -137,6 +139,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const scrollContainer = document.getElementById('products-list');
     const prevBtn = productsSection.querySelector('.prev-btn');
     const nextBtn = productsSection.querySelector('.next-btn');
+    const openAllProductsPageBtn = document.getElementById('open-all-products-page');
+    const allProductsPage = document.getElementById('all-products-page');
+    const allProductsBackBtn = document.getElementById('all-products-back-btn');
+    const allProductsBackFloatingBtn = document.getElementById('all-products-back-floating');
+    const allProductsList = document.getElementById('all-products-list');
+    const allProductsCount = document.getElementById('all-products-count');
+    const allProductsEmpty = document.getElementById('all-products-empty');
+    let allProductsPrevScrollY = 0;
 
     // Funções de Utilitários
     // Para dados que devem persistir (produtos, sugestões)
@@ -322,6 +332,53 @@ document.addEventListener('DOMContentLoaded', () => {
         // ativa lazy-load no card recém-criado
         __pjSetupLazyImages(productCard);
         return productCard;
+    };
+
+    const renderAllProductsPage = () => {
+        if (!allProductsList) return;
+        const allProducts = getFromLocalStorage('products')
+            .slice()
+            .sort((a, b) => (a?.name || '').toString().localeCompare((b?.name || '').toString(), 'pt-PT'));
+
+        allProductsList.innerHTML = '';
+
+        if (allProductsCount) {
+            const total = allProducts.length;
+            allProductsCount.textContent = `${total} ${total === 1 ? 'produto' : 'produtos'}`;
+        }
+
+        if (!allProducts.length) {
+            if (allProductsEmpty) allProductsEmpty.style.display = 'block';
+            return;
+        }
+
+        if (allProductsEmpty) allProductsEmpty.style.display = 'none';
+
+        const favorites = getFromSessionStorage('favorites');
+        allProducts.forEach(product => {
+            const isFavorite = favorites.some(fav => fav.id === product.id);
+            const card = createProductCard(product, isFavorite);
+            allProductsList.appendChild(card);
+        });
+
+        __pjSetupLazyImages(allProductsList);
+    };
+
+    const openAllProductsPage = () => {
+        if (!allProductsPage) return;
+        allProductsPrevScrollY = window.scrollY || window.pageYOffset || 0;
+        renderAllProductsPage();
+        allProductsPage.style.display = 'block';
+        allProductsPage.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('all-products-page-open');
+    };
+
+    const closeAllProductsPage = () => {
+        if (!allProductsPage) return;
+        allProductsPage.style.display = 'none';
+        allProductsPage.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('all-products-page-open');
+        window.scrollTo(0, Math.max(0, allProductsPrevScrollY || 0));
     };
 
     // ================================
@@ -781,6 +838,68 @@ document.addEventListener('DOMContentLoaded', () => {
         return listItem;
     };
 
+    const createFavoriteListItem = (product) => {
+        const item = document.createElement('div');
+        item.className = 'favorite-list-item';
+        item.innerHTML = `
+            <img src="${product.imageUrl || DEFAULT_IMAGE_URL}" alt="${product.name}" class="favorite-item-image" loading="lazy" decoding="async">
+            <div class="favorite-item-info">
+                <h4 class="favorite-item-name">${product.name}</h4>
+                <p class="favorite-item-market"><i class="fas fa-store"></i> ${product.market || 'Sem mercado'}</p>
+                <p class="favorite-item-price">${formatPrice(product.price)}</p>
+            </div>
+            <div class="favorite-item-actions">
+                <button class="add-to-cart-btn" data-id="${product.id}" title="Adicionar ao Carrinho"><i class="fas fa-shopping-cart"></i></button>
+                <button class="remove-from-favorites-btn" data-id="${product.id}" title="Remover dos Favoritos"><i class="fas fa-trash-alt"></i></button>
+            </div>
+        `;
+        return item;
+    };
+
+    const __marketColorCache = {};
+    const getMarketAccentColor = (marketName) => {
+        const key = (marketName || 'Outros').toString().trim().toLowerCase();
+        if (__marketColorCache[key]) return __marketColorCache[key];
+        let hash = 0;
+        for (let i = 0; i < key.length; i += 1) {
+            hash = key.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const hue = Math.abs(hash) % 360;
+        const color = `hsl(${hue}, 70%, 45%)`;
+        __marketColorCache[key] = color;
+        return color;
+    };
+
+    const updateCartMarketFilterOptions = (groups, selectedValue = 'all') => {
+        if (!cartMarketFilter) return;
+        const markets = Object.keys(groups || {}).sort((a, b) => a.localeCompare(b, 'pt-PT'));
+        cartMarketFilter.innerHTML = `<option value="all">Todos os mercados</option>${markets.map(m => `<option value="${m}">${m}</option>`).join('')}`;
+        cartMarketFilter.value = markets.includes(selectedValue) ? selectedValue : 'all';
+    };
+
+    const renderCartMarketBreakdown = (marketTotals, grandTotal) => {
+        if (!cartMarketBreakdown) return;
+        const entries = Object.entries(marketTotals || {}).sort((a, b) => a[0].localeCompare(b[0], 'pt-PT'));
+        if (!entries.length) {
+            cartMarketBreakdown.innerHTML = '';
+            return;
+        }
+        cartMarketBreakdown.innerHTML = entries.map(([market, total]) => {
+            const accent = getMarketAccentColor(market);
+            return `
+                <div class="market-breakdown-row" style="--market-accent:${accent};">
+                    <span class="market-breakdown-name">${market}</span>
+                    <strong class="market-breakdown-total">${formatPrice(total)}</strong>
+                </div>
+            `;
+        }).join('') + `
+            <div class="market-breakdown-row total" style="--market-accent:#111827;">
+                <span class="market-breakdown-name">Total Geral</span>
+                <strong class="market-breakdown-total">${formatPrice(grandTotal)}</strong>
+            </div>
+        `;
+    };
+
 
     // Renderização dos Produtos na tela principal
     const renderProducts = (productsToRender = getFromLocalStorage('products')) => {
@@ -805,6 +924,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Garante que o estado dos botões é verificado após a renderização
         setTimeout(manageScrollButtons, 100);
+
+        // Atualiza a página de "todos os produtos" se estiver aberta
+        if (allProductsPage && allProductsPage.style.display !== 'none') {
+            renderAllProductsPage();
+        }
     };
     
     // Tornar renderProducts disponível globalmente para firebase-loader.js
@@ -1453,7 +1577,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             noFavoritesMessage.style.display = 'none';
             favorites.forEach(product => {
-                const listItem = createModalListItem(product, false);
+                const listItem = createFavoriteListItem(product);
                 favoritesList.appendChild(listItem);
             });
         }
@@ -1506,9 +1630,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderCartItems = () => {
         const cart = getFromSessionStorage('cart');
         cartItemsList.innerHTML = '';
+        const selectedMarket = cartMarketFilter ? (cartMarketFilter.value || 'all') : 'all';
 
         if (!cart || cart.length === 0) {
             emptyCartMessage.style.display = 'block';
+            if (cartMarketBreakdown) cartMarketBreakdown.innerHTML = '';
+            if (cartMarketFilter) {
+                cartMarketFilter.innerHTML = '<option value="all">Todos os mercados</option>';
+                cartMarketFilter.value = 'all';
+            }
             return updateCartTotal();
         }
 
@@ -1522,31 +1652,54 @@ document.addEventListener('DOMContentLoaded', () => {
             return acc;
         }, {});
 
-        let grandTotal = 0;
+        updateCartMarketFilterOptions(groups, selectedMarket);
 
-        Object.keys(groups).forEach(market => {
+        let grandTotal = 0;
+        const marketTotals = {};
+
+        Object.keys(groups).sort((a, b) => a.localeCompare(b, 'pt-PT')).forEach(market => {
             const items = groups[market];
+            const marketSubtotal = items.reduce((sum, it) => sum + (parseFloat(it.price) * (it.quantity || 1)), 0);
+            marketTotals[market] = marketSubtotal;
+            grandTotal += marketSubtotal;
+
+            if (cartMarketFilter && cartMarketFilter.value !== 'all' && cartMarketFilter.value !== market) {
+                return;
+            }
+
+            const accent = getMarketAccentColor(market);
+            const marketBlock = document.createElement('section');
+            marketBlock.className = 'cart-market-group';
+            marketBlock.style.setProperty('--market-accent', accent);
+
             // Cabeçalho do mercado
             const marketHeader = document.createElement('div');
             marketHeader.className = 'cart-market-header';
-            marketHeader.innerHTML = `<h4 class="market-name">${market}</h4>`;
-            cartItemsList.appendChild(marketHeader);
+            marketHeader.innerHTML = `<h4 class="market-name"><i class="fas fa-store"></i> ${market}</h4>`;
+            marketBlock.appendChild(marketHeader);
 
             // Lista de itens deste mercado
             items.forEach(item => {
                 const cartItem = createModalListItem(item, true);
-                cartItemsList.appendChild(cartItem);
+                marketBlock.appendChild(cartItem);
             });
 
             // Subtotal do mercado
-            const marketSubtotal = items.reduce((sum, it) => sum + (parseFloat(it.price) * (it.quantity || 1)), 0);
-            grandTotal += marketSubtotal;
-
             const subtotalNode = document.createElement('div');
             subtotalNode.className = 'market-subtotal';
             subtotalNode.innerHTML = `<div class="subtotal-row"><span>Subtotal ${market}:</span><strong>${formatPrice(marketSubtotal)}</strong></div>`;
-            cartItemsList.appendChild(subtotalNode);
+            marketBlock.appendChild(subtotalNode);
+            cartItemsList.appendChild(marketBlock);
         });
+
+        if (!cartItemsList.children.length && cartMarketFilter && cartMarketFilter.value !== 'all') {
+            const emptyMarketNode = document.createElement('p');
+            emptyMarketNode.className = 'empty-message';
+            emptyMarketNode.textContent = 'Não há itens para este mercado no carrinho.';
+            cartItemsList.appendChild(emptyMarketNode);
+        }
+
+        renderCartMarketBreakdown(marketTotals, grandTotal);
 
         // Total geral ao final da lista
         const totalNode = document.createElement('div');
@@ -1557,6 +1710,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Atualiza o resumo do carrinho (elemento existente)
         cartTotalElement.textContent = formatPrice(grandTotal);
     };
+
+    if (cartMarketFilter) {
+        cartMarketFilter.addEventListener('change', () => {
+            renderCartItems();
+        });
+    }
 
     // Lógica de Filtros e Busca
     const filterProducts = () => {
@@ -2044,6 +2203,27 @@ document.addEventListener('DOMContentLoaded', () => {
         scrollContainer.addEventListener('scroll', manageScrollButtons);
         // Adiciona um listener para o resize da janela, caso o utilizador mude o tamanho
         window.addEventListener('resize', manageScrollButtons);
+    }
+
+    if (openAllProductsPageBtn) {
+        openAllProductsPageBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            openAllProductsPage();
+        });
+    }
+
+    if (allProductsBackBtn) {
+        allProductsBackBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            closeAllProductsPage();
+        });
+    }
+
+    if (allProductsBackFloatingBtn) {
+        allProductsBackFloatingBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            closeAllProductsPage();
+        });
     }
 
 

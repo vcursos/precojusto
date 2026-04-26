@@ -2821,6 +2821,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const marketForm = document.getElementById('market-form');
     const marketNameInput = document.getElementById('market-name');
     const marketLogoInput = document.getElementById('market-logo');
+    const searchMarketLogoBtn = document.getElementById('search-market-logo-btn');
     const marketIdInput = document.getElementById('market-id');
     const cancelEditMarketBtn = document.getElementById('cancel-edit-market-btn');
 
@@ -3174,12 +3175,60 @@ document.addEventListener('DOMContentLoaded', () => {
     const ensureMarketIds = (markets) => {
         let mutated = false;
         markets.forEach(m => {
+            const normalizedName = (m?.name || '').toString().trim().replace(/\s+/g, ' ');
+            const normalizedLogo = (m?.logo || '').toString().trim();
+            if ((m?.name || '') !== normalizedName) {
+                m.name = normalizedName;
+                mutated = true;
+            }
+            if ((m?.logo || '') !== normalizedLogo) {
+                m.logo = normalizedLogo;
+                mutated = true;
+            }
             if (!m.id) {
                 m.id = `mkt-${Date.now()}-${Math.random().toString(16).slice(2)}`;
                 mutated = true;
             }
         });
         return { markets, mutated };
+    };
+
+    const normalizeMarketName = (name) => (name || '').toString().trim().replace(/\s+/g, ' ');
+    const normalizeMarketKey = (name) => normalizeMarketName(name).toLowerCase();
+    const normalizeLogoUrl = (logo) => {
+        let value = (logo || '').toString().trim();
+        if (!value) return '';
+        if (!/^https?:\/\//i.test(value) && /^www\./i.test(value)) {
+            value = `https://${value}`;
+        }
+        return value;
+    };
+
+    const dedupeMarketsByName = (markets) => {
+        const map = new Map();
+        (Array.isArray(markets) ? markets : []).forEach((raw) => {
+            const name = normalizeMarketName(raw?.name);
+            if (!name) return;
+            const logo = normalizeLogoUrl(raw?.logo);
+            const key = normalizeMarketKey(name);
+            if (!map.has(key)) {
+                map.set(key, {
+                    id: raw?.id || `mkt-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+                    name,
+                    logo
+                });
+                return;
+            }
+            const existing = map.get(key);
+            if (!existing.logo && logo) existing.logo = logo;
+            if (!existing.id && raw?.id) existing.id = raw.id;
+        });
+
+        if (!map.has('outro')) {
+            map.set('outro', { id: `mkt-${Date.now()}-${Math.random().toString(16).slice(2)}`, name: 'Outro', logo: '' });
+        }
+
+        return [...map.values()];
     };
 
     const ensureDefaultMarkets = () => {
@@ -3189,13 +3238,15 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem(MARKETS_KEY, JSON.stringify(markets));
             return markets;
         }
-        const { markets: withIds, mutated } = ensureMarketIds(markets);
-        if (mutated) localStorage.setItem(MARKETS_KEY, JSON.stringify(withIds));
+        const merged = dedupeMarketsByName(markets);
+        const { markets: withIds, mutated } = ensureMarketIds(merged);
+        if (mutated || merged.length !== markets.length) localStorage.setItem(MARKETS_KEY, JSON.stringify(withIds));
         return withIds;
     };
 
     const saveMarkets = (markets) => {
-        const { markets: withIds } = ensureMarketIds(markets);
+        const merged = dedupeMarketsByName(markets);
+        const { markets: withIds } = ensureMarketIds(merged);
         localStorage.setItem(MARKETS_KEY, JSON.stringify(withIds));
         return withIds;
     };
@@ -3203,20 +3254,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const getMarkets = () => ensureDefaultMarkets();
 
     const upsertMarket = (name, logo, id = null) => {
-        if (!name) return getMarkets();
+        const normalizedName = normalizeMarketName(name);
+        if (!normalizedName) return getMarkets();
+        const normalizedLogo = normalizeLogoUrl(logo);
         const markets = getMarkets();
         let target = null;
         if (id) {
             target = markets.find(m => m.id === id);
         }
         if (!target) {
-            target = markets.find(m => m.name.toLowerCase() === name.toLowerCase());
+            target = markets.find(m => normalizeMarketKey(m.name) === normalizeMarketKey(normalizedName));
         }
         if (target) {
-            target.name = name;
-            target.logo = logo || target.logo || '';
+            target.name = normalizedName;
+            target.logo = normalizedLogo || target.logo || '';
         } else {
-            markets.push({ id: `mkt-${Date.now()}-${Math.random().toString(16).slice(2)}`, name, logo: logo || '' });
+            markets.push({ id: `mkt-${Date.now()}-${Math.random().toString(16).slice(2)}`, name: normalizedName, logo: normalizedLogo || '' });
         }
         return saveMarkets(markets);
     };
@@ -3236,8 +3289,9 @@ document.addEventListener('DOMContentLoaded', () => {
         let markets = getMarkets();
         let mutated = false;
         products.forEach(p => {
-            if (p.market && !markets.some(m => m.name.toLowerCase() === p.market.toLowerCase())) {
-                markets.push({ id: `mkt-${Date.now()}-${Math.random().toString(16).slice(2)}`, name: p.market, logo: '' });
+            const marketName = normalizeMarketName(p?.market);
+            if (marketName && !markets.some(m => normalizeMarketKey(m.name) === normalizeMarketKey(marketName))) {
+                markets.push({ id: `mkt-${Date.now()}-${Math.random().toString(16).slice(2)}`, name: marketName, logo: '' });
                 mutated = true;
             }
         });
@@ -3261,7 +3315,7 @@ document.addEventListener('DOMContentLoaded', () => {
             card.className = 'market-card';
             card.innerHTML = `
                 <div class="market-card-header">
-                    <img class="market-logo" src="${m.logo || 'https://via.placeholder.com/80x80?text=Logo'}" alt="Logo ${m.name}">
+                    <img class="market-logo" src="${m.logo || 'https://via.placeholder.com/80x80?text=Logo'}" alt="Logo ${m.name}" onerror="this.onerror=null;this.src='https://via.placeholder.com/80x80?text=Logo';">
                     <div style="font-weight:600;">${m.name}</div>
                 </div>
                 <div class="market-card-actions">
@@ -3277,8 +3331,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (marketForm) {
         marketForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const name = marketNameInput?.value.trim();
-            const logo = marketLogoInput?.value.trim();
+            const name = normalizeMarketName(marketNameInput?.value);
+            const logo = normalizeLogoUrl(marketLogoInput?.value);
             const editId = marketIdInput?.value || null;
             if (!name) {
                 alert('Informe o nome do mercado.');
@@ -3340,6 +3394,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (saveBtn) saveBtn.innerHTML = '<i class="fas fa-save"></i> Atualizar Mercado';
         marketNameInput?.focus();
     });
+
+    if (searchMarketLogoBtn) {
+        searchMarketLogoBtn.addEventListener('click', () => {
+            const name = normalizeMarketName(marketNameInput?.value);
+            if (!name) {
+                alert('Informe primeiro o nome do mercado para buscar a logo.');
+                marketNameInput?.focus();
+                return;
+            }
+            const query = `${name} logo mercado`;
+            const url = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`;
+            window.open(url, '_blank', 'noopener,noreferrer');
+            marketLogoInput?.focus();
+        });
+    }
 
     const renderMarketSelect = () => {
         const select = document.getElementById('product-market');
