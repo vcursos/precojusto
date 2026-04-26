@@ -863,10 +863,11 @@
                         // GitHub Pages roda em /<repo>/ (ex: /precojusto/). Use basePath explícito
                         // para registrar no escopo correto e evitar travas por cache/SW antigo.
                         const basePath = location.pathname.replace(/[^/]+$/, '');
-                        const swUrl = new URL('service-worker.js?v=20260102-v15', location.origin + basePath).toString();
-                        navigator.serviceWorker.register(swUrl, { scope: basePath })
+                        const swUrl = new URL('service-worker.js?v=20260427-v16-auto-update', location.origin + basePath).toString();
+                        navigator.serviceWorker.register(swUrl, { scope: basePath, updateViaCache: 'none' })
                             .then(reg => {
                                 console.log('SW registrado (index):', reg.scope);
+                                reg.update().catch(() => {});
                                 if (reg.waiting) { reg.waiting.postMessage({ type: 'SKIP_WAITING' }); }
                                 reg.addEventListener('updatefound', () => {
                                     const nw = reg.installing;
@@ -883,6 +884,13 @@
                                     refreshing = true;
                                     window.location.reload();
                                 });
+
+                                // Verificar atualizações periodicamente enquanto o app estiver aberto
+                                setInterval(() => reg.update().catch(() => {}), 5 * 60 * 1000);
+                                document.addEventListener('visibilitychange', () => {
+                                    if (document.visibilityState === 'visible') reg.update().catch(() => {});
+                                });
+                                window.addEventListener('online', () => reg.update().catch(() => {}));
                             })
                 .catch(err => console.error('SW registro falhou (index):', err));
                     });

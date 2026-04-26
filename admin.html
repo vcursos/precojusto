@@ -386,9 +386,23 @@
                                 <label for="country-name">Nome do País:</label>
                                 <input type="text" id="country-name" placeholder="Ex.: Portugal" required>
                             </div>
-                            <div class="form-group" style="max-width: 180px;">
-                                <label for="country-code">Código ISO (2 letras):</label>
-                                <input type="text" id="country-code" placeholder="PT" maxlength="2" required>
+                            <div class="form-group" style="max-width: 260px;">
+                                <label for="country-flag-icon">Ícone da Bandeira:</label>
+                                <div style="display:flex; gap:8px; align-items:center;">
+                                    <input type="hidden" id="country-flag-icon" value="">
+                                    <div id="country-flag-preview" class="country-flag-preview" aria-label="Pré-visualização da bandeira">🏳️</div>
+                                    <select id="country-flag-picker" style="flex:1; min-width:150px;">
+                                        <option value="">Escolher bandeira…</option>
+                                        <option value="PT">Portugal</option>
+                                        <option value="ES">Espanha</option>
+                                        <option value="BR">Brasil</option>
+                                        <option value="FR">França</option>
+                                        <option value="IT">Itália</option>
+                                        <option value="DE">Alemanha</option>
+                                        <option value="GB">Reino Unido</option>
+                                        <option value="US">Estados Unidos</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                         <div class="form-actions">
@@ -530,9 +544,17 @@
         (function() {
             try {
                 if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.register('/service-worker.js?v=20251112')
+                    if (location.protocol === 'file:' || /^(localhost|127\.|0\.0\.0\.0)/.test(location.hostname)) {
+                        console.warn('Service Worker desabilitado em ambiente local.');
+                        return;
+                    }
+
+                    const basePath = location.pathname.replace(/[^/]+$/, '');
+                    const swUrl = new URL('service-worker.js?v=20260427-v16-auto-update', location.origin + basePath).toString();
+                    navigator.serviceWorker.register(swUrl, { scope: basePath, updateViaCache: 'none' })
                         .then(reg => {
                             console.log('SW registrado (admin):', reg.scope);
+                            reg.update().catch(() => {});
                             if (reg.waiting) { reg.waiting.postMessage({ type: 'SKIP_WAITING' }); }
                             reg.addEventListener('updatefound', () => {
                                 const nw = reg.installing;
@@ -549,6 +571,12 @@
                                 refreshing = true;
                                 window.location.reload();
                             });
+
+                            setInterval(() => reg.update().catch(() => {}), 5 * 60 * 1000);
+                            document.addEventListener('visibilitychange', () => {
+                                if (document.visibilityState === 'visible') reg.update().catch(() => {});
+                            });
+                            window.addEventListener('online', () => reg.update().catch(() => {}));
                         })
                         .catch(err => console.error('SW registro falhou (admin):', err));
                 }

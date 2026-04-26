@@ -277,6 +277,11 @@ document.addEventListener('DOMContentLoaded', () => {
         productCard.dataset.productId = product.id;
 
         const favButtonClass = isFavorite ? 'favorite-btn active' : 'favorite-btn';
+        const marketName = (product?.market || '').toString().trim();
+        const marketLogo = __pjFindMarketLogo(marketName);
+        const marketMetaContent = marketLogo
+            ? `<span class="market-meta-logo-wrap"><img src="${pjEsc(marketLogo)}" alt="Logo ${pjEsc(marketName || 'mercado')}" class="market-meta-logo" loading="lazy" decoding="async"></span>`
+            : `<span class="market-meta-name">${pjEsc(marketName || '—')}</span>`;
         
         productCard.innerHTML = `
             <img src="${__PJ_PLACEHOLDER_IMG}"
@@ -289,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <h3 class="product-name">${product.name}</h3>
                 <p class="product-price">${formatPrice(product.price)}</p>
                 <p class="product-details concise compact">
-                    <span class="meta-item"><strong>Mercado:</strong> ${product.market}</span>
+                    <span class="meta-item market-meta-item"><strong>Mercado:</strong> ${marketMetaContent}</span>
                     <span class="meta-item"><strong>Marca:</strong> <span class="brand-name">${product.brand}</span></span>
                 </p>
             </div>
@@ -462,14 +467,49 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const __pjUpsertPriceSuggestion = (suggestion) => {
-        try {
-            const list = JSON.parse(localStorage.getItem('priceSuggestions') || '[]');
-            const arr = Array.isArray(list) ? list : [];
-            arr.push(suggestion);
-            localStorage.setItem('priceSuggestions', JSON.stringify(arr));
-        } catch (_) {
-            localStorage.setItem('priceSuggestions', JSON.stringify([suggestion]));
-        }
+        const normalized = {
+            id: suggestion?.id || Date.now(),
+            productId: suggestion?.productId || '',
+            productName: suggestion?.productName || '',
+            market: suggestion?.market || '',
+            suggestedPrice: Number(suggestion?.price ?? suggestion?.suggestedPrice ?? 0).toFixed(2),
+            date: suggestion?.date || new Date().toISOString(),
+            status: suggestion?.status || 'pending',
+            suggestedAt: suggestion?.suggestedAt || Date.now()
+        };
+
+        const readArray = (key) => {
+            try {
+                const raw = JSON.parse(localStorage.getItem(key) || '[]');
+                return Array.isArray(raw) ? raw : [];
+            } catch (_) {
+                return [];
+            }
+        };
+        const writeArray = (key, arr) => {
+            try { localStorage.setItem(key, JSON.stringify(arr)); } catch (_) {}
+        };
+        const pushUnique = (arr, item) => {
+            const exists = arr.some(x => String(x?.id) === String(item.id));
+            if (!exists) arr.push(item);
+            return arr;
+        };
+
+        // Mantém compatibilidade com o fluxo novo (priceSuggestions)
+        const priceSuggestions = pushUnique(readArray('priceSuggestions'), normalized);
+        writeArray('priceSuggestions', priceSuggestions);
+
+        // Espelha também para a chave usada no admin (suggestions)
+        const adminSuggestion = {
+            id: normalized.id,
+            productId: normalized.productId,
+            productName: normalized.productName,
+            market: normalized.market,
+            suggestedPrice: normalized.suggestedPrice,
+            date: normalized.date
+        };
+        const suggestions = pushUnique(readArray('suggestions'), adminSuggestion);
+        writeArray('suggestions', suggestions);
     };
 
     const __pjFindMarketLogo = (marketName) => {
@@ -482,6 +522,141 @@ document.addEventListener('DOMContentLoaded', () => {
             return '';
         }
     };
+
+    const __pjNormalizeCountryName = (value) => (value || '').toString().trim().replace(/\s+/g, ' ');
+    const __pjNormalizeCountryCode = (value) => (value || '').toString().trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2);
+    const __pjCountryCodeByName = {
+        portugal: 'PT',
+        espanha: 'ES',
+        spain: 'ES',
+        brasil: 'BR',
+        brazil: 'BR',
+        franca: 'FR',
+        frança: 'FR',
+        france: 'FR',
+        italia: 'IT',
+        itália: 'IT',
+        italy: 'IT',
+        alemanha: 'DE',
+        germany: 'DE',
+        uk: 'GB',
+        'reino unido': 'GB',
+        usa: 'US',
+        'estados unidos': 'US',
+        'united states': 'US'
+    };
+    const __pjCountryNameByCode = {
+        PT: 'Portugal',
+        ES: 'Espanha',
+        BR: 'Brasil',
+        FR: 'França',
+        IT: 'Itália',
+        DE: 'Alemanha',
+        GB: 'Reino Unido',
+        US: 'Estados Unidos'
+    };
+    const __pjResolveCountryCode = (code, name = '') => {
+        const normalizedCode = __pjNormalizeCountryCode(code);
+        if (normalizedCode) return normalizedCode;
+        const key = __pjNormalizeCountryName(name).toLowerCase();
+        return __pjCountryCodeByName[key] || '';
+    };
+    const __pjResolveCountryName = (name, code = '') => {
+        const rawName = __pjNormalizeCountryName(name);
+        const prefixedMatch = rawName.match(/^([A-Za-z]{2})[\s\-:]+(.+)$/);
+        const inferredCode = prefixedMatch ? __pjNormalizeCountryCode(prefixedMatch[1]) : '';
+        const normalizedCode = __pjResolveCountryCode(code || inferredCode, rawName);
+        const cleanName = prefixedMatch ? __pjNormalizeCountryName(prefixedMatch[2]) : rawName;
+
+        if (cleanName && cleanName.length !== 2) return cleanName;
+        return __pjCountryNameByCode[normalizedCode] || cleanName || rawName;
+    };
+    const __pjCountryCodeToFlagEmoji = (code) => {
+        const normalized = __pjNormalizeCountryCode(code);
+        if (normalized.length !== 2) return '';
+        return String.fromCodePoint(...normalized.split('').map(c => 127397 + c.charCodeAt(0)));
+    };
+    const __pjPickFlagWidth = (targetSize = 20) => {
+        const allowed = [16, 20, 24, 32, 40, 48, 64];
+        const target = Math.max(16, Number(targetSize) || 20);
+        const exactOrNext = allowed.find(size => size >= target);
+        return exactOrNext || allowed[allowed.length - 1];
+    };
+    const __pjCountryFlagImageUrl = (code, size = 20) => {
+        const normalized = __pjNormalizeCountryCode(code);
+        if (normalized.length !== 2) return '';
+        const width = __pjPickFlagWidth(size);
+        return `https://flagcdn.com/w${width}/${normalized.toLowerCase()}.png`;
+    };
+    const __pjCountryFlagBackupUrl = (code, size = 24) => {
+        const normalized = __pjNormalizeCountryCode(code);
+        if (normalized.length !== 2) return '';
+        const px = __pjPickFlagWidth(size);
+        return `https://flagsapi.com/${normalized}/flat/${px}.png`;
+    };
+    const __pjBuildCountryDisplayHtml = (country, options = {}) => {
+        const showName = options.showName !== false;
+        const imgSize = Number(options.imgSize || 18);
+        const gap = Number(options.gap || 6);
+        const fallbackSize = Number(options.fallbackSize || 14);
+
+        const name = __pjResolveCountryName(country?.name || '', country?.code || '');
+        const code = __pjResolveCountryCode(country?.code || '', name || country?.name || '');
+        const renderSize = __pjPickFlagWidth(Math.max(imgSize * 2, 20));
+        const flagUrl = __pjCountryFlagImageUrl(code, renderSize);
+        const backupUrl = __pjCountryFlagBackupUrl(code, renderSize);
+        const fallback = __pjCountryCodeToFlagEmoji(code) || '🏳️';
+
+        const flagPart = flagUrl
+            ? `<span style="display:inline-flex;align-items:center;">
+                <img src="${pjEsc(flagUrl)}" alt="Bandeira ${pjEsc(name || code || '')}" style="width:${imgSize}px;height:${Math.round(imgSize * 0.72)}px;object-fit:cover;border:1px solid #e5e7eb;border-radius:2px;vertical-align:middle;" loading="lazy" decoding="async" onerror="if(!this.dataset.fallback&&'${pjEsc(backupUrl)}'){this.dataset.fallback='1';this.src='${pjEsc(backupUrl)}';return;}this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='inline-flex';">
+                <span style="display:none;font-size:${fallbackSize}px;line-height:1;">${pjEsc(fallback)}</span>
+            </span>`
+            : `<span style="font-size:${fallbackSize}px;line-height:1;">${pjEsc(fallback)}</span>`;
+
+        if (!showName) return flagPart;
+        return `<span style="display:inline-flex;align-items:center;gap:${gap}px;">${flagPart}<span>${pjEsc(name || '—')}</span></span>`;
+    };
+    const __pjGetProductCountriesMeta = (product) => {
+        const list = [];
+        if (Array.isArray(product?.countries) && product.countries.length) {
+            product.countries.forEach((item, index) => {
+                if (item && typeof item === 'object') {
+                    const name = __pjResolveCountryName(item.name || item.country || '', item.code || item.countryCode || '');
+                    const code = __pjResolveCountryCode(item.code || item.countryCode || '', name);
+                    if (name) list.push({ name, code });
+                    return;
+                }
+                const rawName = __pjNormalizeCountryName(item);
+                const code = __pjResolveCountryCode(Array.isArray(product.countryCodes) ? product.countryCodes[index] : '', rawName);
+                const name = __pjResolveCountryName(rawName, code);
+                if (name) list.push({ name, code });
+            });
+        }
+
+        if (!list.length) {
+            const rawName = __pjNormalizeCountryName(product?.country || product?.zone || '');
+            const rawCode = __pjNormalizeCountryCode(product?.countryCode || '');
+            const name = __pjResolveCountryName(rawName, rawCode);
+            const code = __pjResolveCountryCode(rawCode, name || rawName);
+            if (name) list.push({ name, code });
+        }
+
+        const dedup = new Map();
+        list.forEach(item => {
+            const key = __pjNormalizeCountryName(item.name).toLowerCase();
+            if (!key) return;
+            if (!dedup.has(key)) {
+                dedup.set(key, { name: item.name, code: item.code });
+                return;
+            }
+            const existing = dedup.get(key);
+            if (!existing.code && item.code) existing.code = item.code;
+        });
+
+        return [...dedup.values()];
+    };
+    const __pjGetPrimaryCountryMeta = (product) => __pjGetProductCountriesMeta(product)[0] || null;
 
     // Toast simples (mensagem flutuante) para feedback de ações
     let __pjToastTimer = null;
@@ -659,6 +834,37 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    if (modalSuggestionForm) {
+        modalSuggestionForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const productId = (modalSuggestionProductId?.value || '').toString().trim();
+            const productName = (modalSuggestionProductName?.value || '').toString().trim();
+            const market = (modalSuggestionMarket?.value || '').toString().trim();
+            const rawPrice = (modalSuggestionNewPrice?.value || '').toString().trim().replace(',', '.');
+            const parsed = Number(rawPrice);
+
+            if (!rawPrice || Number.isNaN(parsed) || parsed <= 0) {
+                alert('Por favor, insira um preço válido.');
+                return;
+            }
+
+            __pjUpsertPriceSuggestion({
+                id: Date.now(),
+                productId,
+                productName,
+                market,
+                suggestedPrice: parsed,
+                date: new Date().toISOString(),
+                status: 'pending'
+            });
+
+            alert('Sua sugestão foi enviada com sucesso e será analisada pela administração!');
+            closeModal(suggestionModal);
+            modalSuggestionForm.reset();
+        });
+    }
+
     const renderModernProductModal = (p) => {
         if (!pjProductModalBody) return;
     const isFav = __pjGetFavoriteIds().includes(String(p.id));
@@ -677,52 +883,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const marketName = (p.market || p.mercado || '').toString().trim();
     const marketLogo = __pjFindMarketLogo(marketName);
 
-    const normalizeCountryName = (value) => (value || '').toString().trim().replace(/\s+/g, ' ');
-    const normalizeCountryCode = (value) => (value || '').toString().trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2);
-    const toFlagEmoji = (code) => {
-        const normalized = normalizeCountryCode(code);
-        if (normalized.length !== 2) return '';
-        return String.fromCodePoint(...normalized.split('').map(c => 127397 + c.charCodeAt(0)));
-    };
-
-    const modalCountriesMeta = (() => {
-        const list = [];
-        if (Array.isArray(p.countries) && p.countries.length) {
-            p.countries.forEach((item, index) => {
-                if (item && typeof item === 'object') {
-                    const name = normalizeCountryName(item.name || item.country || '');
-                    const code = normalizeCountryCode(item.code || item.countryCode || '');
-                    if (name) list.push({ name, code });
-                    return;
-                }
-                const name = normalizeCountryName(item);
-                const code = normalizeCountryCode(Array.isArray(p.countryCodes) ? p.countryCodes[index] : '');
-                if (name) list.push({ name, code });
-            });
-        }
-
-        if (!list.length) {
-            const legacyName = normalizeCountryName(p.country || p.zone || '');
-            const legacyCode = normalizeCountryCode(p.countryCode || '');
-            if (legacyName) list.push({ name: legacyName, code: legacyCode });
-        }
-
-        const map = new Map();
-        list.forEach(item => {
-            const key = item.name.toLowerCase();
-            if (!map.has(key)) {
-                map.set(key, { name: item.name, code: item.code });
-                return;
-            }
-            const existing = map.get(key);
-            if (!existing.code && item.code) existing.code = item.code;
-        });
-        return [...map.values()];
-    })();
-
-    const countryLabel = modalCountriesMeta
-        .map(item => `${toFlagEmoji(item.code) ? `${toFlagEmoji(item.code)} ` : ''}${item.name}`)
-        .join(' • ');
+    const modalCountriesMeta = __pjGetProductCountriesMeta(p);
+    const countryHtml = modalCountriesMeta
+        .map(item => __pjBuildCountryDisplayHtml(item, { showName: true, imgSize: 18, gap: 6, fallbackSize: 14 }))
+        .filter(Boolean)
+        .join('<span style="opacity:.55;padding:0 4px;">•</span>');
 
     const isDesktopModal = window.matchMedia && window.matchMedia('(min-width: 1024px)').matches;
     const modalImageSize = isDesktopModal ? 124 : 160;
@@ -780,8 +945,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div style="margin-top:4px;font-family:monospace;font-size:13px;color:#1e3a8a;word-break:break-all;">${pjEsc(barcodeValue)}</div>
                         </div>` : ''}
 
-                        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px;display:flex;gap:10px;align-items:center;">
-                            <div style="flex:0 0 auto;width:34px;height:34px;border-radius:8px;border:1px solid #e5e7eb;overflow:hidden;background:#fff;display:flex;align-items:center;justify-content:center;">
+                        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px;display:flex;gap:12px;align-items:center;">
+                            <div style="flex:0 0 auto;width:48px;height:48px;border-radius:10px;border:1px solid #e5e7eb;overflow:hidden;background:#fff;display:flex;align-items:center;justify-content:center;">
                                 <img src="${pjEsc(marketLogo || 'images/icons/icon-192.png')}" alt="Logo" style="width:100%;height:100%;object-fit:contain;" loading="lazy" decoding="async">
                             </div>
                             <div style="flex:1;min-width:0;">
@@ -816,12 +981,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div style="margin-top:4px;font-size:14px;color:#7c2d12;font-weight:700;">${pjEsc(unitLabel)}</div>
                         </div>` : ''}
 
-                        ${countryLabel ? `
+                        ${countryHtml ? `
                         <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px 12px;">
                             <div style="font-size:12px;font-weight:700;color:#991b1b;text-transform:uppercase;letter-spacing:.04em;">
                                 <i class="fas fa-globe"></i> País
                             </div>
-                            <div style="margin-top:4px;font-size:14px;color:#7f1d1d;font-weight:700;">${pjEsc(countryLabel)}</div>
+                            <div style="margin-top:4px;font-size:14px;color:#7f1d1d;font-weight:700;">${countryHtml}</div>
                         </div>` : ''}
                     </div>
 
@@ -1123,6 +1288,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const cartList = getFromSessionStorage('cart');
     const isFav = (id) => favoritesList.some(f => String(f.id) === String(id));
     const inCart = (id) => cartList.some(c => String(c.id) === String(id));
+    const getMarketLogoHtml = (marketName, extraClass = '') => {
+        const logo = __pjFindMarketLogo(marketName);
+        const classes = ['compare-market-logo'];
+        if (extraClass) classes.push(extraClass);
+        const className = classes.join(' ');
+        if (logo) return `<img src="${pjEsc(logo)}" alt="Logo ${pjEsc(marketName || '')}" class="${className}" loading="lazy" decoding="async">`;
+        return `<img src="images/icons/icon-192.png" alt="Logo" class="${className}" loading="lazy" decoding="async">`;
+    };
+    const getCountryHtml = (item, showName = true) => {
+        const primary = __pjGetPrimaryCountryMeta(item);
+        if (!primary) return showName ? '<span style="opacity:.7;">—</span>' : '';
+        return __pjBuildCountryDisplayHtml(primary, { showName, imgSize: 16, gap: 6, fallbackSize: 13 });
+    };
         matches.forEach(p => { if (isPrivateLabel(p.brand)) privateLabel.push(p); else branded.push(p); });
 
         // find cheapest per group and globally
@@ -1152,7 +1330,8 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="highlight-main">
                 <h3 class="highlight-name">${cheapestGlobal.name}</h3>
                 <div class="highlight-meta">
-                    <span class="highlight-market">${cheapestGlobal.market || ''}</span>
+                    <span class="highlight-market">${getMarketLogoHtml(cheapestGlobal.market || '', 'compare-market-logo--xl')}</span>
+                    <span class="highlight-country">${getCountryHtml(cheapestGlobal, true)}</span>
                     <span class="highlight-brand">${cheapestGlobal.brand || ''}</span>
                     ${cheapestGlobal.barcode ? `<span class="highlight-barcode">EAN: ${cheapestGlobal.barcode}</span>` : ''}
                 </div>
@@ -1192,7 +1371,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     <img src="${p.imageUrl || DEFAULT_IMAGE_URL}" alt="${p.name}" class="cli-image" loading="lazy">
                 </div>
                 <div class="cli-name-col" title="${p.name}">${p.name}</div>
-                <div class="cli-market-col">${p.market || ''}</div>
+                <div class="cli-market-col" style="display:flex;align-items:center;gap:8px;">
+                    ${getMarketLogoHtml(p.market || '')}
+                </div>
+                <div class="cli-country-col" style="display:flex;align-items:center;white-space:nowrap;">${getCountryHtml(p, true)}</div>
                 <div class="cli-price-col">${formatPrice(p.price)}</div>
                 <div class="cli-diff-col">${diffPercent(p.price)}</div>
                 <div class="cli-actions-col">
@@ -1519,52 +1701,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const p = products.find(x => String(x.id) === String(productId));
         if (!p) return;
         const esc = (s) => (s || '').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        const normalizeCountryName = (value) => (value || '').toString().trim().replace(/\s+/g, ' ');
-        const normalizeCountryCode = (value) => (value || '').toString().trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2);
-        const toFlagEmoji = (code) => {
-            const normalized = normalizeCountryCode(code);
-            if (normalized.length !== 2) return '';
-            return String.fromCodePoint(...normalized.split('').map(c => 127397 + c.charCodeAt(0)));
-        };
-
-        const detailCountriesMeta = (() => {
-            const list = [];
-            if (Array.isArray(p.countries) && p.countries.length) {
-                p.countries.forEach((item, index) => {
-                    if (item && typeof item === 'object') {
-                        const name = normalizeCountryName(item.name || item.country || '');
-                        const code = normalizeCountryCode(item.code || item.countryCode || '');
-                        if (name) list.push({ name, code });
-                        return;
-                    }
-                    const name = normalizeCountryName(item);
-                    const code = normalizeCountryCode(Array.isArray(p.countryCodes) ? p.countryCodes[index] : '');
-                    if (name) list.push({ name, code });
-                });
-            }
-
-            if (!list.length) {
-                const legacyName = normalizeCountryName(p.country || p.zone || '');
-                const legacyCode = normalizeCountryCode(p.countryCode || '');
-                if (legacyName) list.push({ name: legacyName, code: legacyCode });
-            }
-
-            const map = new Map();
-            list.forEach(item => {
-                const key = item.name.toLowerCase();
-                if (!map.has(key)) {
-                    map.set(key, item);
-                    return;
-                }
-                const existing = map.get(key);
-                if (!existing.code && item.code) existing.code = item.code;
-            });
-            return [...map.values()];
-        })();
-
-        const detailCountryLabel = detailCountriesMeta
-            .map(item => `${toFlagEmoji(item.code) ? `${toFlagEmoji(item.code)} ` : ''}${item.name}`)
-            .join(' • ');
+        const detailCountriesMeta = __pjGetProductCountriesMeta(p);
+        const detailCountryHtml = detailCountriesMeta
+            .map(item => __pjBuildCountryDisplayHtml(item, { showName: true, imgSize: 16, gap: 6, fallbackSize: 13 }))
+            .filter(Boolean)
+            .join('<span style="opacity:.55;padding:0 4px;">•</span>');
+        const detailMarketLogo = __pjFindMarketLogo(p.market || '');
+        const detailMarketHtml = detailMarketLogo
+            ? `<img src="${esc(detailMarketLogo)}" alt="Logo ${esc(p.market || '')}" style="width:52px;height:52px;object-fit:contain;border:1px solid #e5e7eb;border-radius:8px;background:#fff;padding:4px;vertical-align:middle;" loading="lazy" decoding="async">`
+            : esc(p.market || '—');
 
         const detailUnit = `${esc(p.quantity || '')} ${esc(p.unit || '')}`.trim() || '—';
 
@@ -1581,11 +1726,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         <h3 class="detail-name">${esc(p.name)}</h3>
                         <div class="detail-price">${formatPrice(p.price)}</div>
                         <div class="detail-meta">
-                            <div><strong>Mercado:</strong> ${esc(p.market || '—')}</div>
+                            <div><strong>Mercado:</strong> ${detailMarketHtml}</div>
                             <div><strong>Marca:</strong> ${esc(p.brand || '—')}</div>
                             <div><strong>Categoria:</strong> ${esc(p.category || '—')}</div>
                             <div><strong>Unidade:</strong> ${detailUnit}</div>
-                            <div><strong>País:</strong> ${esc(detailCountryLabel || '—')}</div>
+                            <div><strong>País:</strong> ${detailCountryHtml || '—'}</div>
                         </div>
                         <p class="detail-description">${esc(p.description || '')}</p>
                         <div class="detail-actions">
@@ -2785,15 +2930,6 @@ window.addEventListener('load', () => {
         }
     } catch (e) {
         console.warn('Falha no fallback de renderizacao:', e);
-    }
-    try {
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/js/service-worker.js')
-                .then(reg => console.log('ServiceWorker registrado (index):', reg.scope))
-                .catch(err => console.error('Falha ao registrar ServiceWorker:', err));
-        }
-    } catch (err) {
-        console.warn('ServiceWorker nao suportado ou erro:', err);
     }
 });
 

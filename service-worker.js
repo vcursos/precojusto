@@ -1,8 +1,8 @@
 // Root-scoped Service Worker (controls entire site)
 // Keep this file at the site root to ensure scope='/' in all browsers, including iOS Safari
-// Version bump to force updates on clients - force refresh on GitHub Pages
-// IMPORTANTE: sempre que publicar e não aparecer no domínio, aumente a versão.
-const CACHE_NAME = 'precomercado-v15-devsafe';
+// Versionamento do SW
+const SW_VERSION = '20260427-v16-auto-update';
+const CACHE_NAME = `precomercado-${SW_VERSION}`;
 
 // Lista relativa para funcionar em /precojusto/ (GitHub Pages) e em /
 const APP_SHELL_REL = [
@@ -111,11 +111,18 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (APP_SHELL.some(p => url.pathname === p)) {
-    event.respondWith(
-      caches.match(req).then(res => res || fetch(req).then(fresh => {
-        return caches.open(CACHE_NAME).then(c => { c.put(req, fresh.clone()); return fresh; });
-      }))
-    );
+    // Network-first para garantir atualização automática dos assets em apps instalados
+    event.respondWith((async () => {
+      try {
+        const fresh = await fetch(req, { cache: 'no-store' });
+        const cache = await caches.open(CACHE_NAME);
+        cache.put(req, fresh.clone());
+        return fresh;
+      } catch {
+        const cached = await caches.match(req);
+        return cached || fetch(req);
+      }
+    })());
     return;
   }
 
