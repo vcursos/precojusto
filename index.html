@@ -38,6 +38,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- Leitor de códigos robusto para Android e iOS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+    <link rel="stylesheet" href="css/compare-modal.css">
     
     <!-- CSS MOBILE LAYOUT FINAL - PRODUTO MAIS BARATO NO TOPO -->
     <style>
@@ -807,10 +808,10 @@
             const enabled = requested.length ? requested : defaultSet;
 
             const has = (k) => enabled.includes(k);
-
+            
             if (has('core')) {
                 // Sempre usar a versão fixed que não trava!
-                document.write('<scr' + 'ipt src="js/script_fixed.js?v=20260426-compare-fix"></scr' + 'ipt>');
+                document.write('<scr' + 'ipt src="js/script_fixed.js?v=20260426-compare-fix-2"></scr' + 'ipt>');
             }
             if (has('cat')) {
                 document.write('<scr' + 'ipt src="js/category-inject.js"></scr' + 'ipt>');

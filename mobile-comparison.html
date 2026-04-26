@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comparar Produtos - Preço Certo</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/mobile-compare.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header class="main-header">
+        <div class="header-left">
+            <a href="index.html" class="back-button"><i class="fas fa-arrow-left"></i> Voltar</a>
+        </div>
+        <div class="header-center">
+            <h1 class="main-title">Comparar Produtos</h1>
+        </div>
+        <div class="header-right">
+        </div>
+    </header>
+
+    <main class="container" id="comparison-container">
+        <!-- Comparison content will be loaded here by JavaScript -->
+        <div class="loader-container">
+            <div class="loader"></div>
+            <p>A carregar comparações...</p>
+        </div>
+    </main>
+
+    <div id="product-detail-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <div id="product-detail-content"></div>
+        </div>
+    </div>
+
+    <script src="js/mobile-comparison.js"></script>
+</body>
+</html>
