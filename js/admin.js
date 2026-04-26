@@ -2824,6 +2824,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchMarketLogoBtn = document.getElementById('search-market-logo-btn');
     const marketIdInput = document.getElementById('market-id');
     const cancelEditMarketBtn = document.getElementById('cancel-edit-market-btn');
+    const productCountriesChecklist = document.getElementById('product-countries-checklist');
+    const countryForm = document.getElementById('country-form');
+    const countryIdInput = document.getElementById('country-id');
+    const countryNameInput = document.getElementById('country-name');
+    const countryCodeInput = document.getElementById('country-code');
+    const cancelEditCountryBtn = document.getElementById('cancel-edit-country-btn');
 
     // Elementos do leitor de código de barras (adicionados no HTML)
     const productBarcodeInput = document.getElementById('product-barcode');
@@ -3010,6 +3016,7 @@ document.addEventListener('DOMContentLoaded', () => {
         otherMarketGroup.style.display = 'none';
         imageUrlGroup.style.display = 'none';
         document.getElementById('product-quantity').value = 1;
+    setSelectedProductCountriesFromProduct({ countries: [] });
         
         // Ocultar botão de deletar
         const deleteBtn = document.getElementById('delete-product-btn');
@@ -3138,7 +3145,7 @@ document.addEventListener('DOMContentLoaded', () => {
             brandInputGroup.style.display = 'block';
             productBrandInput.value = product.brand || '';
         }
-        document.getElementById('market-zone').value = product.zone || '';
+    setSelectedProductCountriesFromProduct(product);
         if (product.imageUrl === DEFAULT_IMAGE_URL) {
             useDefaultImageRadio.checked = true;
             imageUrlGroup.style.display = 'none';
@@ -3155,6 +3162,257 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const getFromLocalStorage = (key) => {
         return JSON.parse(localStorage.getItem(key)) || [];
+    };
+
+    // -------- Países --------
+    const COUNTRIES_KEY = 'countries';
+    const defaultCountries = [
+        { name: 'Portugal', code: 'PT' },
+        { name: 'Espanha', code: 'ES' }
+    ];
+
+    const normalizeCountryName = (name) => (name || '').toString().trim().replace(/\s+/g, ' ');
+    const normalizeCountryCode = (code) => (code || '').toString().trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2);
+    const normalizeCountryKey = (name) => normalizeCountryName(name).toLowerCase();
+
+    const dedupeCountriesByName = (countries) => {
+        const map = new Map();
+        (Array.isArray(countries) ? countries : []).forEach((raw) => {
+            const name = normalizeCountryName(raw?.name || raw?.country || raw);
+            if (!name) return;
+            const code = normalizeCountryCode(raw?.code || raw?.countryCode || '');
+            const key = normalizeCountryKey(name);
+            if (!map.has(key)) {
+                map.set(key, {
+                    id: raw?.id || `ctr-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+                    name,
+                    code
+                });
+                return;
+            }
+            const existing = map.get(key);
+            if (!existing.code && code) existing.code = code;
+            if (!existing.id && raw?.id) existing.id = raw.id;
+        });
+        return [...map.values()];
+    };
+
+    const ensureCountryIds = (countries) => {
+        let mutated = false;
+        countries.forEach(c => {
+            const normalizedName = normalizeCountryName(c?.name);
+            const normalizedCode = normalizeCountryCode(c?.code);
+            if ((c?.name || '') !== normalizedName) {
+                c.name = normalizedName;
+                mutated = true;
+            }
+            if ((c?.code || '') !== normalizedCode) {
+                c.code = normalizedCode;
+                mutated = true;
+            }
+            if (!c.id) {
+                c.id = `ctr-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+                mutated = true;
+            }
+        });
+        return { countries, mutated };
+    };
+
+    const ensureDefaultCountries = () => {
+        let countries = getFromLocalStorage(COUNTRIES_KEY);
+        if (!countries.length) {
+            countries = defaultCountries.map(c => ({ ...c, id: `ctr-${Date.now()}-${Math.random().toString(16).slice(2)}` }));
+            localStorage.setItem(COUNTRIES_KEY, JSON.stringify(countries));
+            return countries;
+        }
+        const merged = dedupeCountriesByName(countries);
+        const { countries: withIds, mutated } = ensureCountryIds(merged);
+        if (mutated || merged.length !== countries.length) localStorage.setItem(COUNTRIES_KEY, JSON.stringify(withIds));
+        return withIds;
+    };
+
+    const saveCountries = (countries) => {
+        const merged = dedupeCountriesByName(countries);
+        const { countries: withIds } = ensureCountryIds(merged);
+        localStorage.setItem(COUNTRIES_KEY, JSON.stringify(withIds));
+        return withIds;
+    };
+
+    const getCountries = () => ensureDefaultCountries();
+
+    const upsertCountry = (name, code, id = null) => {
+        const normalizedName = normalizeCountryName(name);
+        const normalizedCode = normalizeCountryCode(code);
+        if (!normalizedName) return getCountries();
+
+        const countries = getCountries();
+        let target = null;
+        if (id) target = countries.find(c => c.id === id);
+        if (!target) target = countries.find(c => normalizeCountryKey(c.name) === normalizeCountryKey(normalizedName));
+
+        if (target) {
+            target.name = normalizedName;
+            target.code = normalizedCode || target.code || '';
+        } else {
+            countries.push({
+                id: `ctr-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+                name: normalizedName,
+                code: normalizedCode
+            });
+        }
+
+        return saveCountries(countries);
+    };
+
+    const deleteCountryById = (id) => {
+        if (!id) return getCountries();
+        const countries = getCountries().filter(c => c.id !== id);
+        return saveCountries(countries);
+    };
+
+    const getProductCountriesMeta = (product) => {
+        if (!product) return [];
+
+        const fromArray = [];
+        if (Array.isArray(product.countries)) {
+            product.countries.forEach((item, index) => {
+                if (item && typeof item === 'object') {
+                    const name = normalizeCountryName(item.name || item.country || '');
+                    const code = normalizeCountryCode(item.code || item.countryCode || '');
+                    if (name) fromArray.push({ name, code });
+                    return;
+                }
+                const name = normalizeCountryName(item);
+                const code = normalizeCountryCode(Array.isArray(product.countryCodes) ? product.countryCodes[index] : '');
+                if (name) fromArray.push({ name, code });
+            });
+        }
+
+        if (!fromArray.length) {
+            const legacyName = normalizeCountryName(product.country || product.zone || '');
+            const legacyCode = normalizeCountryCode(product.countryCode || '');
+            if (legacyName) fromArray.push({ name: legacyName, code: legacyCode });
+        }
+
+        const registered = getCountries();
+        const registeredMap = new Map(registered.map(c => [normalizeCountryKey(c.name), c]));
+        return dedupeCountriesByName(fromArray.map(item => {
+            const found = registeredMap.get(normalizeCountryKey(item.name));
+            return {
+                name: item.name,
+                code: item.code || found?.code || ''
+            };
+        }));
+    };
+
+    const getSelectedProductCountriesMeta = () => {
+        if (!productCountriesChecklist) return [];
+        const selected = Array.from(productCountriesChecklist.querySelectorAll('input[type="checkbox"]:checked'));
+        return selected.map(input => ({
+            name: normalizeCountryName(input.dataset.countryName || ''),
+            code: normalizeCountryCode(input.dataset.countryCode || '')
+        })).filter(c => c.name);
+    };
+
+    const setSelectedProductCountriesFromProduct = (product) => {
+        if (!productCountriesChecklist) return;
+        const selectedNames = new Set(getProductCountriesMeta(product).map(c => normalizeCountryKey(c.name)));
+        productCountriesChecklist.querySelectorAll('input[type="checkbox"]').forEach(input => {
+            const key = normalizeCountryKey(input.dataset.countryName || '');
+            input.checked = selectedNames.has(key);
+        });
+    };
+
+    const getProductCountriesLabel = (product) => {
+        const names = getProductCountriesMeta(product).map(c => c.name).filter(Boolean);
+        return names.length ? names.join(', ') : '';
+    };
+
+    const renderProductCountriesChecklist = () => {
+        if (!productCountriesChecklist) return;
+        const previousSelection = getSelectedProductCountriesMeta();
+        const selectedSet = new Set(previousSelection.map(c => normalizeCountryKey(c.name)));
+        const countries = getCountries().sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+
+        productCountriesChecklist.innerHTML = '';
+        if (!countries.length) {
+            productCountriesChecklist.innerHTML = '<p class="countries-empty">Nenhum país cadastrado. Cadastre na aba Mercados.</p>';
+            return;
+        }
+
+        countries.forEach(country => {
+            const label = document.createElement('label');
+            label.className = 'country-option';
+            const checked = selectedSet.has(normalizeCountryKey(country.name)) ? 'checked' : '';
+            label.innerHTML = `
+                <input type="checkbox" value="${country.id}" data-country-name="${country.name}" data-country-code="${country.code || ''}" ${checked}>
+                <span>${country.name}${country.code ? ` (${country.code})` : ''}</span>
+            `;
+            productCountriesChecklist.appendChild(label);
+        });
+    };
+
+    const renderCountriesList = () => {
+        const listEl = document.getElementById('countries-list');
+        const emptyEl = document.getElementById('no-countries');
+        if (!listEl) return;
+
+        const countries = getCountries();
+        listEl.innerHTML = '';
+
+        if (!countries.length) {
+            if (emptyEl) emptyEl.style.display = 'block';
+            return;
+        }
+        if (emptyEl) emptyEl.style.display = 'none';
+
+        countries
+            .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
+            .forEach(c => {
+                const card = document.createElement('div');
+                card.className = 'country-card';
+                card.innerHTML = `
+                    <div class="country-card-header">
+                        <div style="font-weight:600;">${c.name}</div>
+                        <span class="country-code-badge">${c.code || '—'}</span>
+                    </div>
+                    <div class="market-card-actions">
+                        <button class="btn-small" data-action="edit-country" data-id="${c.id}"><i class="fas fa-edit"></i> Editar</button>
+                        <button class="btn-small btn-danger" data-action="delete-country" data-id="${c.id}"><i class="fas fa-trash"></i> Remover</button>
+                    </div>
+                `;
+                listEl.appendChild(card);
+            });
+    };
+
+    const syncCountriesFromProducts = () => {
+        const products = getFromLocalStorage('products');
+        let countries = getCountries();
+        let mutated = false;
+
+        products.forEach(product => {
+            getProductCountriesMeta(product).forEach(country => {
+                if (!country.name) return;
+                const exists = countries.some(c => normalizeCountryKey(c.name) === normalizeCountryKey(country.name));
+                if (!exists) {
+                    countries.push({
+                        id: `ctr-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+                        name: country.name,
+                        code: country.code || ''
+                    });
+                    mutated = true;
+                    return;
+                }
+                const existing = countries.find(c => normalizeCountryKey(c.name) === normalizeCountryKey(country.name));
+                if (existing && !existing.code && country.code) {
+                    existing.code = country.code;
+                    mutated = true;
+                }
+            });
+        });
+
+        if (mutated) countries = saveCountries(countries);
+        return countries;
     };
 
     // -------- Mercados --------
@@ -3410,6 +3668,75 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    if (countryForm) {
+        countryForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = normalizeCountryName(countryNameInput?.value);
+            const code = normalizeCountryCode(countryCodeInput?.value);
+            const editId = countryIdInput?.value || null;
+
+            if (!name) {
+                alert('Informe o nome do país.');
+                return;
+            }
+            if (!code || code.length !== 2) {
+                alert('Informe o código ISO com 2 letras (ex.: PT, ES).');
+                countryCodeInput?.focus();
+                return;
+            }
+
+            upsertCountry(name, code, editId);
+            refreshMarketsUI();
+
+            if (countryNameInput) countryNameInput.value = '';
+            if (countryCodeInput) countryCodeInput.value = '';
+            if (countryIdInput) countryIdInput.value = '';
+            if (cancelEditCountryBtn) cancelEditCountryBtn.style.display = 'none';
+
+            const saveBtn = document.getElementById('save-country-btn');
+            if (saveBtn) saveBtn.innerHTML = '<i class="fas fa-save"></i> Salvar País';
+
+            alert('País salvo com sucesso!');
+        });
+    }
+
+    if (cancelEditCountryBtn) {
+        cancelEditCountryBtn.addEventListener('click', () => {
+            if (countryNameInput) countryNameInput.value = '';
+            if (countryCodeInput) countryCodeInput.value = '';
+            if (countryIdInput) countryIdInput.value = '';
+            cancelEditCountryBtn.style.display = 'none';
+            const saveBtn = document.getElementById('save-country-btn');
+            if (saveBtn) saveBtn.innerHTML = '<i class="fas fa-save"></i> Salvar País';
+        });
+    }
+
+    document.getElementById('countries-list')?.addEventListener('click', (e) => {
+        const editBtn = e.target.closest('[data-action="edit-country"]');
+        if (editBtn) {
+            const id = editBtn.dataset.id;
+            const target = getCountries().find(c => c.id === id);
+            if (!target) return;
+            if (countryNameInput) countryNameInput.value = target.name;
+            if (countryCodeInput) countryCodeInput.value = target.code || '';
+            if (countryIdInput) countryIdInput.value = target.id;
+            if (cancelEditCountryBtn) cancelEditCountryBtn.style.display = 'inline-block';
+            const saveBtn = document.getElementById('save-country-btn');
+            if (saveBtn) saveBtn.innerHTML = '<i class="fas fa-save"></i> Atualizar País';
+            countryNameInput?.focus();
+            return;
+        }
+
+        const deleteBtn = e.target.closest('[data-action="delete-country"]');
+        if (!deleteBtn) return;
+        const id = deleteBtn.dataset.id;
+        if (!id) return;
+        if (confirm('Remover este país?')) {
+            deleteCountryById(id);
+            refreshMarketsUI();
+        }
+    });
+
     const renderMarketSelect = () => {
         const select = document.getElementById('product-market');
         if (!select) return;
@@ -3432,6 +3759,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const refreshMarketsUI = () => {
         renderMarketsList();
         renderMarketSelect();
+        renderCountriesList();
+        renderProductCountriesChecklist();
         updateFilterOptions();
     };
 
@@ -3442,25 +3771,104 @@ document.addEventListener('DOMContentLoaded', () => {
         suggestionsCountBadge.textContent = suggestions.length;
     };
 
+    const getProductsCollectionPaths = () => {
+        const appId = typeof __app_id !== 'undefined' && __app_id ? __app_id : 'default-app-id';
+        const paths = [
+            `/artifacts/${appId}/public/data/products`,
+            '/public/data/products'
+        ];
+        if (appId !== 'default-app-id') {
+            paths.push('/artifacts/default-app-id/public/data/products');
+        }
+        return [...new Set(paths)];
+    };
+
+    const getProductsCollections = () => getProductsCollectionPaths().map(path => ({ path, ref: collection(db, path) }));
+
+    const isPermissionDeniedError = (error) =>
+        error?.code === 'permission-denied' || /Missing or insufficient permissions/i.test(error?.message || '');
+
+    const readProductsFromAnyCollection = async () => {
+        const collections = getProductsCollections();
+        let lastError = null;
+        let firstSuccess = null;
+
+        for (const item of collections) {
+            try {
+                const snap = await getDocs(item.ref);
+                const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                if (!firstSuccess) firstSuccess = { docs, path: item.path };
+                if (docs.length > 0) return { docs, path: item.path };
+            } catch (error) {
+                lastError = error;
+                console.warn(`[firebase] leitura falhou em ${item.path}:`, error?.code || error?.message || error);
+            }
+        }
+
+        if (firstSuccess) return firstSuccess;
+        if (lastError) throw lastError;
+        return { docs: [], path: '' };
+    };
+
+    const createProductInAnyCollection = async (productData) => {
+        const collections = getProductsCollections();
+        let lastError = null;
+        for (const item of collections) {
+            try {
+                const created = await addDoc(item.ref, productData);
+                return { docId: created.id, path: item.path };
+            } catch (error) {
+                lastError = error;
+                console.warn(`[firebase] criação falhou em ${item.path}:`, error?.code || error?.message || error);
+                if (!isPermissionDeniedError(error)) throw error;
+            }
+        }
+        throw lastError || new Error('Não foi possível criar produto no servidor.');
+    };
+
+    const updateProductInAnyCollection = async (productId, productData) => {
+        const collections = getProductsCollections();
+        let lastError = null;
+        for (const item of collections) {
+            try {
+                const docRef = doc(db, item.path, productId);
+                await updateDoc(docRef, productData);
+                return { path: item.path };
+            } catch (error) {
+                lastError = error;
+                console.warn(`[firebase] atualização falhou em ${item.path}:`, error?.code || error?.message || error);
+                if (!isPermissionDeniedError(error)) throw error;
+            }
+        }
+        throw lastError || new Error('Não foi possível atualizar produto no servidor.');
+    };
+
+    const deleteProductInAnyCollection = async (productId) => {
+        const collections = getProductsCollections();
+        let lastError = null;
+        for (const item of collections) {
+            try {
+                const docRef = doc(db, item.path, productId);
+                await deleteDoc(docRef);
+                return { path: item.path };
+            } catch (error) {
+                lastError = error;
+                console.warn(`[firebase] remoção falhou em ${item.path}:`, error?.code || error?.message || error);
+                if (!isPermissionDeniedError(error)) throw error;
+            }
+        }
+        throw lastError || new Error('Não foi possível remover produto no servidor.');
+    };
+
     // Função para carregar produtos do Firebase
     const loadProductsFromFirebase = async () => {
         try {
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const productsRef = collection(db, `/artifacts/${appId}/public/data/products`);
-            const querySnapshot = await getDocs(productsRef);
-            const firebaseProducts = [];
-            
-            querySnapshot.forEach((doc) => {
-                firebaseProducts.push({
-                    id: doc.id,
-                    ...doc.data()
-                });
-            });
+            const { docs: firebaseProducts, path } = await readProductsFromAnyCollection();
             
             const filtered = filterOutDeleted(firebaseProducts);
             // Salvar produtos do Firebase no localStorage e renderizar
             saveToLocalStorage('products', filtered);
-            console.log(`${filtered.length} produtos carregados do Firebase (após filtro de deletados)`);
+            console.log(`${filtered.length} produtos carregados do Firebase (após filtro de deletados) via ${path || 'sem caminho'}`);
             return filtered;
         } catch (error) {
             console.error('Erro ao carregar produtos do Firebase:', error);
@@ -3496,14 +3904,24 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Se não encontrado localmente, procurar no Firestore
+        // Se não encontrado localmente, procurar no Firestore (com fallback de caminhos)
         try {
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const productsRef = collection(db, `/artifacts/${appId}/public/data/products`);
-            const q = query(productsRef, where('barcode', '==', code));
-            const qSnap = await getDocs(q);
-            if (!qSnap.empty) {
-                const docSnap = qSnap.docs[0];
+            let foundRemote = null;
+            for (const item of getProductsCollections()) {
+                try {
+                    const q = query(item.ref, where('barcode', '==', code));
+                    const qSnap = await getDocs(q);
+                    if (!qSnap.empty) {
+                        foundRemote = { docSnap: qSnap.docs[0], path: item.path };
+                        break;
+                    }
+                } catch (error) {
+                    console.warn(`[firebase] busca por barcode falhou em ${item.path}:`, error?.code || error?.message || error);
+                }
+            }
+
+            if (foundRemote?.docSnap) {
+                const docSnap = foundRemote.docSnap;
                 const product = { id: docSnap.id, ...docSnap.data() };
                 // Atualizar localStorage
                 const existing = getFromLocalStorage('products');
@@ -3512,6 +3930,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (idx > -1) existing[idx] = product; else existing.push(product);
                 saveToLocalStorage('products', existing);
                 if (barcodeStatusText) barcodeStatusText.textContent = 'Produto encontrado no servidor.';
+                console.log(`[firebase] barcode localizado via ${foundRemote.path}`);
                 const confirmFillRemote = confirm('Produto encontrado no servidor. Deseja preencher o formulário com os dados encontrados?');
                 if (confirmFillRemote) {
                     fillProductFormFromObject(product);
@@ -3849,7 +4268,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td data-label="Preço">€ ${product.price || '0.00'}</td>
                     <td data-label="Unidade">${product.quantity || '1'} ${product.unit || 'unidade'}</td>
                     <td data-label="Marca">${product.brand || 'Sem marca'}</td>
-                    <td data-label="Zona">${product.zone || 'Sem zona'}</td>
+                    <td data-label="País(es)">${getProductCountriesLabel(product) || 'Sem país'}</td>
                     <td data-label="Ações">
                         <button class="btn-action btn-edit" data-id="${pid}"><i class="fas fa-edit"></i></button>
                         <button class="btn-action btn-delete" data-id="${pid}"><i class="fas fa-trash-alt"></i></button>
@@ -3881,6 +4300,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await loadProductsFromFirebase();
             ensureProductIds();
             syncMarketsFromProducts();
+            syncCountriesFromProducts();
             refreshMarketsUI();
             
             // Atualizar interface
@@ -3934,7 +4354,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const category = document.getElementById('product-category').value;
         const brandType = document.querySelector('input[name="brand-type"]:checked').value;
         const brand = brandType === 'generic' ? 'Marca Branca' : productBrandInput.value;
-        const zone = document.getElementById('market-zone').value;
+    const selectedCountries = getSelectedProductCountriesMeta();
+    const countryNames = selectedCountries.map(c => c.name);
+    const countryCodes = selectedCountries.map(c => c.code);
+    const primaryCountry = countryNames[0] || '';
         let imageUrl = productImageUrlInput.value;
 
         // Se "Outro" for selecionado, usa o valor do campo de texto
@@ -3960,7 +4383,10 @@ document.addEventListener('DOMContentLoaded', () => {
             quantity,
             category,
             brand,
-            zone,
+            zone: primaryCountry,
+            country: primaryCountry,
+            countries: countryNames,
+            countryCodes,
             barcode: productBarcodeInput ? productBarcodeInput.value.trim() : '',
             imageUrl
         };
@@ -3978,8 +4404,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Salva no Firestore com fallback local em caso de permissão
         (async () => {
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const productsCollection = collection(db, `/artifacts/${appId}/public/data/products`);
             const productsLocal = getFromLocalStorage('products');
             const doRenderAndReset = () => {
                 productsViewState.page = 1;
@@ -3994,6 +4418,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 otherMarketGroup.style.display = 'none';
                 imageUrlGroup.style.display = 'none';
                 document.getElementById('product-quantity').value = 1;
+                setSelectedProductCountriesFromProduct({ countries: [] });
                 const imageInput = document.getElementById('product-image');
                 if (imageInput) {
                     imageInput.value = '';
@@ -4006,8 +4431,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (id && id !== '') {
                     // ATUALIZAR produto existente
                     console.log('✏️ Atualizando produto com ID:', id);
-                    const docRef = doc(db, `/artifacts/${appId}/public/data/products`, id);
-                    await updateDoc(docRef, productData);
+                    await updateProductInAnyCollection(id, productData);
 
                     const index = productsLocal.findIndex(p => p.id === id);
                     if (index !== -1) {
@@ -4019,16 +4443,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     // CRIAR novo produto
                     console.log('➕ Criando novo produto');
-                    const docRef = await addDoc(productsCollection, productData);
-                    productData.id = docRef.id;
+                    const created = await createProductInAnyCollection(productData);
+                    productData.id = created.docId;
                     productsLocal.push(productData);
                     saveToLocalStorage('products', productsLocal);
-                    console.log('✅ Produto criado com sucesso! ID:', docRef.id);
+                    console.log('✅ Produto criado com sucesso! ID:', created.docId);
                     alert('Produto criado com sucesso!');
                 }
             } catch (error) {
                 console.error('❌ Erro detalhado:', error);
-                if (error?.code === 'permission-denied' || /Missing or insufficient permissions/i.test(error?.message || '')) {
+                if (isPermissionDeniedError(error)) {
                     // Fallback local
                     if (!id) {
                         const localId = `local-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -4250,6 +4674,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadProductsFromFirebase().then(() => {
                     ensureProductIds();
                     syncMarketsFromProducts();
+                    syncCountriesFromProducts();
                     refreshMarketsUI();
                     updateCounts();
                     updateFilterOptions();
@@ -4273,6 +4698,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             } else if (button.dataset.tab === 'tab-markets') {
                 syncMarketsFromProducts();
+                syncCountriesFromProducts();
                 refreshMarketsUI();
             } else if (button.dataset.tab === 'tab-suggestions') {
                 renderSuggestions();
@@ -4290,7 +4716,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (confirm('Tem certeza que deseja deletar este produto?')) {
                 (async () => {
                     try {
-                        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                         // Sempre remover localmente pelo id ou localId
                         let products = getFromLocalStorage('products');
                         const before = products.length;
@@ -4303,8 +4728,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         // Tentar remover no Firestore, mas não bloquear UI
                         if (productId) {
                             try {
-                                const docRef = doc(db, `/artifacts/${appId}/public/data/products`, productId);
-                                await deleteDoc(docRef);
+                                await deleteProductInAnyCollection(productId);
                             } catch (err) {
                                 console.warn('Não foi possível remover do Firestore, removido apenas localmente:', err);
                             }
@@ -4395,7 +4819,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     productBrandInput.value = product.brand;
                 }
                 
-                document.getElementById('market-zone').value = product.zone;
+                setSelectedProductCountriesFromProduct(product);
 
                 // ÚLTIMO: Trata a URL da imagem DEPOIS de limpar
                 if (product.imageUrl === DEFAULT_IMAGE_URL || !product.imageUrl) {
@@ -4488,10 +4912,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!confirmDelete) return;
             
             try {
-                // Deletar do Firestore se tiver ID do Firebase
-                if (product.firebaseId) {
-                    await deleteDoc(doc(db, 'products', product.firebaseId));
-                    console.log('🗑️ Produto deletado do Firestore:', product.firebaseId);
+                // Deletar do Firestore pelos caminhos suportados (quando houver id remoto)
+                const remoteId = product.id && !String(product.id).startsWith('local-') ? String(product.id) : '';
+                if (remoteId) {
+                    try {
+                        await deleteProductInAnyCollection(remoteId);
+                        console.log('🗑️ Produto deletado do Firestore:', remoteId);
+                    } catch (remoteErr) {
+                        console.warn('Não foi possível deletar no servidor, seguindo com remoção local:', remoteErr);
+                    }
                 }
                 
                 // Deletar do localStorage

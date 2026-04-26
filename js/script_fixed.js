@@ -677,35 +677,93 @@ document.addEventListener('DOMContentLoaded', () => {
     const marketName = (p.market || p.mercado || '').toString().trim();
     const marketLogo = __pjFindMarketLogo(marketName);
 
+    const normalizeCountryName = (value) => (value || '').toString().trim().replace(/\s+/g, ' ');
+    const normalizeCountryCode = (value) => (value || '').toString().trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2);
+    const toFlagEmoji = (code) => {
+        const normalized = normalizeCountryCode(code);
+        if (normalized.length !== 2) return '';
+        return String.fromCodePoint(...normalized.split('').map(c => 127397 + c.charCodeAt(0)));
+    };
+
+    const modalCountriesMeta = (() => {
+        const list = [];
+        if (Array.isArray(p.countries) && p.countries.length) {
+            p.countries.forEach((item, index) => {
+                if (item && typeof item === 'object') {
+                    const name = normalizeCountryName(item.name || item.country || '');
+                    const code = normalizeCountryCode(item.code || item.countryCode || '');
+                    if (name) list.push({ name, code });
+                    return;
+                }
+                const name = normalizeCountryName(item);
+                const code = normalizeCountryCode(Array.isArray(p.countryCodes) ? p.countryCodes[index] : '');
+                if (name) list.push({ name, code });
+            });
+        }
+
+        if (!list.length) {
+            const legacyName = normalizeCountryName(p.country || p.zone || '');
+            const legacyCode = normalizeCountryCode(p.countryCode || '');
+            if (legacyName) list.push({ name: legacyName, code: legacyCode });
+        }
+
+        const map = new Map();
+        list.forEach(item => {
+            const key = item.name.toLowerCase();
+            if (!map.has(key)) {
+                map.set(key, { name: item.name, code: item.code });
+                return;
+            }
+            const existing = map.get(key);
+            if (!existing.code && item.code) existing.code = item.code;
+        });
+        return [...map.values()];
+    })();
+
+    const countryLabel = modalCountriesMeta
+        .map(item => `${toFlagEmoji(item.code) ? `${toFlagEmoji(item.code)} ` : ''}${item.name}`)
+        .join(' • ');
+
+    const isDesktopModal = window.matchMedia && window.matchMedia('(min-width: 1024px)').matches;
+    const modalImageSize = isDesktopModal ? 124 : 160;
+    const modalTitleFontSize = isDesktopModal ? 22 : 26;
+    const modalPriceFontSize = isDesktopModal ? 26 : 30;
+    const modalActionPadding = isDesktopModal ? '8px 12px' : '10px 14px';
+    const modalCardMinWidth = isDesktopModal ? 190 : 220;
+    const modalBodyPadding = isDesktopModal ? '12px 12px 6px 12px' : '16px 16px 8px 16px';
+    const modalMainGap = isDesktopModal ? 10 : 16;
+    const modalHeaderGap = isDesktopModal ? 10 : 16;
+    const modalInfoGap = isDesktopModal ? 8 : 10;
+
         pjProductModalBody.innerHTML = `
             <div style="background:#fff;border-radius:12px;overflow:hidden;">
-                <div style="padding:16px 16px 8px 16px;display:flex;flex-direction:column;gap:12px;">
-                    <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;">
+                <div style="padding:${modalBodyPadding};display:flex;flex-direction:column;gap:${modalMainGap}px;max-height:calc(88vh - 120px);overflow:auto;">
+                    <div style="display:flex;gap:${modalHeaderGap}px;align-items:flex-start;flex-wrap:wrap;">
                         <div style="flex:0 0 auto;">
                             <img
                                 src="${__PJ_PLACEHOLDER_IMG}"
                                 data-src="${pjEsc(p.imageUrl || DEFAULT_IMAGE_URL)}"
                                 alt="${pjEsc(p.name)}"
-                                style="width:160px;height:160px;object-fit:cover;border-radius:10px;border:1px solid #e5e7eb;background:#f9fafb;"
+                                style="width:${modalImageSize}px;height:${modalImageSize}px;object-fit:cover;border-radius:10px;border:1px solid #e5e7eb;background:#f9fafb;"
                                 loading="lazy" decoding="async" />
                         </div>
-                        <div style="flex:1;min-width:240px;">
-                            <div style="font-size:26px;font-weight:800;color:#111827;line-height:1.15;">${pjEsc(p.name)}</div>
-                            <div style="margin-top:8px;font-size:30px;font-weight:900;color:#4f46e5;">€${Number(p.price || 0).toFixed(2).replace('.', ',')}</div>
-                            <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:10px;">
-                                <button id="pj-modal-fav-btn" class="favorite-btn${isFav ? ' active' : ''}" onclick="window.__pjToggleFavorite('${pjEsc(p.id)}')" style="padding:10px 14px;border-radius:10px;border:1px solid #fecaca;background:#fff;display:flex;align-items:center;gap:8px;cursor:pointer;">
+                        <div style="flex:1;min-width:${isDesktopModal ? 220 : 240}px;">
+                            <div style="font-size:${modalTitleFontSize}px;font-weight:800;color:#111827;line-height:1.12;word-break:break-word;">${pjEsc(p.name)}</div>
+                            <div style="margin-top:${isDesktopModal ? 6 : 8}px;font-size:${modalPriceFontSize}px;font-weight:900;color:#4f46e5;line-height:1.05;">€${Number(p.price || 0).toFixed(2).replace('.', ',')}</div>
+                            <div style="margin-top:${isDesktopModal ? 10 : 12}px;display:flex;flex-wrap:wrap;gap:${isDesktopModal ? 8 : 10}px;">
+                                <button id="pj-modal-fav-btn" class="favorite-btn${isFav ? ' active' : ''}" onclick="window.__pjToggleFavorite('${pjEsc(p.id)}')" style="padding:${modalActionPadding};border-radius:10px;border:1px solid #fecaca;background:#fff;display:flex;align-items:center;gap:8px;cursor:pointer;">
                                     <i class="fas fa-heart"></i>
                                     <span>Favorito</span>
                                 </button>
-                                <button id="pj-modal-cart-btn" onclick="window.__pjAddToCart('${pjEsc(p.id)}')" style="padding:10px 14px;border-radius:10px;border:1px solid #bbf7d0;background:#fff;display:flex;align-items:center;gap:8px;cursor:pointer;transition:transform .08s ease, background .2s ease, border-color .2s ease;" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform=''" onmouseleave="this.style.transform=''">
+                                <button id="pj-modal-cart-btn" onclick="window.__pjAddToCart('${pjEsc(p.id)}')" style="padding:${modalActionPadding};border-radius:10px;border:1px solid #bbf7d0;background:#fff;display:flex;align-items:center;gap:8px;cursor:pointer;transition:transform .08s ease, background .2s ease, border-color .2s ease;" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform=''" onmouseleave="this.style.transform=''">
                                     <i class="fas fa-shopping-cart"></i>
                                     <span>Carrinho</span>
                                 </button>
-                                <button onclick="window.__pjOpenSuggest('${pjEsc(p.id)}')" style="padding:10px 14px;border-radius:10px;border:1px solid #fde68a;background:#fff;display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                <button onclick="window.__pjOpenSuggest('${pjEsc(p.id)}')" style="padding:${modalActionPadding};border-radius:10px;border:1px solid #fde68a;background:#fff;display:flex;align-items:center;gap:8px;cursor:pointer;">
                                     <i class="fas fa-tag"></i>
                                     <span>Sugerir Preço</span>
                                 </button>
-                                <button id="pj-modal-compare-btn" style="padding:10px 16px;border-radius:10px;border:none;background:#2563eb;color:#fff;display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                <button id="pj-modal-compare-btn" style="padding:${isDesktopModal ? '8px 14px' : '10px 16px'};border-radius:10px;border:none;background:#2563eb;color:#fff;display:flex;align-items:center;gap:8px;cursor:pointer;">
                                     <i class="fas fa-balance-scale"></i>
                                     <span>Comparar</span>
                                 </button>
@@ -713,7 +771,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
 
-                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:8px;">
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(${modalCardMinWidth}px,1fr));gap:${modalInfoGap}px;margin-top:${isDesktopModal ? 4 : 8}px;">
                         ${hasBarcode ? `
                         <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 12px;">
                             <div style="font-size:12px;font-weight:700;color:#1d4ed8;text-transform:uppercase;letter-spacing:.04em;">
@@ -758,19 +816,19 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div style="margin-top:4px;font-size:14px;color:#7c2d12;font-weight:700;">${pjEsc(unitLabel)}</div>
                         </div>` : ''}
 
-                        ${p.country ? `
+                        ${countryLabel ? `
                         <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px 12px;">
                             <div style="font-size:12px;font-weight:700;color:#991b1b;text-transform:uppercase;letter-spacing:.04em;">
                                 <i class="fas fa-globe"></i> País
                             </div>
-                            <div style="margin-top:4px;font-size:14px;color:#7f1d1d;font-weight:700;">${pjEsc(p.country)}</div>
+                            <div style="margin-top:4px;font-size:14px;color:#7f1d1d;font-weight:700;">${pjEsc(countryLabel)}</div>
                         </div>` : ''}
                     </div>
 
                     ${p.description ? `
                     <div style="margin-top:6px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:12px;">
                         <div style="font-size:12px;font-weight:800;color:#374151;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">Descrição</div>
-                        <div style="color:#374151;line-height:1.55;">${pjEsc(p.description)}</div>
+                        <div style="color:#374151;line-height:${isDesktopModal ? '1.42' : '1.55'};font-size:${isDesktopModal ? '13px' : '14px'};">${pjEsc(p.description)}</div>
                     </div>` : ''}
                 </div>
             </div>
@@ -1461,6 +1519,54 @@ document.addEventListener('DOMContentLoaded', () => {
         const p = products.find(x => String(x.id) === String(productId));
         if (!p) return;
         const esc = (s) => (s || '').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        const normalizeCountryName = (value) => (value || '').toString().trim().replace(/\s+/g, ' ');
+        const normalizeCountryCode = (value) => (value || '').toString().trim().toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2);
+        const toFlagEmoji = (code) => {
+            const normalized = normalizeCountryCode(code);
+            if (normalized.length !== 2) return '';
+            return String.fromCodePoint(...normalized.split('').map(c => 127397 + c.charCodeAt(0)));
+        };
+
+        const detailCountriesMeta = (() => {
+            const list = [];
+            if (Array.isArray(p.countries) && p.countries.length) {
+                p.countries.forEach((item, index) => {
+                    if (item && typeof item === 'object') {
+                        const name = normalizeCountryName(item.name || item.country || '');
+                        const code = normalizeCountryCode(item.code || item.countryCode || '');
+                        if (name) list.push({ name, code });
+                        return;
+                    }
+                    const name = normalizeCountryName(item);
+                    const code = normalizeCountryCode(Array.isArray(p.countryCodes) ? p.countryCodes[index] : '');
+                    if (name) list.push({ name, code });
+                });
+            }
+
+            if (!list.length) {
+                const legacyName = normalizeCountryName(p.country || p.zone || '');
+                const legacyCode = normalizeCountryCode(p.countryCode || '');
+                if (legacyName) list.push({ name: legacyName, code: legacyCode });
+            }
+
+            const map = new Map();
+            list.forEach(item => {
+                const key = item.name.toLowerCase();
+                if (!map.has(key)) {
+                    map.set(key, item);
+                    return;
+                }
+                const existing = map.get(key);
+                if (!existing.code && item.code) existing.code = item.code;
+            });
+            return [...map.values()];
+        })();
+
+        const detailCountryLabel = detailCountriesMeta
+            .map(item => `${toFlagEmoji(item.code) ? `${toFlagEmoji(item.code)} ` : ''}${item.name}`)
+            .join(' • ');
+
+        const detailUnit = `${esc(p.quantity || '')} ${esc(p.unit || '')}`.trim() || '—';
 
         // update title and render a compact detail view inside the compare list container
         compareTitle.textContent = `Detalhes: ${p.name}`;
@@ -1478,7 +1584,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div><strong>Mercado:</strong> ${esc(p.market || '—')}</div>
                             <div><strong>Marca:</strong> ${esc(p.brand || '—')}</div>
                             <div><strong>Categoria:</strong> ${esc(p.category || '—')}</div>
-                            <div><strong>Unidade:</strong> ${esc(p.quantity||'')} ${esc(p.unit||'')}</div>
+                            <div><strong>Unidade:</strong> ${detailUnit}</div>
+                            <div><strong>País:</strong> ${esc(detailCountryLabel || '—')}</div>
                         </div>
                         <p class="detail-description">${esc(p.description || '')}</p>
                         <div class="detail-actions">

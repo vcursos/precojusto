@@ -242,12 +242,9 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="market-zone">País:</label>
-                            <select id="market-zone">
-                                <option value="">Sem definir</option>
-                                <option value="Portugal">Portugal</option>
-                                <option value="Espanha">Espanha</option>
-                            </select>
+                            <label>País(es):</label>
+                            <div id="product-countries-checklist" class="countries-checklist"></div>
+                            <small class="help-text">Selecione um ou mais países cadastrados na aba Mercados.</small>
                         </div>
                         
                         <div class="form-group">
@@ -322,7 +319,7 @@
                                     <th data-sort="price">Preço <i class="fas fa-sort"></i></th>
                                     <th data-sort="unit">Unidade <i class="fas fa-sort"></i></th>
                                     <th data-sort="brand">Marca <i class="fas fa-sort"></i></th>
-                                    <th data-sort="zone">Zona <i class="fas fa-sort"></i></th>
+                                    <th data-sort="zone">País(es) <i class="fas fa-sort"></i></th>
                                     <th>Ações</th>
                                 </tr>
                             </thead>
@@ -378,6 +375,34 @@
 
                     <div class="markets-list" id="markets-list"></div>
                     <p id="no-markets" class="no-suggestions" style="display:none;">Nenhum mercado cadastrado ainda.</p>
+
+                    <hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;">
+
+                    <h3 style="margin:0 0 12px 0; color:#1f2937;"><i class="fas fa-flag"></i> Países</h3>
+                    <form id="country-form" class="admin-form">
+                        <input type="hidden" id="country-id">
+                        <div class="form-group-inline">
+                            <div class="form-group" style="flex: 2;">
+                                <label for="country-name">Nome do País:</label>
+                                <input type="text" id="country-name" placeholder="Ex.: Portugal" required>
+                            </div>
+                            <div class="form-group" style="max-width: 180px;">
+                                <label for="country-code">Código ISO (2 letras):</label>
+                                <input type="text" id="country-code" placeholder="PT" maxlength="2" required>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-submit" id="save-country-btn">
+                                <i class="fas fa-save"></i> Salvar País
+                            </button>
+                            <button type="button" class="btn-delete" id="cancel-edit-country-btn" style="display:none;">
+                                <i class="fas fa-times"></i> Cancelar edição
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="countries-list" id="countries-list"></div>
+                    <p id="no-countries" class="no-suggestions" style="display:none;">Nenhum país cadastrado ainda.</p>
                 </section>
             </div>
         </main>

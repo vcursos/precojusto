@@ -3754,3 +3754,92 @@ body.admin-google-image-modal-open {
     transform: translateY(-1px);
     box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
 }
+
+/* Compactação do detalhe no modal de comparação (desktop) */
+@media (min-width: 901px) {
+    #compare-modal .modal-content {
+        max-width: 820px;
+        width: min(90vw, 820px);
+        max-height: 86vh;
+        padding: 14px 14px 12px;
+        overflow: hidden;
+    }
+
+    #compare-modal #compare-list {
+        max-height: calc(86vh - 88px);
+        overflow: auto;
+        padding: 6px 4px;
+    }
+
+    #compare-modal .compare-detail {
+        padding: 4px 2px;
+    }
+
+    #compare-modal .compare-detail-back {
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+    }
+
+    #compare-modal .compare-detail-grid {
+        display: grid;
+        grid-template-columns: 124px minmax(0, 1fr);
+        gap: 10px;
+        align-items: start;
+    }
+
+    #compare-modal .detail-image-col {
+        flex: 0 0 124px;
+        width: 124px;
+    }
+
+    #compare-modal .detail-image {
+        width: 124px;
+        height: 124px;
+        border-radius: 8px;
+    }
+
+    #compare-modal .detail-info-col {
+        gap: 6px;
+    }
+
+    #compare-modal .detail-name {
+        font-size: 1rem;
+        line-height: 1.25;
+        margin: 0;
+    }
+
+    #compare-modal .detail-price {
+        font-size: 1.1rem;
+        line-height: 1.1;
+    }
+
+    #compare-modal .detail-meta {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 4px 12px;
+    }
+
+    #compare-modal .detail-meta div {
+        font-size: 0.86rem;
+        line-height: 1.25;
+    }
+
+    #compare-modal .detail-description {
+        font-size: 0.87rem;
+        line-height: 1.35;
+        margin-top: 2px;
+        margin-bottom: 2px;
+    }
+
+    #compare-modal .detail-actions {
+        margin-top: 6px;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    #compare-modal .detail-actions .fav-btn,
+    #compare-modal .detail-actions .cart-btn {
+        padding: 7px 9px;
+        font-size: 0.85rem;
+    }
+}
