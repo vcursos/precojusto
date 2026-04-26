@@ -1235,10 +1235,15 @@ document.addEventListener('DOMContentLoaded', () => {
         comparePage._onPop = onPop;
 
         // Bind delegated actions for favorites/cart inside the mobile compare page
-        if (!comparePage._onFavCart) {
-            comparePage._onFavCart = (e) => {
-                const btn = e.target.closest('button');
-                if (!btn) return;
+        // Bind delegated click actions for ALL cards in the mobile compare page
+        // Always remove old listener and rebind fresh so all products are covered
+        if (comparePage._onPageClick) {
+            comparePage.removeEventListener('click', comparePage._onPageClick);
+        }
+        comparePage._onPageClick = (e) => {
+            const btn = e.target.closest('.fav-btn, .cart-btn');
+            if (btn) {
+                e.stopPropagation();
                 const id = btn.dataset && btn.dataset.id;
                 if (!id) return;
                 // Favoritar
@@ -1253,21 +1258,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     saveToSessionStorage('favorites', favorites);
                     renderFavorites();
-                    renderProducts();
-                    // toggle visual state
                     const nowFav = !isFav;
                     btn.classList.toggle('fav-active', nowFav);
                     btn.setAttribute('aria-pressed', String(nowFav));
+                    // sync all buttons with same id
+                    comparePage.querySelectorAll('.fav-btn[data-id="' + id + '"]').forEach(b => { b.classList.toggle('fav-active', nowFav); b.setAttribute('aria-pressed', String(nowFav)); });
                     const notice = document.getElementById('compare-action-notice');
-                    if (notice) {
-                        notice.textContent = nowFav ? 'Adicionado aos favoritos' : 'Removido dos favoritos';
-                        notice.className = 'compare-action-notice ' + (nowFav ? 'success' : 'info');
-                        notice.style.display = 'block';
-                        // auto-hide after 2.5s
-                        clearTimeout(notice._t);
-                        notice._t = setTimeout(()=> notice.style.display='none', 2500);
-                    }
+                    if (notice) { notice.textContent = nowFav ? 'Adicionado aos favoritos' : 'Removido dos favoritos'; notice.className = 'compare-action-notice ' + (nowFav ? 'success' : 'info'); notice.style.display = 'block'; clearTimeout(notice._t); notice._t = setTimeout(()=> notice.style.display='none', 2500); }
                     try { showToast(nowFav ? 'Adicionado aos favoritos' : 'Removido dos favoritos', { type: 'info' }); } catch(_) {}
+                    return;
                 }
                 // Carrinho
                 if (btn.classList.contains('cart-btn')) {
@@ -1279,22 +1278,26 @@ document.addEventListener('DOMContentLoaded', () => {
                         else { const copy = Object.assign({}, product); copy.quantity = 1; cart.push(copy); }
                         saveToSessionStorage('cart', cart);
                         renderCartItems();
-                        btn.classList.add('adicionado','in-cart');
-                        btn.setAttribute('aria-pressed','true');
+                        comparePage.querySelectorAll('.cart-btn[data-id="' + id + '"]').forEach(b => { b.classList.add('adicionado', 'in-cart'); b.setAttribute('aria-pressed', 'true'); });
                         const notice = document.getElementById('compare-action-notice');
-                        if (notice) {
-                            notice.textContent = `${product.name} adicionado ao carrinho`;
-                            notice.className = 'compare-action-notice success';
-                            notice.style.display = 'block';
-                            clearTimeout(notice._t);
-                            notice._t = setTimeout(()=> notice.style.display='none', 2500);
-                        }
-                        try { showToast(`${product.name} adicionado ao carrinho`, { type: 'success' }); } catch(_) {}
+                        if (notice) { notice.textContent = product.name + ' adicionado ao carrinho'; notice.className = 'compare-action-notice success'; notice.style.display = 'block'; clearTimeout(notice._t); notice._t = setTimeout(()=> notice.style.display='none', 2500); }
+                        try { showToast(product.name + ' adicionado ao carrinho', { type: 'success' }); } catch(_) {}
                     }
+                    return;
                 }
-            };
-            comparePage.addEventListener('click', comparePage._onFavCart);
-        }
+                return;
+            }
+            // Click on a card (not on a button) → open product detail
+            const card = e.target.closest('.compare-linear-item, .compare-highlight-card, .compare-card, .compare-item');
+            if (card) {
+                const pid = card.dataset.productId;
+                if (pid && typeof window.openProductDetail === 'function') {
+                    window.openProductDetail(pid);
+                }
+            }
+        };
+        comparePage.addEventListener('click', comparePage._onPageClick);
+        comparePage._onFavCart = comparePage._onPageClick; // backward compat alias
 
         // ensure columnsWrap fills the container
         try { columnsWrap.style.width = '100%'; columnsWrap.style.boxSizing = 'border-box'; } catch (e) { /* ignore if not settable */ }
@@ -3313,42 +3316,31 @@ window.addEventListener('productsLoaded', (event) => {
         // store listener so we can remove later
         comparePage._onPop = onPop;
 
-        // Bind delegated actions for favorites/cart inside the mobile compare page
-        if (!comparePage._onFavCart) {
-            comparePage._onFavCart = (e) => {
-                const btn = e.target.closest('button');
-                if (!btn) return;
+        // Bind delegated click actions for ALL cards in the mobile compare page
+        // Always remove old listener and rebind fresh so all products are covered
+        if (comparePage._onPageClick) {
+            comparePage.removeEventListener('click', comparePage._onPageClick);
+        }
+        comparePage._onPageClick = (e) => {
+            const btn = e.target.closest('.fav-btn, .cart-btn');
+            if (btn) {
+                e.stopPropagation();
                 const id = btn.dataset && btn.dataset.id;
                 if (!id) return;
-                // Favoritar
                 if (btn.classList.contains('fav-btn')) {
                     let favorites = getFromSessionStorage('favorites');
                     const isFav = favorites.some(f => String(f.id) === String(id));
-                    if (isFav) {
-                        favorites = favorites.filter(f => String(f.id) !== String(id));
-                    } else {
-                        const product = getFromLocalStorage('products').find(p => String(p.id) === String(id));
-                        if (product) favorites.push(product);
-                    }
+                    if (isFav) { favorites = favorites.filter(f => String(f.id) !== String(id)); }
+                    else { const product = getFromLocalStorage('products').find(p => String(p.id) === String(id)); if (product) favorites.push(product); }
                     saveToSessionStorage('favorites', favorites);
                     renderFavorites();
-                    renderProducts();
-                    // toggle visual state
                     const nowFav = !isFav;
-                    btn.classList.toggle('fav-active', nowFav);
-                    btn.setAttribute('aria-pressed', String(nowFav));
+                    comparePage.querySelectorAll('.fav-btn[data-id="' + id + '"]').forEach(b => { b.classList.toggle('fav-active', nowFav); b.setAttribute('aria-pressed', String(nowFav)); });
                     const notice = document.getElementById('compare-action-notice');
-                    if (notice) {
-                        notice.textContent = nowFav ? 'Adicionado aos favoritos' : 'Removido dos favoritos';
-                        notice.className = 'compare-action-notice ' + (nowFav ? 'success' : 'info');
-                        notice.style.display = 'block';
-                        // auto-hide after 2.5s
-                        clearTimeout(notice._t);
-                        notice._t = setTimeout(()=> notice.style.display='none', 2500);
-                    }
+                    if (notice) { notice.textContent = nowFav ? 'Adicionado aos favoritos' : 'Removido dos favoritos'; notice.className = 'compare-action-notice ' + (nowFav ? 'success' : 'info'); notice.style.display = 'block'; clearTimeout(notice._t); notice._t = setTimeout(()=> notice.style.display='none', 2500); }
                     try { showToast(nowFav ? 'Adicionado aos favoritos' : 'Removido dos favoritos', { type: 'info' }); } catch(_) {}
+                    return;
                 }
-                // Carrinho
                 if (btn.classList.contains('cart-btn')) {
                     const cart = getFromSessionStorage('cart');
                     const product = getFromLocalStorage('products').find(p => String(p.id) === String(id));
@@ -3358,23 +3350,23 @@ window.addEventListener('productsLoaded', (event) => {
                         else { const copy = Object.assign({}, product); copy.quantity = 1; cart.push(copy); }
                         saveToSessionStorage('cart', cart);
                         renderCartItems();
-                        btn.classList.add('adicionado','in-cart');
-                        btn.setAttribute('aria-pressed','true');
+                        comparePage.querySelectorAll('.cart-btn[data-id="' + id + '"]').forEach(b => { b.classList.add('adicionado', 'in-cart'); b.setAttribute('aria-pressed', 'true'); });
                         const notice = document.getElementById('compare-action-notice');
-                        if (notice) {
-                            notice.textContent = `${product.name} adicionado ao carrinho`;
-                            notice.className = 'compare-action-notice success';
-                            notice.style.display = 'block';
-                            clearTimeout(notice._t);
-                            notice._t = setTimeout(()=> notice.style.display='none', 2500);
-                        }
-                        try { showToast(`${product.name} adicionado ao carrinho`, { type: 'success' }); } catch(_) {}
+                        if (notice) { notice.textContent = product.name + ' adicionado ao carrinho'; notice.className = 'compare-action-notice success'; notice.style.display = 'block'; clearTimeout(notice._t); notice._t = setTimeout(()=> notice.style.display='none', 2500); }
+                        try { showToast(product.name + ' adicionado ao carrinho', { type: 'success' }); } catch(_) {}
                     }
+                    return;
                 }
-            };
-            comparePage.addEventListener('click', comparePage._onFavCart);
-        }
-
+                return;
+            }
+            const card = e.target.closest('.compare-linear-item, .compare-highlight-card, .compare-card, .compare-item');
+            if (card) {
+                const pid = card.dataset.productId;
+                if (pid && typeof window.openProductDetail === 'function') { window.openProductDetail(pid); }
+            }
+        };
+        comparePage.addEventListener('click', comparePage._onPageClick);
+        comparePage._onFavCart = comparePage._onPageClick;
         // ensure columnsWrap fills the container
         try { columnsWrap.style.width = '100%'; columnsWrap.style.boxSizing = 'border-box'; } catch (e) { /* ignore if not settable */ }
 
