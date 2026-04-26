@@ -2056,6 +2056,7 @@ body.admin-google-image-modal-open {
     overflow: hidden;
     touch-action: none;
 }
+.compare-page-header {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -2528,7 +2529,7 @@ body.admin-google-image-modal-open {
     border-top: 1px solid #f0f2f5;
 }
 
-.favorite-btn, .add-to-cart-btn, .suggest-price-btn {
+.favorite-btn, .add-to-cart-btn, .compare-btn, .suggest-price-btn {
     border: none;
     background: none;
     cursor: pointer;
@@ -2543,6 +2544,10 @@ body.admin-google-image-modal-open {
 
 .add-to-cart-btn:hover {
     color: #007BFF;
+}
+
+.compare-btn:hover {
+    color: #2563eb;
 }
 
 .suggest-price-btn:hover {
@@ -2887,7 +2892,7 @@ body.admin-google-image-modal-open {
     .product-details.concise .meta-item { font-size:0.65rem; padding:2px 4px; }
     .scroll-btn { display:none !important; }
     /* touch targets */
-    .favorite-btn, .add-to-cart-btn, .suggest-price-btn { font-size:1.3rem; }
+    .favorite-btn, .add-to-cart-btn, .compare-btn, .suggest-price-btn { font-size:1.3rem; }
     .product-card-actions { padding:10px; }
     /* hide background heavy image overlay for performance */
     body::before { background: rgba(255,255,255,0.70); }
@@ -2947,6 +2952,12 @@ body.admin-google-image-modal-open {
 }
 
 .compare-desktop-redesign { display:flex; flex-direction:column; gap:1rem; }
+.compare-summary-panel { display:flex; gap:.55rem; flex-wrap:wrap; }
+.compare-summary-panel .summary-pill { display:inline-flex; align-items:baseline; gap:.38rem; background:#f3f6fb; border:1px solid #dbe6f5; color:#1e293b; border-radius:999px; padding:.38rem .68rem; }
+.compare-summary-panel .summary-pill strong { font-size:.86rem; font-weight:800; }
+.compare-summary-panel .summary-pill span { font-size:.72rem; color:#475569; }
+.compare-summary-panel .summary-pill-success { background:#ecfdf3; border-color:#b7f0cf; }
+.compare-summary-panel .summary-pill-success strong { color:#166534; }
 .compare-highlight-card { display:flex; gap:1rem; background:#ffffff; border:2px solid #2d7a2d; padding:1rem; border-radius:12px; box-shadow:0 4px 14px rgba(0,0,0,0.12); position:relative; }
 .compare-highlight-card::before { content:"Mais barato"; position:absolute; top:-10px; left:12px; background:#2d7a2d; color:#fff; font-size:.65rem; font-weight:600; padding:4px 8px; border-radius:6px; letter-spacing:.5px; text-transform:uppercase; box-shadow:0 2px 6px rgba(0,0,0,.2); }
 .compare-highlight-card .highlight-image { width:90px; height:90px; object-fit:contain; flex-shrink:0; border-radius:8px; background:#f7f7f7; padding:4px; }
