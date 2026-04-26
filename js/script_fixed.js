@@ -1012,79 +1012,10 @@ document.addEventListener('DOMContentLoaded', () => {
         desktopLayout.appendChild(listWrapper);
 
         // Se viewport > 720, usa layout desktop. Para mobile, usaremos uma versão linear simplificada.
-        if (typeof window !== 'undefined' && window.innerWidth > 720) {
-            compareList.appendChild(desktopLayout);
-            openModal(compareModal);
-            return; // interrompe antes do layout antigo
-        }
-
-        // ===== Novo fluxo para MOBILE: destaque + lista linear =====
-        if (typeof window !== 'undefined' && window.innerWidth <= 720) {
-            const mobileLayout = document.createElement('div');
-            mobileLayout.className = 'compare-mobile-redesign';
-
-            // destaque (reutiliza o mesmo HTML de destaque)
-            const mobileHighlight = document.createElement('div');
-            mobileHighlight.className = 'compare-highlight-card';
-            mobileHighlight.innerHTML = `
-                <div class="highlight-left">
-                    <img src="${cheapestGlobal.imageUrl || DEFAULT_IMAGE_URL}" alt="${cheapestGlobal.name}" class="highlight-image" loading="lazy">
-                </div>
-                <div class="highlight-main">
-                    <h3 class="highlight-name">${cheapestGlobal.name}</h3>
-                    <div class="highlight-meta">
-                        <span class="highlight-market">${cheapestGlobal.market || ''}</span>
-                        <span class="highlight-brand">${cheapestGlobal.brand || ''}</span>
-                        ${cheapestGlobal.barcode ? `<span class="highlight-barcode">EAN: ${cheapestGlobal.barcode}</span>` : ''}
-                    </div>
-                    <div class="highlight-price-row">
-                        <span class="highlight-price">${formatPrice(cheapestGlobal.price)}</span>
-                        <span class="highlight-badge">Mais Barato</span>
-                    </div>
-                    <div class="highlight-actions">
-                        <button class="fav-btn ${isFav(cheapestGlobal.id) ? 'fav-active' : ''}" aria-pressed="${isFav(cheapestGlobal.id)}" data-id="${cheapestGlobal.id}" title="Favoritar"><i class="fas fa-heart"></i></button>
-                        <button class="cart-btn ${inCart(cheapestGlobal.id) ? 'adicionado in-cart' : ''}" aria-pressed="${inCart(cheapestGlobal.id)}" data-id="${cheapestGlobal.id}" title="Adicionar ao carrinho"><i class="fas fa-shopping-cart"></i></button>
-                    </div>
-                </div>
-            `;
-            mobileLayout.appendChild(mobileHighlight);
-
-            // lista linear dos demais
-            const mobileList = document.createElement('div');
-            mobileList.className = 'compare-linear-list';
-            const base = parseFloat(cheapestGlobal.price);
-            const diffPct = (price) => {
-                const current = parseFloat(price);
-                if (!isFinite(base) || base <= 0) return '—';
-                const pct = ((current - base) / base) * 100;
-                if (pct === 0) return 'Igual';
-                const str = `${pct > 0 ? '+' : ''}${pct.toFixed(1)}%`;
-                return str;
-            };
-            others.forEach(p => {
-                const node = document.createElement('div');
-                node.className = 'compare-linear-item';
-                node.dataset.productId = p.id;
-                node.innerHTML = `
-                    <div class="cli-image-col">
-                        <img src="${p.imageUrl || DEFAULT_IMAGE_URL}" alt="${p.name}" class="cli-image" loading="lazy">
-                    </div>
-                    <div class="cli-name-col" title="${p.name}">${p.name}</div>
-                    <div class="cli-market-col">${p.market || ''}</div>
-                    <div class="cli-price-col">${formatPrice(p.price)}</div>
-                    <div class="cli-diff-col">${diffPct(p.price)}</div>
-                    <div class="cli-actions-col">
-                        <button class="fav-btn ${isFav(p.id) ? 'fav-active' : ''}" aria-pressed="${isFav(p.id)}" data-id="${p.id}" title="Favoritar"><i class="fas fa-heart"></i></button>
-                        <button class="cart-btn ${inCart(p.id) ? 'adicionado in-cart' : ''}" aria-pressed="${inCart(p.id)}" data-id="${p.id}" title="Adicionar ao carrinho"><i class="fas fa-shopping-cart"></i></button>
-                    </div>
-                `;
-                mobileList.appendChild(node);
-            });
-            mobileLayout.appendChild(mobileList);
-
-            openComparePage(productName, mobileLayout);
-            return;
-        }
+        // Usar o mesmo layout em desktop e mobile
+        compareList.appendChild(desktopLayout);
+        openModal(compareModal);
+        return;
 
         // ===== Mantém fluxo ANTIGO para mobile abaixo =====
         privateLabel.sort((a,b) => parseFloat(a.price) - parseFloat(b.price));
@@ -3096,79 +3027,10 @@ window.addEventListener('productsLoaded', (event) => {
         listWrapper.appendChild(ul);
         desktopLayout.appendChild(listWrapper);
 
-        // Se viewport > 720, usa layout desktop. Para mobile, usaremos uma versão linear simplificada.
-        if (typeof window !== 'undefined' && window.innerWidth > 720) {
-            compareList.appendChild(desktopLayout);
-            openModal(compareModal);
-            return; // interrompe antes do layout antigo
-        }
-
-        // ===== Novo fluxo para MOBILE: destaque + lista linear =====
-        if (typeof window !== 'undefined' && window.innerWidth <= 720) {
-            const mobileLayout = document.createElement('div');
-            mobileLayout.className = 'compare-mobile-redesign';
-
-            // destaque (reutiliza o mesmo HTML de destaque)
-            const mobileHighlight = document.createElement('div');
-            mobileHighlight.className = 'compare-highlight-card';
-            mobileHighlight.innerHTML = `
-                <div class="highlight-left">
-                    <img src="${cheapestGlobal.imageUrl || DEFAULT_IMAGE_URL}" alt="${cheapestGlobal.name}" class="highlight-image" loading="lazy">
-                </div>
-                <div class="highlight-main">
-                    <h3 class="highlight-name">${cheapestGlobal.name}</h3>
-                    <div class="highlight-meta">
-                        <span class="highlight-market">${cheapestGlobal.market || ''}</span>
-                        <span class="highlight-brand">${cheapestGlobal.brand || ''}</span>
-                        ${cheapestGlobal.barcode ? `<span class="highlight-barcode">EAN: ${cheapestGlobal.barcode}</span>` : ''}
-                    </div>
-                    <div class="highlight-price-row">
-                        <span class="highlight-price">${formatPrice(cheapestGlobal.price)}</span>
-                        <span class="highlight-badge">Mais Barato</span>
-                    </div>
-                    <div class="highlight-actions">
-                        <button class="fav-btn ${isFav(cheapestGlobal.id) ? 'fav-active' : ''}" aria-pressed="${isFav(cheapestGlobal.id)}" data-id="${cheapestGlobal.id}" title="Favoritar"><i class="fas fa-heart"></i></button>
-                        <button class="cart-btn ${inCart(cheapestGlobal.id) ? 'adicionado in-cart' : ''}" aria-pressed="${inCart(cheapestGlobal.id)}" data-id="${cheapestGlobal.id}" title="Adicionar ao carrinho"><i class="fas fa-shopping-cart"></i></button>
-                    </div>
-                </div>
-            `;
-            mobileLayout.appendChild(mobileHighlight);
-
-            // lista linear dos demais
-            const mobileList = document.createElement('div');
-            mobileList.className = 'compare-linear-list';
-            const base = parseFloat(cheapestGlobal.price);
-            const diffPct = (price) => {
-                const current = parseFloat(price);
-                if (!isFinite(base) || base <= 0) return '—';
-                const pct = ((current - base) / base) * 100;
-                if (pct === 0) return 'Igual';
-                const str = `${pct > 0 ? '+' : ''}${pct.toFixed(1)}%`;
-                return str;
-            };
-            others.forEach(p => {
-                const node = document.createElement('div');
-                node.className = 'compare-linear-item';
-                node.dataset.productId = p.id;
-                node.innerHTML = `
-                    <div class="cli-image-col">
-                        <img src="${p.imageUrl || DEFAULT_IMAGE_URL}" alt="${p.name}" class="cli-image" loading="lazy">
-                    </div>
-                    <div class="cli-name-col" title="${p.name}">${p.name}</div>
-                    <div class="cli-market-col">${p.market || ''}</div>
-                    <div class="cli-price-col">${formatPrice(p.price)}</div>
-                    <div class="cli-diff-col">${diffPct(p.price)}</div>
-                    <div class="cli-actions-col">
-                        <button class="fav-btn ${isFav(p.id) ? 'fav-active' : ''}" aria-pressed="${isFav(p.id)}" data-id="${p.id}" title="Favoritar"><i class="fas fa-heart"></i></button>
-                        <button class="cart-btn ${inCart(p.id) ? 'adicionado in-cart' : ''}" aria-pressed="${inCart(p.id)}" data-id="${p.id}" title="Adicionar ao carrinho"><i class="fas fa-shopping-cart"></i></button>
-                    </div>
-                `;
-                mobileList.appendChild(node);
-            });
-            mobileLayout.appendChild(mobileList);
-
-            openComparePage(productName, mobileLayout);
-            return;
+        // Usar o mesmo layout em desktop e mobile
+        compareList.appendChild(desktopLayout);
+        openModal(compareModal);
+        return;
         }
 
         // ===== Mantém fluxo ANTIGO para mobile abaixo =====
