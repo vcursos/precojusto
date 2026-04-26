@@ -728,6 +728,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (compareBtn) {
                 compareBtn.onclick = () => {
                     try {
+                        pjCloseModal();
                         const fn = window.openCompareModal;
                         if (typeof fn === 'function') fn(p.name);
                     } catch (_) {}
@@ -1121,6 +1122,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showCompareItemDetail(id);
         };
     };
+    window.openCompareModal = openCompareModal;
 
     // Render compare as a full-page view (mobile UX) with back navigation
     const openComparePage = (productName, columnsWrap) => {
