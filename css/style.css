@@ -1,4 +1,4 @@
-/* Geral */
+﻿/* Geral */
 html, body { height: 100%; }
 body {
     font-family: Arial, sans-serif;
@@ -2049,13 +2049,13 @@ body.admin-google-image-modal-open {
 .compare-page {
     position: fixed;
     inset: 0;
-    background: #fff;
+    background: #f1f5f9;
     z-index: 200002;
     display: none;
     flex-direction: column;
     overflow: hidden;
+    touch-action: none;
 }
-.compare-page-header {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -2137,7 +2137,7 @@ body.admin-google-image-modal-open {
 /* Ícones ativos: coração vermelho, carrinho azul */
 .fav-btn.fav-active i { color:#ef4444 !important; }
 .cart-btn.in-cart i { color:#1d4ed8 !important; }
-.compare-page-content { overflow:auto; padding:12px; height: calc(100vh - 62px); }
+.compare-page-content { overflow-y: scroll; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; padding: 12px; height: calc(100vh - 62px); flex: 1 1 auto; min-height: 0; }
 
 /* Visual separation and group headers for mobile compare list */
 .compare-page { background: #f1f5f9; }

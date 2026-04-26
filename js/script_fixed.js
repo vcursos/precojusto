@@ -1222,7 +1222,7 @@ document.addEventListener('DOMContentLoaded', () => {
     comparePage.style.display = 'flex';
     comparePage.style.flexDirection = 'column';
         document.documentElement.style.overflow = 'hidden';
-
+        document.body.style.overflow = 'hidden';
         // push history state so native back works
         try { history.pushState({ comparePage: true, product: productName }, '', '#compare'); } catch (e) { /* ignore */ }
 
@@ -1381,13 +1381,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!comparePage) return;
         if (comparePage._onPop) window.removeEventListener('popstate', comparePage._onPop);
         comparePage.style.display = 'none';
-        comparePage.innerHTML = '';
         document.documentElement.style.overflow = '';
-        // remove the hash without navigating if it points to compare
-        try {
-            if (location.hash === '#compare') history.replaceState({}, '', location.pathname + location.search);
-        } catch (e) { /* ignore */ }
+        document.body.style.overflow = '';
+        // defer heavy cleanup so UI closes instantly
+        setTimeout(() => { comparePage.innerHTML = ''; try { if (location.hash === '#compare') history.replaceState({}, '', location.pathname + location.search); } catch(e){} }, 50);
     };
+
+
 
     // show product details inside the compare modal (replaces compare content)
     const showCompareItemDetail = (productId) => {
@@ -3301,7 +3301,7 @@ window.addEventListener('productsLoaded', (event) => {
     comparePage.style.display = 'flex';
     comparePage.style.flexDirection = 'column';
         document.documentElement.style.overflow = 'hidden';
-
+        document.body.style.overflow = 'hidden';
         // push history state so native back works
         try { history.pushState({ comparePage: true, product: productName }, '', '#compare'); } catch (e) { /* ignore */ }
 
@@ -3460,13 +3460,13 @@ window.addEventListener('productsLoaded', (event) => {
         if (!comparePage) return;
         if (comparePage._onPop) window.removeEventListener('popstate', comparePage._onPop);
         comparePage.style.display = 'none';
-        comparePage.innerHTML = '';
         document.documentElement.style.overflow = '';
-        // remove the hash without navigating if it points to compare
-        try {
-            if (location.hash === '#compare') history.replaceState({}, '', location.pathname + location.search);
-        } catch (e) { /* ignore */ }
+        document.body.style.overflow = '';
+        setTimeout(() => { comparePage.innerHTML = ''; try { if (location.hash === '#compare') history.replaceState({}, '', location.pathname + location.search); } catch(e){} }, 50);
     };
+
+
+
 
     // show product details inside the compare modal (replaces compare content)
     const showCompareItemDetail = (productId) => {
