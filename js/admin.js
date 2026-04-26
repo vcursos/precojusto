@@ -3720,6 +3720,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (marketForm) {
         marketForm.addEventListener('submit', (e) => {
             e.preventDefault();
+
+            const activeUser = auth?.currentUser;
+            if (!activeUser || activeUser.isAnonymous === true) {
+                alert('Sua sessão expirou ou não está autenticada no servidor. Faça login novamente no admin para salvar mercados.');
+                showLogin();
+                return;
+            }
+
             const name = normalizeMarketName(marketNameInput?.value);
             const logo = normalizeLogoUrl(marketLogoInput?.value);
             const editId = marketIdInput?.value || null;
@@ -3727,15 +3735,47 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Informe o nome do mercado.');
                 return;
             }
-            upsertMarket(name, logo, editId);
+
+            const updatedMarkets = upsertMarket(name, logo, editId);
+            const localTarget = updatedMarkets.find(m => m.id === editId)
+                || updatedMarkets.find(m => normalizeMarketKey(m.name) === normalizeMarketKey(name));
             refreshMarketsUI();
+
+            (async () => {
+                try {
+                    const persisted = await persistMarketInFirebase({
+                        id: localTarget?.id || editId,
+                        name,
+                        logo
+                    });
+
+                    if (localTarget && persisted?.docId && localTarget.id !== persisted.docId) {
+                        const all = getMarkets();
+                        const idx = all.findIndex(m => m.id === localTarget.id);
+                        if (idx !== -1) {
+                            all[idx].id = persisted.docId;
+                            saveMarkets(all);
+                            refreshMarketsUI();
+                        }
+                    }
+
+                    alert('Mercado salvo com sucesso no Firebase!');
+                } catch (error) {
+                    console.error('Erro ao sincronizar mercado no Firebase:', error);
+                    if (isPermissionDeniedError(error)) {
+                        alert('Mercado salvo localmente, mas sem permissão para salvar no Firebase.');
+                    } else {
+                        alert('Mercado salvo localmente, mas falhou a sincronização: ' + (error?.message || error));
+                    }
+                }
+            })();
+
             if (marketNameInput) marketNameInput.value = '';
             if (marketLogoInput) marketLogoInput.value = '';
             if (marketIdInput) marketIdInput.value = '';
             if (cancelEditMarketBtn) cancelEditMarketBtn.style.display = 'none';
             const saveBtn = document.getElementById('save-market-btn');
             if (saveBtn) saveBtn.innerHTML = '<i class="fas fa-save"></i> Salvar Mercado';
-            alert('Mercado salvo com sucesso!');
         });
     }
 
@@ -3764,6 +3804,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (confirm('Remover este mercado?')) {
             deleteMarketById(id);
             refreshMarketsUI();
+
+            (async () => {
+                try {
+                    if (id && !isLocalMarketId(id)) {
+                        await deleteMarketInAnyCollection(id);
+                    }
+                } catch (error) {
+                    console.error('Erro ao remover mercado no Firebase:', error);
+                    if (isPermissionDeniedError(error)) {
+                        alert('Mercado removido localmente, mas sem permissão para remover no Firebase.');
+                    } else {
+                        alert('Mercado removido localmente, mas falhou a remoção no Firebase: ' + (error?.message || error));
+                    }
+                }
+            })();
         }
     });
 
@@ -3932,6 +3987,159 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const isPermissionDeniedError = (error) =>
         error?.code === 'permission-denied' || /Missing or insufficient permissions/i.test(error?.message || '');
+
+    const isLocalMarketId = (id) => !id || /^mkt-|^local-/.test(String(id));
+
+    const getMarketsCollectionPaths = () => {
+        const appId = typeof __app_id !== 'undefined' && __app_id ? __app_id : 'default-app-id';
+        const paths = [
+            `/artifacts/${appId}/public/data/markets`,
+            '/public/data/markets',
+            '/markets'
+        ];
+        if (appId !== 'default-app-id') {
+            paths.push('/artifacts/default-app-id/public/data/markets');
+        }
+        return [...new Set(paths)];
+    };
+
+    const getMarketsCollections = () => getMarketsCollectionPaths().map(path => ({ path, ref: collection(db, path) }));
+
+    const readMarketsFromAnyCollection = async () => {
+        const collections = getMarketsCollections();
+        let lastError = null;
+        let firstSuccess = null;
+
+        for (const item of collections) {
+            try {
+                const snap = await getDocs(item.ref);
+                const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                if (!firstSuccess) firstSuccess = { docs, path: item.path };
+                if (docs.length > 0) return { docs, path: item.path };
+            } catch (error) {
+                lastError = error;
+                console.warn(`[firebase] leitura de mercados falhou em ${item.path}:`, error?.code || error?.message || error);
+            }
+        }
+
+        if (firstSuccess) return firstSuccess;
+        if (lastError) throw lastError;
+        return { docs: [], path: '' };
+    };
+
+    const findMarketDocByNameInAnyCollection = async (marketName) => {
+        const normalizedName = normalizeMarketName(marketName);
+        if (!normalizedName) return null;
+
+        for (const item of getMarketsCollections()) {
+            try {
+                const q = query(item.ref, where('name', '==', normalizedName));
+                const qSnap = await getDocs(q);
+                if (!qSnap.empty) {
+                    return { docId: qSnap.docs[0].id, path: item.path };
+                }
+            } catch (error) {
+                console.warn(`[firebase] busca de mercado por nome falhou em ${item.path}:`, error?.code || error?.message || error);
+            }
+        }
+
+        return null;
+    };
+
+    const createMarketInAnyCollection = async (marketData) => {
+        let lastError = null;
+        for (const item of getMarketsCollections()) {
+            try {
+                const created = await addDoc(item.ref, marketData);
+                return { docId: created.id, path: item.path };
+            } catch (error) {
+                lastError = error;
+                console.warn(`[firebase] criação de mercado falhou em ${item.path}:`, error?.code || error?.message || error);
+                if (!isPermissionDeniedError(error)) throw error;
+            }
+        }
+        throw lastError || new Error('Não foi possível criar mercado no servidor.');
+    };
+
+    const updateMarketInAnyCollection = async (marketId, marketData) => {
+        let lastError = null;
+        for (const item of getMarketsCollections()) {
+            try {
+                const docRef = doc(db, item.path, marketId);
+                await updateDoc(docRef, marketData);
+                return { path: item.path };
+            } catch (error) {
+                lastError = error;
+                console.warn(`[firebase] atualização de mercado falhou em ${item.path}:`, error?.code || error?.message || error);
+                if (!isPermissionDeniedError(error) && error?.code !== 'not-found') throw error;
+            }
+        }
+        throw lastError || new Error('Não foi possível atualizar mercado no servidor.');
+    };
+
+    const deleteMarketInAnyCollection = async (marketId) => {
+        let lastError = null;
+        for (const item of getMarketsCollections()) {
+            try {
+                const docRef = doc(db, item.path, marketId);
+                await deleteDoc(docRef);
+                return { path: item.path };
+            } catch (error) {
+                lastError = error;
+                console.warn(`[firebase] remoção de mercado falhou em ${item.path}:`, error?.code || error?.message || error);
+                if (!isPermissionDeniedError(error) && error?.code !== 'not-found') throw error;
+            }
+        }
+        throw lastError || new Error('Não foi possível remover mercado no servidor.');
+    };
+
+    const persistMarketInFirebase = async ({ id, name, logo }) => {
+        const marketData = {
+            name: normalizeMarketName(name),
+            logo: normalizeLogoUrl(logo)
+        };
+
+        if (!marketData.name) throw new Error('Nome do mercado inválido para sincronização.');
+
+        if (id && !isLocalMarketId(id)) {
+            await updateMarketInAnyCollection(id, marketData);
+            return { docId: id, op: 'update' };
+        }
+
+        const foundByName = await findMarketDocByNameInAnyCollection(marketData.name);
+        if (foundByName?.docId) {
+            await updateMarketInAnyCollection(foundByName.docId, marketData);
+            return { docId: foundByName.docId, op: 'update-by-name' };
+        }
+
+        const created = await createMarketInAnyCollection(marketData);
+        return { docId: created.docId, op: 'create' };
+    };
+
+    const loadMarketsFromFirebase = async () => {
+        try {
+            const { docs, path } = await readMarketsFromAnyCollection();
+            if (!Array.isArray(docs) || !docs.length) {
+                return getMarkets();
+            }
+
+            const remoteMarkets = docs
+                .map(item => ({
+                    id: item.id,
+                    name: normalizeMarketName(item?.name || item?.market || ''),
+                    logo: normalizeLogoUrl(item?.logo || item?.logoUrl || item?.marketLogo || '')
+                }))
+                .filter(item => item.name);
+
+            const merged = dedupeMarketsByName([...remoteMarkets, ...getMarkets()]);
+            const saved = saveMarkets(merged);
+            console.log(`[firebase] ${saved.length} mercados sincronizados via ${path || 'sem caminho'}`);
+            return saved;
+        } catch (error) {
+            console.warn('Erro ao carregar mercados do Firebase, usando localStorage:', error?.code || error?.message || error);
+            return getMarkets();
+        }
+    };
 
     const readProductsFromAnyCollection = async () => {
         const collections = getProductsCollections();
@@ -4441,6 +4649,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Função para inicializar os dados da aplicação
     async function initializeAppData() {
         try {
+            await loadMarketsFromFirebase();
             // Carregar produtos do Firebase
             await loadProductsFromFirebase();
             ensureProductIds();

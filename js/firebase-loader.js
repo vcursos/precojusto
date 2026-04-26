@@ -2,6 +2,70 @@
 import { db } from './firebase-init.js';
 import { collection, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+const normalizeMarketName = (name) => (name || '').toString().trim().replace(/\s+/g, ' ');
+const normalizeMarketKey = (name) => normalizeMarketName(name).toLowerCase();
+const normalizeLogoUrl = (logo) => {
+    let value = (logo || '').toString().trim();
+    if (!value) return '';
+    if (!/^https?:\/\//i.test(value) && /^www\./i.test(value)) {
+        value = `https://${value}`;
+    }
+    return value;
+};
+
+const dedupeMarketsByName = (markets) => {
+    const map = new Map();
+    (Array.isArray(markets) ? markets : []).forEach((raw) => {
+        const name = normalizeMarketName(raw?.name || raw?.market || '');
+        if (!name) return;
+        const logo = normalizeLogoUrl(raw?.logo || raw?.logoUrl || raw?.marketLogo || '');
+        const key = normalizeMarketKey(name);
+        if (!map.has(key)) {
+            map.set(key, { id: raw?.id || '', name, logo });
+            return;
+        }
+        const existing = map.get(key);
+        if (!existing.logo && logo) existing.logo = logo;
+        if (!existing.id && raw?.id) existing.id = raw.id;
+    });
+    return [...map.values()];
+};
+
+async function loadMarketsFromFirebase() {
+    try {
+        const possibleCollections = [
+            'markets',
+            'public/data/markets',
+            'artifacts/default-app-id/public/data/markets'
+        ];
+
+        for (const collectionPath of possibleCollections) {
+            try {
+                const snapshot = await getDocs(collection(db, collectionPath));
+                if (snapshot.empty) continue;
+
+                const remoteMarkets = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+
+                const localMarkets = JSON.parse(localStorage.getItem('markets') || '[]');
+                const merged = dedupeMarketsByName([...remoteMarkets, ...(Array.isArray(localMarkets) ? localMarkets : [])]);
+                localStorage.setItem('markets', JSON.stringify(merged));
+                console.log(`💾 ${merged.length} mercados sincronizados do Firebase (${collectionPath})`);
+                return merged;
+            } catch (error) {
+                console.log(`❌ Erro ao carregar mercados em ${collectionPath}:`, error.message);
+            }
+        }
+
+        return JSON.parse(localStorage.getItem('markets') || '[]');
+    } catch (error) {
+        console.error('❌ Erro geral ao carregar mercados do Firebase:', error);
+        return JSON.parse(localStorage.getItem('markets') || '[]');
+    }
+}
+
 // Função para carregar produtos do Firebase
 async function loadProductsFromFirebase() {
     console.log('🔥 Iniciando carregamento do Firebase...');
@@ -189,6 +253,7 @@ function initializeFirebaseLoader() {
     
     // Carregar sempre, independente de existir no localStorage
     loadProductsFromFirebase();
+    loadMarketsFromFirebase();
 }
 
 // Tentar múltiplas formas de inicialização
@@ -205,6 +270,7 @@ setTimeout(() => {
     if (shouldLoadProducts()) {
         loadProductsFromFirebase();
     }
+    loadMarketsFromFirebase();
 }, 1000);
 
 // Backup adicional: tentar quando a janela carregar completamente
@@ -215,6 +281,9 @@ window.addEventListener('load', () => {
             loadProductsFromFirebase();
         }, 200);
     }
+    setTimeout(() => {
+        loadMarketsFromFirebase();
+    }, 250);
 });
 
-export { loadProductsFromFirebase };
+export { loadProductsFromFirebase, loadMarketsFromFirebase };
