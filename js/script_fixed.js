@@ -2442,6 +2442,25 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.style.display = 'flex';
         // allow CSS to animate
         setTimeout(() => modal.classList.add('visible'), 10);
+
+        // Compare modal: always open from top and show highlighted cheapest card first
+        if (modal.id === 'compare-modal') {
+            const resetCompareScroll = () => {
+                const content = modal.querySelector('.modal-content');
+                const list = modal.querySelector('#compare-list, .compare-list');
+                try {
+                    if (content) content.scrollTop = 0;
+                    if (list) list.scrollTop = 0;
+                    const highlight = list ? list.querySelector('.compare-highlight-card') : null;
+                    if (highlight && typeof highlight.scrollIntoView === 'function') {
+                        highlight.scrollIntoView({ block: 'start', inline: 'nearest' });
+                    }
+                } catch (_) { /* noop */ }
+            };
+            requestAnimationFrame(resetCompareScroll);
+            setTimeout(resetCompareScroll, 70);
+            setTimeout(resetCompareScroll, 180);
+        }
     };
 
     const closeModal = (modal) => {
