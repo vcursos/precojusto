@@ -664,8 +664,8 @@ body.all-products-page-open {
 }
 
     .compare-market-logo {
-        width: 48px;
-        height: 48px;
+        width: 58px;
+        height: 58px;
         object-fit: contain;
         border-radius: 6px;
         border: 1px solid #e5e7eb;
@@ -673,14 +673,14 @@ body.all-products-page-open {
         padding: 3px;
     }
     .compare-market-logo.compare-market-logo--xl {
-        width: 58px;
-        height: 58px;
+        width: 68px;
+        height: 68px;
         border-radius: 8px;
         padding: 4px;
     }
     .compare-market-logo.compare-market-logo--sm {
-        width: 34px;
-        height: 34px;
+        width: 54px;
+        height: 54px;
         border-radius: 8px;
         padding: 2px;
         border-width: 1.5px;
@@ -2090,18 +2090,22 @@ body.admin-google-image-modal-open {
 
 /* On small viewports, align modal to top so large content is visible and scrollable */
 @media (max-width: 720px) {
-    .modal { align-items: flex-start; padding-top: 8px; padding-bottom: 8px; }
+    .modal {
+        align-items: flex-start;
+        padding-top: env(safe-area-inset-top, 8px);
+        padding-bottom: env(safe-area-inset-bottom, 8px);
+    }
     /* Make modal-content fill most of the viewport on small screens so content is visible and scrollable */
     .modal-content {
         position: fixed;
-        top: 6px;
+        top: env(safe-area-inset-top, 6px);
         left: 6px;
         right: 6px;
-        bottom: 6px;
+        bottom: env(safe-area-inset-bottom, 6px);
         width: auto;
         max-width: none;
         height: auto;
-        max-height: calc(100vh - 12px);
+        max-height: calc(100dvh - env(safe-area-inset-top, 6px) - env(safe-area-inset-bottom, 6px));
         border-radius: 10px;
         overflow: hidden;
     }
@@ -2139,6 +2143,9 @@ body.admin-google-image-modal-open {
         white-space: normal;
         overflow-wrap: anywhere;
         word-break: break-word;
+        position: sticky;
+        top: 0;
+        z-index: 6;
     }
     #compare-modal .compare-list {
         padding-bottom: 16px;
@@ -3685,6 +3692,10 @@ body.admin-google-image-modal-open {
     }
 
     .compare-linear-item .cli-image-col { grid-area: image; align-self: start; }
+    .compare-linear-item img.cli-image {
+        width: 78px;
+        height: 78px;
+    }
     .compare-linear-item .cli-name-col {
         grid-area: name;
         -webkit-line-clamp: 3;
@@ -3710,12 +3721,12 @@ body.admin-google-image-modal-open {
         white-space: nowrap;
     }
     .compare-linear-item .cli-country-flag img {
-        width: 20px !important;
-        height: 14px !important;
+        width: 26px !important;
+        height: 18px !important;
     }
     .compare-linear-item .cli-market-under-flag .compare-market-logo--sm {
-        width: 30px;
-        height: 30px;
+        width: 39px;
+        height: 39px;
     }
 
     .compare-linear-item .cli-price-col {
@@ -3750,8 +3761,8 @@ body.admin-google-image-modal-open {
         scroll-margin-top: 10px;
     }
     .compare-highlight-card .highlight-image {
-        width: 72px;
-        height: 72px;
+        width: 94px;
+        height: 94px;
     }
     .compare-highlight-card .highlight-name {
         font-size: .94rem;
@@ -3770,24 +3781,24 @@ body.admin-google-image-modal-open {
         gap: 5px 7px;
     }
     .compare-linear-item img.cli-image {
-        width: 50px;
-        height: 50px;
+        width: 65px;
+        height: 65px;
     }
     .compare-linear-item .cli-price-col {
         font-size: .98rem;
         padding: .18rem .55rem;
     }
     .compare-linear-item .cli-country-flag img {
-        width: 18px !important;
-        height: 13px !important;
+        width: 24px !important;
+        height: 17px !important;
     }
     .compare-linear-item .cli-market-under-flag .compare-market-logo--sm {
-        width: 28px;
-        height: 28px;
+        width: 36px;
+        height: 36px;
     }
     .compare-highlight-card .highlight-image {
-        width: 64px;
-        height: 64px;
+        width: 83px;
+        height: 83px;
     }
 }
 

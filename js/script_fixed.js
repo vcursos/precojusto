@@ -1445,6 +1445,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     firstHighlight.scrollIntoView({ block: 'start', inline: 'nearest' });
                 }
             });
+            setTimeout(() => {
+                compareList.scrollTop = 0;
+                if (compareModalContent) compareModalContent.scrollTop = 0;
+            }, 80);
         } catch (_) { /* noop */ }
         return;
 
