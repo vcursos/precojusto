@@ -1437,17 +1437,45 @@ document.addEventListener('DOMContentLoaded', () => {
         compareList.appendChild(desktopLayout);
     ensureCompareModalOpen();
         try {
-            requestAnimationFrame(() => {
+            const shouldRestorePosition = !!(compareModal && compareModal.dataset.compareRestore === '1');
+            const restoreProductId = compareModal ? (compareModal.dataset.compareRestoreProductId || '') : '';
+            const restoreScrollRaw = compareModal ? (compareModal.dataset.compareRestoreScrollTop || '') : '';
+            const restoreScrollTop = Number(restoreScrollRaw);
+            const applyInitialComparePosition = () => {
+                if (shouldRestorePosition) {
+                    if (Number.isFinite(restoreScrollTop) && restoreScrollTop >= 0) {
+                        compareList.scrollTop = restoreScrollTop;
+                        if (compareModalContent) compareModalContent.scrollTop = restoreScrollTop;
+                    }
+                    if (restoreProductId) {
+                        const restoreNode = Array.from(compareList.querySelectorAll('[data-product-id]'))
+                            .find(node => String(node.dataset.productId) === String(restoreProductId));
+                        if (restoreNode && typeof restoreNode.scrollIntoView === 'function') {
+                            restoreNode.scrollIntoView({ block: 'center', inline: 'nearest' });
+                        }
+                    }
+                    return;
+                }
+
                 compareList.scrollTop = 0;
                 if (compareModalContent) compareModalContent.scrollTop = 0;
                 const firstHighlight = compareList.querySelector('.compare-highlight-card');
                 if (firstHighlight && typeof firstHighlight.scrollIntoView === 'function') {
                     firstHighlight.scrollIntoView({ block: 'start', inline: 'nearest' });
                 }
+            };
+
+            requestAnimationFrame(() => {
+                applyInitialComparePosition();
             });
             setTimeout(() => {
-                compareList.scrollTop = 0;
-                if (compareModalContent) compareModalContent.scrollTop = 0;
+                applyInitialComparePosition();
+
+                if (shouldRestorePosition && compareModal) {
+                    delete compareModal.dataset.compareRestore;
+                    delete compareModal.dataset.compareRestoreProductId;
+                    delete compareModal.dataset.compareRestoreScrollTop;
+                }
             }, 80);
         } catch (_) { /* noop */ }
         return;
@@ -1833,6 +1861,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const p = products.find(x => String(x.id) === String(productId));
         if (!p) return;
         const compareModalContent = compareModal ? compareModal.querySelector('.modal-content') : null;
+
+        if (compareModal) {
+            compareModal.dataset.compareReturnProductId = String(productId || '');
+            compareModal.dataset.compareReturnScrollTop = String(compareList ? (compareList.scrollTop || 0) : 0);
+        }
+
         const esc = (s) => (s || '').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         const detailCountriesMeta = __pjGetProductCountriesMeta(p);
         const detailCountryHtml = detailCountriesMeta
@@ -1898,6 +1932,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const backBtn = document.getElementById('compare-detail-back');
         if (backBtn) backBtn.addEventListener('click', () => {
             const original = (compareModal && compareModal.dataset.compareProduct) ? compareModal.dataset.compareProduct : p.name;
+
+            if (compareModal) {
+                compareModal.dataset.compareRestore = '1';
+                compareModal.dataset.compareRestoreProductId = compareModal.dataset.compareReturnProductId || String(productId || '');
+                compareModal.dataset.compareRestoreScrollTop = compareModal.dataset.compareReturnScrollTop || '0';
+            }
+
             openCompareModal(original);
         });
     };
