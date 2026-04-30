@@ -1745,6 +1745,50 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // show product details inside the compare modal (replaces compare content)
+    const ensureCompareImageZoomModal = () => {
+        let zoomModal = document.getElementById('compare-image-zoom-modal');
+        if (zoomModal) return zoomModal;
+
+        zoomModal = document.createElement('div');
+        zoomModal.id = 'compare-image-zoom-modal';
+        zoomModal.className = 'compare-image-zoom-modal';
+        zoomModal.setAttribute('role', 'dialog');
+        zoomModal.setAttribute('aria-modal', 'true');
+        zoomModal.setAttribute('aria-label', 'Imagem ampliada do produto');
+        zoomModal.innerHTML = `
+            <button class="compare-image-zoom-close" aria-label="Fechar imagem ampliada">&times;</button>
+            <img class="compare-image-zoom-img" alt="Imagem ampliada do produto">
+        `;
+        document.body.appendChild(zoomModal);
+
+        const closeZoom = () => {
+            zoomModal.classList.remove('show');
+            zoomModal.style.display = 'none';
+        };
+
+        const closeBtn = zoomModal.querySelector('.compare-image-zoom-close');
+        if (closeBtn) closeBtn.addEventListener('click', closeZoom);
+        zoomModal.addEventListener('click', (ev) => {
+            if (ev.target === zoomModal) closeZoom();
+        });
+        window.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Escape' && zoomModal.classList.contains('show')) closeZoom();
+        });
+
+        return zoomModal;
+    };
+
+    const openCompareImageZoom = (src, alt) => {
+        if (!src) return;
+        const zoomModal = ensureCompareImageZoomModal();
+        const img = zoomModal.querySelector('.compare-image-zoom-img');
+        if (!img) return;
+        img.src = src;
+        img.alt = alt || 'Imagem ampliada do produto';
+        zoomModal.style.display = 'flex';
+        requestAnimationFrame(() => zoomModal.classList.add('show'));
+    };
+
     const showCompareItemDetail = (productId) => {
         const products = getFromLocalStorage('products');
         const p = products.find(x => String(x.id) === String(productId));
@@ -1797,14 +1841,22 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         try {
             requestAnimationFrame(() => {
-                compareList.scrollTop = 0;
-                if (compareModalContent) compareModalContent.scrollTop = 0;
+                compareList.scrollTop = 22;
+                if (compareModalContent) compareModalContent.scrollTop = 22;
             });
             setTimeout(() => {
-                compareList.scrollTop = 0;
-                if (compareModalContent) compareModalContent.scrollTop = 0;
+                compareList.scrollTop = 22;
+                if (compareModalContent) compareModalContent.scrollTop = 22;
             }, 80);
         } catch (_) { /* noop */ }
+
+        const detailImg = compareList.querySelector('.detail-image');
+        if (detailImg) {
+            detailImg.style.cursor = 'zoom-in';
+            detailImg.addEventListener('click', () => {
+                openCompareImageZoom(detailImg.src, detailImg.alt);
+            });
+        }
 
         // back button restores the comparison view by re-opening it with the original product name
         const backBtn = document.getElementById('compare-detail-back');
