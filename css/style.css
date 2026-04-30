@@ -1818,12 +1818,18 @@ body.admin-google-image-modal-open {
 .compare-card-fullname { font-size:0.95rem; color:#0f172a; margin:2px 0 0 0; }
 
 /* Compare modal — in-place detail view */
-.compare-detail { padding: 12px 8px; }
+.compare-detail {
+    padding: 12px 8px;
+    display: flex;
+    flex-direction: column;
+}
 .compare-detail-back {
     display:inline-flex;
     align-items:center;
     gap:6px;
-    margin-bottom:12px;
+    position: static;
+    margin: 0 0 10px 0;
+    align-self: flex-start;
     background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
     border:1px solid #15803d;
     color:#ffffff;
@@ -1851,12 +1857,12 @@ body.admin-google-image-modal-open {
 
 @media (max-width:720px) {
     #compare-modal .compare-detail {
-        padding-top: 18px;
+        padding-top: 12px;
     }
     #compare-modal .compare-detail-back {
-        position: sticky;
-        top: 4px;
-        z-index: 3;
+        position: static;
+        margin: 0 0 10px 0;
+        align-self: flex-start;
     }
     .compare-detail-grid { flex-direction:column; }
     .detail-image-col { flex:0 0 auto; }
@@ -2982,6 +2988,32 @@ body.admin-google-image-modal-open {
     text-decoration: none;
 }
 
+#compare-modal #close-compare-btn.compare-back-btn {
+    float: right;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 1.05rem;
+    font-weight: 800;
+    line-height: 1;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+    border: 1px solid #15803d;
+    box-shadow: 0 8px 16px rgba(21,128,61,0.22);
+}
+
+#compare-modal #close-compare-btn.compare-back-btn:hover,
+#compare-modal #close-compare-btn.compare-back-btn:focus {
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(21,128,61,0.28);
+    text-decoration: none;
+}
+
 .cart-summary, .favorites-summary {
     text-align: right;
     margin-top: 20px;
@@ -3764,11 +3796,10 @@ body.admin-google-image-modal-open {
 
 @media (max-width: 720px) {
     .compare-linear-item {
-        grid-template-columns: 56px 1fr auto;
+        grid-template-columns: 56px 1fr auto auto;
         grid-template-areas:
-            "name name country"
-            "image price price"
-            "image diff actions";
+            "name name country country"
+            "image price diff actions";
         align-items: center;
         gap: 6px 8px;
         padding: .65rem .62rem;
@@ -3815,6 +3846,7 @@ body.admin-google-image-modal-open {
     .compare-linear-item .cli-price-col {
         grid-area: price;
         justify-self: start;
+        align-self: center;
         font-size: 1.04rem;
         font-weight: 900;
         letter-spacing: .2px;
@@ -3830,11 +3862,14 @@ body.admin-google-image-modal-open {
     .compare-linear-item .cli-diff-col {
         grid-area: diff;
         justify-self: start;
+        align-self: center;
         font-size: .68rem;
+        margin-left: 2px;
     }
 
     .compare-linear-item .cli-actions-col {
         grid-area: actions;
+        align-self: center;
         justify-self: end;
     }
 
@@ -3860,7 +3895,7 @@ body.admin-google-image-modal-open {
 
 @media (max-width: 420px) {
     .compare-linear-item {
-        grid-template-columns: 50px 1fr auto;
+        grid-template-columns: 50px 1fr auto auto;
         gap: 5px 7px;
     }
     .compare-linear-item img.cli-image {
@@ -4259,11 +4294,13 @@ body.admin-google-image-modal-open {
 
     #compare-modal .compare-detail {
         padding: 4px 2px;
+        padding-top: 4px;
     }
 
     #compare-modal .compare-detail-back {
-        margin-bottom: 8px;
         font-size: 0.9rem;
+        margin: 0 0 8px 0;
+        align-self: flex-start;
     }
 
     #compare-modal .compare-detail-grid {

@@ -1034,7 +1034,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     try {
                         const fn = (typeof openCompareModal === 'function') ? openCompareModal : window.openCompareModal;
                         pjCloseModal();
-                        if (typeof fn === 'function') fn(p.name);
+                        if (typeof fn === 'function') {
+                            fn(p.name, { returnType: 'product-modal', returnProductId: p.id });
+                        }
                     } catch (_) {}
                 };
             }
@@ -1051,6 +1053,11 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         renderModernProductModal(p);
+        try {
+            if (pjProductModal) {
+                pjProductModal.dataset.productId = String(p.id || '');
+            }
+        } catch (_) { /* noop */ }
         pjOpenModal();
     };
     window.openProductDetail = openProductDetail;
@@ -1188,6 +1195,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const compareTitle = document.getElementById('compare-modal-title');
     const closeCompareBtn = document.getElementById('close-compare-btn');
 
+    const setCompareReturnContext = ({ type = 'page', productId = '' } = {}) => {
+        if (!compareModal) return;
+        compareModal.dataset.comparePrevType = String(type || 'page');
+        compareModal.dataset.comparePrevProductId = String(productId || '');
+    };
+
+    const setCompareTopBackMode = (mode = 'list') => {
+        if (!closeCompareBtn) return;
+        closeCompareBtn.classList.add('compare-back-btn');
+        closeCompareBtn.textContent = '←';
+        closeCompareBtn.setAttribute('aria-label', 'Voltar');
+        closeCompareBtn.setAttribute('title', 'Voltar');
+        if (compareModal) compareModal.dataset.compareView = mode;
+    };
+
     const isCompareModalVisible = () => {
         if (!compareModal) return false;
         return compareModal.classList.contains('show') || compareModal.style.display === 'flex';
@@ -1200,6 +1222,14 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const normalizeName = (name) => name ? name.toString().toLowerCase().replace(/\s+/g, ' ').trim() : '';
+    const normalizeCompareText = (value) => (value || '')
+        .toString()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
 
     // Attempt to extract a 'core' product name by removing brand tokens and common qualifiers
     const extractCoreName = (name, brand) => {
@@ -1227,11 +1257,68 @@ document.addEventListener('DOMContentLoaded', () => {
         return normalizeName(n);
     };
 
-    const openCompareModal = (productName) => {
+    const __pjCompareStopwords = new Set([
+        'de', 'do', 'da', 'dos', 'das', 'e', 'com', 'sem', 'para', 'por', 'em',
+        'tipo', 'extra', 'virgem', 'integral', 'refinado', 'classico', 'classic',
+        'premium', 'super', 'light', 'bio', 'pack', 'pacote', 'un', 'unidade',
+        'kg', 'g', 'gr', 'l', 'ml'
+    ]);
+
+    const getComparableNameTokens = (name, brand = '', market = '') => {
+        const core = extractCoreName(name, brand);
+        let text = normalizeCompareText(core || name || '');
+        const marketText = normalizeCompareText(market || '');
+
+        if (marketText) {
+            marketText.split(' ').forEach(token => {
+                if (!token) return;
+                const marketRe = new RegExp('\\b' + token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'g');
+                text = text.replace(marketRe, ' ');
+            });
+            text = text.replace(/\s+/g, ' ').trim();
+        }
+
+        return text
+            .split(' ')
+            .map(t => t.trim())
+            .filter(t => t.length > 1 && !__pjCompareStopwords.has(t));
+    };
+
+    const isGenericNameMatch = (candidateName, requestedName, candidateBrand = '', candidateMarket = '') => {
+        const requestedTokens = getComparableNameTokens(requestedName, '', '');
+        const candidateTokens = getComparableNameTokens(candidateName, candidateBrand, candidateMarket);
+
+        if (!requestedTokens.length || !candidateTokens.length) return false;
+
+        const sameFirst = candidateTokens[0] === requestedTokens[0];
+        if (!sameFirst) return false;
+
+        const sameFirstTwo = requestedTokens.length > 1 && candidateTokens.length > 1
+            && candidateTokens[1] === requestedTokens[1];
+        if (sameFirstTwo) return true;
+
+        const requestedSet = new Set(requestedTokens);
+        const candidateSet = new Set(candidateTokens);
+        const intersection = [...requestedSet].filter(x => candidateSet.has(x)).length;
+        const overlap = intersection / Math.max(requestedSet.size, 1);
+        return overlap >= 0.4;
+    };
+
+    const openCompareModal = (productName, options = {}) => {
         const products = getFromLocalStorage('products');
         const normalized = normalizeName(productName);
         const isGenericArrozSearch = normalized === 'arroz';
         const compareModalContent = compareModal ? compareModal.querySelector('.modal-content') : null;
+
+        setCompareTopBackMode('list');
+
+        if (!options.preserveReturnContext) {
+            if (options.returnType) {
+                setCompareReturnContext({ type: options.returnType, productId: options.returnProductId || '' });
+            } else {
+                setCompareReturnContext({ type: 'page', productId: '' });
+            }
+        }
 
         // build core name for the requested product (if brand passed within name, try to strip later)
         // try to detect brand by checking last token (common pattern: '... <brand>')
@@ -1245,36 +1332,19 @@ document.addEventListener('DOMContentLoaded', () => {
         // first try to find products whose core name equals requested core
         let matches = products.filter(p => extractCoreName(p.name, p.brand) === requestedCore && requestedCore.length > 0);
 
-        // helper: consider two names similar if they share the same first 2+ words or high overlap
-        const areNamesSimilar = (n1, n2) => {
-            if (!n1 || !n2) return false;
-            const a = normalizeName(n1).split(' ');
-            const b = normalizeName(n2).split(' ');
-            // require at least 2 words to compare usefully
-            const minWords = 2;
-            const common = a.filter((w, i) => b[i] === w).length;
-            if (common >= minWords) return true;
-            // fallback: compute overlap ratio
-            const setA = new Set(a);
-            const setB = new Set(b);
-            const intersection = [...setA].filter(x => setB.has(x)).length;
-            const union = new Set([...setA, ...setB]).size;
-            if (union === 0) return false;
-            const ratio = intersection / union;
-            return ratio >= 0.5; // 50% overlap considered similar
-        };
-
-        // expand matches to include names that are similar by words (helps when only brand differs)
-        const extra = products.filter(p => !matches.includes(p) && areNamesSimilar(p.name, productName));
-        if (extra.length) {
-            matches.push(...extra);
-        }
+        // expand by generic leading name (ex: "azeite continente" vs "azeite pingo doce")
+        const genericMatches = products.filter(p => !matches.includes(p) && isGenericNameMatch(p.name, productName, p.brand, p.market));
+        if (genericMatches.length) matches.push(...genericMatches);
 
         // fallback: if no matches by core, try exact name or substring match
         if (matches.length === 0) {
-            matches = products.filter(p => normalizeName(p.name) === normalized);
+            const normalizedQuery = normalizeCompareText(productName);
+            matches = products.filter(p => normalizeCompareText(p.name) === normalizedQuery);
             if (matches.length === 0) {
-                matches = products.filter(p => normalizeName(p.name).includes(normalized));
+                matches = products.filter(p => {
+                    const n = normalizeCompareText(p.name);
+                    return n.includes(normalizedQuery) || isGenericNameMatch(p.name, productName, p.brand, p.market);
+                });
             }
         }
 
@@ -1862,6 +1932,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!p) return;
         const compareModalContent = compareModal ? compareModal.querySelector('.modal-content') : null;
 
+        setCompareTopBackMode('detail');
+
         if (compareModal) {
             compareModal.dataset.compareReturnProductId = String(productId || '');
             compareModal.dataset.compareReturnScrollTop = String(compareList ? (compareList.scrollTop || 0) : 0);
@@ -1888,7 +1960,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (_) { /* noop */ }
         compareList.innerHTML = `
             <div class="compare-detail">
-                <button id="compare-detail-back" class="compare-detail-back">← Voltar</button>
                 <div class="compare-detail-grid">
                     <div class="detail-image-col">
                         <img src="${esc(p.imageUrl || DEFAULT_IMAGE_URL)}" alt="${esc(p.name)}" class="detail-image">
@@ -1928,24 +1999,49 @@ document.addEventListener('DOMContentLoaded', () => {
             detailImg.style.cursor = 'zoom-in';
         }
 
-        // back button restores the comparison view by re-opening it with the original product name
-        const backBtn = document.getElementById('compare-detail-back');
-        if (backBtn) backBtn.addEventListener('click', () => {
-            const original = (compareModal && compareModal.dataset.compareProduct) ? compareModal.dataset.compareProduct : p.name;
+    };
+
+    if (closeCompareBtn) closeCompareBtn.addEventListener('click', (e) => {
+        try {
+            e.preventDefault();
+            e.stopPropagation();
+        } catch (_) { /* noop */ }
+
+        const view = (compareModal && compareModal.dataset.compareView) ? compareModal.dataset.compareView : 'list';
+
+        if (isCompareImageZoomOpen()) {
+            try { __closeCompareImageZoom(); } catch (_) { /* noop */ }
+            return;
+        }
+
+        if (view === 'detail') {
+            const currentProductId = compareModal ? (compareModal.dataset.compareReturnProductId || '') : '';
+            const original = (compareModal && compareModal.dataset.compareProduct)
+                ? compareModal.dataset.compareProduct
+                : ((compareTitle && compareTitle.textContent)
+                    ? compareTitle.textContent.replace(/^Detalhes:\s*/i, '').trim()
+                    : '');
 
             if (compareModal) {
                 compareModal.dataset.compareRestore = '1';
-                compareModal.dataset.compareRestoreProductId = compareModal.dataset.compareReturnProductId || String(productId || '');
+                compareModal.dataset.compareRestoreProductId = currentProductId;
                 compareModal.dataset.compareRestoreScrollTop = compareModal.dataset.compareReturnScrollTop || '0';
             }
 
-            openCompareModal(original);
-        });
-    };
+            openCompareModal(original, { preserveReturnContext: true });
+            return;
+        }
 
-    if (closeCompareBtn) closeCompareBtn.addEventListener('click', () => {
-        try { __closeCompareImageZoom(); } catch (_) { /* noop */ }
+        const prevType = compareModal ? (compareModal.dataset.comparePrevType || 'page') : 'page';
+        const prevProductId = compareModal ? (compareModal.dataset.comparePrevProductId || '') : '';
+
         closeModal(compareModal);
+
+        if (prevType === 'product-modal' && prevProductId) {
+            setTimeout(() => {
+                try { openProductDetail(prevProductId); } catch (_) { /* noop */ }
+            }, 260);
+        }
     });
 
     // Delegated events inside compare modal for fav/cart
@@ -2646,6 +2742,10 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', () => {
             if (btn.id === 'pj-close-product-modal') {
                 pjCloseModal();
+                return;
+            }
+            if (btn.id === 'close-compare-btn') {
+                // O compare usa fluxo customizado de "voltar"; não aplicar fechamento genérico.
                 return;
             }
             const modal = btn.closest('.modal');
