@@ -1,7 +1,7 @@
 // Root-scoped Service Worker (controls entire site)
 // Keep this file at the site root to ensure scope='/' in all browsers, including iOS Safari
 // Versionamento do SW
-const SW_VERSION = '20260427-v16-auto-update';
+const SW_VERSION = '20260501-v17-icons-refresh';
 const CACHE_NAME = `precomercado-${SW_VERSION}`;
 
 // Lista relativa para funcionar em /precojusto/ (GitHub Pages) e em /
@@ -19,6 +19,9 @@ const APP_SHELL_REL = [
   './js/category-inject.js',
   './js/firebase-loader.js',
   './js/firebase-init.js',
+  './images/icons/icon-192.png',
+  './images/icons/icon-512.png',
+  './images/icons/apple-touch-icon.png',
   './images/icons/maskable-icon.svg',
   './images/cabecalho.png'
 ];

@@ -3014,6 +3014,66 @@ body.admin-google-image-modal-open {
     text-decoration: none;
 }
 
+.update-info-content {
+    max-width: 560px;
+    border: 1px solid #dbeafe;
+    border-radius: 14px;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18);
+    padding: 18px 18px 14px;
+}
+
+.update-info-content h2 {
+    margin: 0 0 8px;
+    color: #1e3a8a;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.update-info-close {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-size: 1.4rem;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.update-info-close:hover,
+.update-info-close:focus {
+    color: #0f172a;
+}
+
+.update-info-version {
+    margin: 0 0 6px;
+    color: #475569;
+    font-size: 0.92rem;
+}
+
+.update-info-subtitle {
+    margin: 0 0 10px;
+    color: #1f2937;
+    font-weight: 600;
+}
+
+.update-info-list {
+    margin: 0;
+    padding-left: 18px;
+    color: #334155;
+    display: grid;
+    gap: 8px;
+}
+
+.update-info-actions {
+    margin-top: 14px;
+    display: flex;
+    justify-content: flex-end;
+}
+
 .cart-summary, .favorites-summary {
     text-align: right;
     margin-top: 20px;

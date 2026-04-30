@@ -25,15 +25,15 @@
             }
         })();
     </script>
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="manifest.json?v=20260501-v2-icons">
     <!-- iOS PWA meta tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Preço Certo">
     <!-- Apple touch icon for iOS -->
-    <link rel="apple-touch-icon" href="images/icons/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="images/icons/icon-192.png">
-    <link rel="icon" type="image/png" sizes="512x512" href="images/icons/icon-512.png">
+    <link rel="apple-touch-icon" href="images/icons/apple-touch-icon.png?v=20260501-v2-icons">
+    <link rel="icon" type="image/png" sizes="192x192" href="images/icons/icon-192.png?v=20260501-v2-icons">
+    <link rel="icon" type="image/png" sizes="512x512" href="images/icons/icon-512.png?v=20260501-v2-icons">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- Leitor de códigos robusto para Android e iOS -->
@@ -820,6 +820,19 @@
             const defaultSet = ['core', 'cat', 'scan', 'fb'];
             const enabled = requested.length ? requested : defaultSet;
 
+            // Metadados de release para modal de novidades (atualize a cada versão publicada)
+            window.__PJ_RELEASE__ = {
+                version: '20260501-v2-icons',
+                title: 'Novidades da atualização',
+                notes: [
+                    'Ícone do app atualizado para versão moderna em instalações já existentes.',
+                    'Novo botão de voltar contextual no modal de comparação.',
+                    'Fluxo de retorno corrigido para voltar à tela anterior sem fechar tudo.',
+                    'Manifest e cache ajustados para atualização automática do app instalado.',
+                    'Melhorias na comparação por nome genérico de produtos.'
+                ]
+            };
+
             const has = (k) => enabled.includes(k);
 
             if (has('core')) {
@@ -863,7 +876,7 @@
                         // GitHub Pages roda em /<repo>/ (ex: /precojusto/). Use basePath explícito
                         // para registrar no escopo correto e evitar travas por cache/SW antigo.
                         const basePath = location.pathname.replace(/[^/]+$/, '');
-                        const swUrl = new URL('service-worker.js?v=20260427-v16-auto-update', location.origin + basePath).toString();
+                        const swUrl = new URL('service-worker.js?v=20260501-v17-icons-refresh', location.origin + basePath).toString();
                         navigator.serviceWorker.register(swUrl, { scope: basePath, updateViaCache: 'none' })
                             .then(reg => {
                                 console.log('SW registrado (index):', reg.scope);

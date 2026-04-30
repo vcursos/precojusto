@@ -126,6 +126,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const historyDropdown = document.getElementById('history-dropdown');
     const clearHistoryBtn = document.getElementById('clear-history');
     const closeFavoritesBottomBtn = document.getElementById('close-favorites-bottom');
+
+    const APP_RELEASE_FALLBACK = {
+        version: '20260501-v2-icons',
+        title: 'Novidades da atualização',
+        notes: [
+            'Novo botão de voltar contextual no modal de comparação.',
+            'Retorno para a tela anterior corrigido ao sair da comparação.',
+            'Ícones do app atualizados com visual mais moderno (inclui instalações antigas).',
+            'Manifest e service worker versionados para forçar atualização do app instalado.',
+            'Comparação de produtos melhorada por nome genérico.'
+        ]
+    };
+    const APP_RELEASE = (window.__PJ_RELEASE__ && typeof window.__PJ_RELEASE__ === 'object')
+        ? window.__PJ_RELEASE__
+        : APP_RELEASE_FALLBACK;
+    const APP_RELEASE_VERSION = String(APP_RELEASE.version || APP_RELEASE_FALLBACK.version);
+    const APP_RELEASE_TITLE = String(APP_RELEASE.title || APP_RELEASE_FALLBACK.title);
+    const APP_RELEASE_NOTES = Array.isArray(APP_RELEASE.notes) && APP_RELEASE.notes.length
+        ? APP_RELEASE.notes.map(item => String(item || '').trim()).filter(Boolean)
+        : APP_RELEASE_FALLBACK.notes;
+    const APP_RELEASE_SEEN_KEY = 'pj-last-seen-release-version';
     
     // Elementos do modal de sugestão
     const modalSuggestionForm = document.getElementById('modal-suggestion-form');
@@ -2725,6 +2746,55 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 240);
     };
 
+    const ensureUpdateInfoModal = () => {
+        let modal = document.getElementById('app-update-modal');
+        if (modal) return modal;
+
+        modal = document.createElement('div');
+        modal.id = 'app-update-modal';
+        modal.className = 'modal update-info-modal';
+        modal.style.zIndex = '320000';
+
+        const notesHtml = APP_RELEASE_NOTES
+            .map(note => `<li>${pjEsc(note)}</li>`)
+            .join('');
+
+        modal.innerHTML = `
+            <div class="modal-content update-info-content" role="dialog" aria-modal="true" aria-labelledby="update-info-title">
+                <button type="button" class="update-info-close" id="close-update-info" aria-label="Fechar">&times;</button>
+                <h2 id="update-info-title"><i class="fas fa-rocket"></i> ${pjEsc(APP_RELEASE_TITLE)}</h2>
+                <p class="update-info-version">Versão: <strong>${pjEsc(APP_RELEASE_VERSION)}</strong></p>
+                <p class="update-info-subtitle">O que melhorou nesta versão:</p>
+                <ul class="update-info-list">${notesHtml}</ul>
+                <div class="update-info-actions">
+                    <button type="button" class="checkout-btn" id="update-info-ok-btn">Entendi</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const markAsSeenAndClose = () => {
+            try { localStorage.setItem(APP_RELEASE_SEEN_KEY, APP_RELEASE_VERSION); } catch (_) { /* noop */ }
+            closeModal(modal);
+        };
+
+        const closeBtn = modal.querySelector('#close-update-info');
+        const okBtn = modal.querySelector('#update-info-ok-btn');
+        if (closeBtn) closeBtn.addEventListener('click', markAsSeenAndClose);
+        if (okBtn) okBtn.addEventListener('click', markAsSeenAndClose);
+
+        return modal;
+    };
+
+    const showUpdateInfoIfNeeded = () => {
+        let lastSeen = '';
+        try { lastSeen = localStorage.getItem(APP_RELEASE_SEEN_KEY) || ''; } catch (_) { /* noop */ }
+        if (lastSeen === APP_RELEASE_VERSION) return;
+        const modal = ensureUpdateInfoModal();
+        openModal(modal);
+    };
+
     cartBtn.addEventListener('click', (e) => {
         e.preventDefault();
         openModal(cartModal);
@@ -2756,6 +2826,9 @@ document.addEventListener('DOMContentLoaded', () => {
     closeCartBtn.addEventListener('click', () => {
         closeModal(cartModal);
     });
+
+    // Exibe novidades automaticamente quando a versão publicada muda.
+    setTimeout(showUpdateInfoIfNeeded, 600);
 
     // Fechar modais clicando fora (backdrop) - genérico para qualquer modal
     window.addEventListener('click', (e) => {
