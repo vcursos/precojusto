@@ -2129,7 +2129,7 @@ body.admin-google-image-modal-open {
     }
 
     #compare-modal .modal-content {
-        padding: 10px 10px 8px;
+        padding: max(14px, env(safe-area-inset-top, 10px)) 10px 8px;
     }
     #compare-modal .modal-content h2 {
         margin: 0 56px 8px 0;

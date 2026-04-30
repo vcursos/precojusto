@@ -1749,6 +1749,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const products = getFromLocalStorage('products');
         const p = products.find(x => String(x.id) === String(productId));
         if (!p) return;
+        const compareModalContent = compareModal ? compareModal.querySelector('.modal-content') : null;
         const esc = (s) => (s || '').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         const detailCountriesMeta = __pjGetProductCountriesMeta(p);
         const detailCountryHtml = detailCountriesMeta
@@ -1764,6 +1765,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // update title and render a compact detail view inside the compare list container
         compareTitle.textContent = `Detalhes: ${p.name}`;
+        try {
+            compareList.scrollTop = 0;
+            if (compareModalContent) compareModalContent.scrollTop = 0;
+        } catch (_) { /* noop */ }
         compareList.innerHTML = `
             <div class="compare-detail">
                 <button id="compare-detail-back" class="compare-detail-back">← Voltar</button>
@@ -1790,6 +1795,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
         `;
+        try {
+            requestAnimationFrame(() => {
+                compareList.scrollTop = 0;
+                if (compareModalContent) compareModalContent.scrollTop = 0;
+            });
+            setTimeout(() => {
+                compareList.scrollTop = 0;
+                if (compareModalContent) compareModalContent.scrollTop = 0;
+            }, 80);
+        } catch (_) { /* noop */ }
 
         // back button restores the comparison view by re-opening it with the original product name
         const backBtn = document.getElementById('compare-detail-back');
