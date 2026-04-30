@@ -1904,13 +1904,16 @@ body.admin-google-image-modal-open {
 .compare-image-zoom-modal {
     position: fixed;
     inset: 0;
-    z-index: 220000;
+    z-index: 2147483647 !important;
     background: rgba(2, 6, 23, 0.88);
     display: none;
     align-items: center;
     justify-content: center;
     padding: 18px;
     backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    isolation: isolate;
+    pointer-events: auto;
 }
 .compare-image-zoom-modal.show {
     display: flex;
@@ -1919,25 +1922,33 @@ body.admin-google-image-modal-open {
     width: min(94vw, 980px);
     max-height: 88dvh;
     object-fit: contain;
+    position: relative;
+    z-index: 1;
     border-radius: 14px;
     background: #fff;
     box-shadow: 0 20px 36px rgba(0, 0, 0, 0.42);
 }
 .compare-image-zoom-close {
-    position: absolute;
+    position: fixed;
     top: max(14px, env(safe-area-inset-top, 8px));
-    right: 14px;
-    width: 42px;
-    height: 42px;
-    z-index: 2;
+    left: 14px;
+    z-index: 2147483647;
     border-radius: 999px;
-    border: 1px solid rgba(255,255,255,.45);
-    background: rgba(15,23,42,.55);
+    border: 1px solid rgba(255,255,255,.4);
+    background: rgba(15,23,42,.62);
     color: #fff;
-    font-size: 1.65rem;
+    font-size: .95rem;
     font-weight: 700;
     line-height: 1;
+    padding: 10px 14px;
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
+    pointer-events: auto;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
 
 /* show overlay when item has .show-actions */

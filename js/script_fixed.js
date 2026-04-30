@@ -1746,6 +1746,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // show product details inside the compare modal (replaces compare content)
     let __closeCompareImageZoom = () => {};
+    const isCompareImageZoomOpen = () => {
+        const zoomModal = document.getElementById('compare-image-zoom-modal');
+        if (!zoomModal) return false;
+        return zoomModal.classList.contains('show') && zoomModal.style.display !== 'none';
+    };
 
     const ensureCompareImageZoomModal = () => {
         let zoomModal = document.getElementById('compare-image-zoom-modal');
@@ -1758,7 +1763,7 @@ document.addEventListener('DOMContentLoaded', () => {
         zoomModal.setAttribute('aria-modal', 'true');
         zoomModal.setAttribute('aria-label', 'Imagem ampliada do produto');
         zoomModal.innerHTML = `
-            <button class="compare-image-zoom-close" aria-label="Fechar imagem ampliada">&times;</button>
+            <button class="compare-image-zoom-close" aria-label="Voltar para detalhes">← Voltar</button>
             <img class="compare-image-zoom-img" alt="Imagem ampliada do produto">
         `;
         document.body.appendChild(zoomModal);
@@ -1771,15 +1776,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const closeBtn = zoomModal.querySelector('.compare-image-zoom-close');
         if (closeBtn) {
+            closeBtn.addEventListener('pointerup', (ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                closeZoom();
+            });
             closeBtn.addEventListener('click', (ev) => {
                 ev.preventDefault();
                 ev.stopPropagation();
                 closeZoom();
             });
+            closeBtn.addEventListener('touchstart', (ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+            }, { passive: false });
+            closeBtn.addEventListener('touchend', (ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                closeZoom();
+            }, { passive: false });
         }
         zoomModal.addEventListener('click', (ev) => {
-            if (ev.target === zoomModal) closeZoom();
+            if (ev.target === zoomModal) {
+                ev.preventDefault();
+                ev.stopPropagation();
+                closeZoom();
+            }
         });
+        zoomModal.addEventListener('touchend', (ev) => {
+            if (ev.target === zoomModal) {
+                ev.preventDefault();
+                ev.stopPropagation();
+                closeZoom();
+            }
+        }, { passive: false });
         window.addEventListener('keydown', (ev) => {
             if (ev.key === 'Escape' && zoomModal.classList.contains('show')) closeZoom();
         });
@@ -1862,12 +1892,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const detailImg = compareList.querySelector('.detail-image');
         if (detailImg) {
             detailImg.style.cursor = 'zoom-in';
-            detailImg.addEventListener('click', (ev) => {
-                ev.preventDefault();
-                ev.stopPropagation();
-                if (ev.currentTarget !== detailImg) return;
-                openCompareImageZoom(detailImg.src, detailImg.alt);
-            });
         }
 
         // back button restores the comparison view by re-opening it with the original product name
@@ -1885,6 +1909,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Delegated events inside compare modal for fav/cart
     compareList.addEventListener('click', (e) => {
+        const detailImg = e.target.closest('.detail-image');
+        if (detailImg) {
+            e.preventDefault();
+            e.stopPropagation();
+            openCompareImageZoom(detailImg.currentSrc || detailImg.src, detailImg.alt || 'Imagem ampliada do produto');
+            return;
+        }
         const btn = e.target.closest('button');
         if (!btn) return;
         const id = btn.dataset.id;
@@ -1930,6 +1961,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+
+    compareList.addEventListener('touchend', (e) => {
+        const detailImg = e.target.closest('.detail-image');
+        if (!detailImg) return;
+        e.preventDefault();
+        e.stopPropagation();
+        openCompareImageZoom(detailImg.currentSrc || detailImg.src, detailImg.alt || 'Imagem ampliada do produto');
+    }, { passive: false });
 
     const renderRecentProducts = () => {
         if (!recentProductsList) return;
@@ -2580,6 +2619,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fechar modais clicando fora (backdrop) - genérico para qualquer modal
     window.addEventListener('click', (e) => {
         try {
+            if (isCompareImageZoomOpen()) {
+                return;
+            }
             if (e.target && e.target.classList && e.target.classList.contains('modal')) {
                 if (e.target.id === 'pj-product-modal') {
                     pjCloseModal();
