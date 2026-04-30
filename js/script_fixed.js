@@ -1231,6 +1231,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const products = getFromLocalStorage('products');
         const normalized = normalizeName(productName);
         const isGenericArrozSearch = normalized === 'arroz';
+        const compareModalContent = compareModal ? compareModal.querySelector('.modal-content') : null;
 
         // build core name for the requested product (if brand passed within name, try to strip later)
         // try to detect brand by checking last token (common pattern: '... <brand>')
@@ -1287,6 +1288,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         compareList.innerHTML = '';
+        try {
+            compareList.scrollTop = 0;
+            if (compareModalContent) compareModalContent.scrollTop = 0;
+        } catch (_) { /* noop */ }
         if (!matches || matches.length === 0) {
             compareEmpty.style.display = 'block';
             compareTitle.textContent = `Comparar: ${productName}`;
@@ -1431,6 +1436,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // Desktop e mobile: usar o mesmo modal/layout
         compareList.appendChild(desktopLayout);
     ensureCompareModalOpen();
+        try {
+            requestAnimationFrame(() => {
+                compareList.scrollTop = 0;
+                if (compareModalContent) compareModalContent.scrollTop = 0;
+                const firstHighlight = compareList.querySelector('.compare-highlight-card');
+                if (firstHighlight && typeof firstHighlight.scrollIntoView === 'function') {
+                    firstHighlight.scrollIntoView({ block: 'start', inline: 'nearest' });
+                }
+            });
+        } catch (_) { /* noop */ }
         return;
 
         // ===== Mantém fluxo ANTIGO para mobile abaixo =====
