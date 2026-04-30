@@ -1745,6 +1745,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // show product details inside the compare modal (replaces compare content)
+    let __closeCompareImageZoom = () => {};
+
     const ensureCompareImageZoomModal = () => {
         let zoomModal = document.getElementById('compare-image-zoom-modal');
         if (zoomModal) return zoomModal;
@@ -1765,9 +1767,16 @@ document.addEventListener('DOMContentLoaded', () => {
             zoomModal.classList.remove('show');
             zoomModal.style.display = 'none';
         };
+        __closeCompareImageZoom = closeZoom;
 
         const closeBtn = zoomModal.querySelector('.compare-image-zoom-close');
-        if (closeBtn) closeBtn.addEventListener('click', closeZoom);
+        if (closeBtn) {
+            closeBtn.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                closeZoom();
+            });
+        }
         zoomModal.addEventListener('click', (ev) => {
             if (ev.target === zoomModal) closeZoom();
         });
@@ -1853,7 +1862,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const detailImg = compareList.querySelector('.detail-image');
         if (detailImg) {
             detailImg.style.cursor = 'zoom-in';
-            detailImg.addEventListener('click', () => {
+            detailImg.addEventListener('click', (ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                if (ev.currentTarget !== detailImg) return;
                 openCompareImageZoom(detailImg.src, detailImg.alt);
             });
         }
@@ -1866,7 +1878,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    if (closeCompareBtn) closeCompareBtn.addEventListener('click', () => closeModal(compareModal));
+    if (closeCompareBtn) closeCompareBtn.addEventListener('click', () => {
+        try { __closeCompareImageZoom(); } catch (_) { /* noop */ }
+        closeModal(compareModal);
+    });
 
     // Delegated events inside compare modal for fav/cart
     compareList.addEventListener('click', (e) => {
@@ -2517,6 +2532,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const closeModal = (modal) => {
         if (!modal) return;
+        if (modal.id === 'compare-modal') {
+            try { __closeCompareImageZoom(); } catch (_) { /* noop */ }
+        }
         
         modal.classList.remove('visible');
         modal.classList.add('closing');

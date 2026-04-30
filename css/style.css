@@ -1929,11 +1929,13 @@ body.admin-google-image-modal-open {
     right: 14px;
     width: 42px;
     height: 42px;
+    z-index: 2;
     border-radius: 999px;
     border: 1px solid rgba(255,255,255,.45);
     background: rgba(15,23,42,.55);
     color: #fff;
     font-size: 1.65rem;
+    font-weight: 700;
     line-height: 1;
     cursor: pointer;
 }
